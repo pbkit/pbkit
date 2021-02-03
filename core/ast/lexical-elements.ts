@@ -1,8 +1,14 @@
+import { StatementBase } from "./index.ts";
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
+
+export interface Type extends Span {
+  type: "type";
+  identOrDots: (Ident | Dot)[];
+}
 
 export interface FullIdent extends Span {
   type: "full-ident";
-  identAndDots: (Ident | Dot)[];
+  identOrDots: (Ident | Dot)[];
 }
 
 export interface Ident extends Token {
@@ -13,12 +19,8 @@ export interface Dot extends Token {
   type: "dot";
 }
 
-export interface BoolLit extends Token {
-  type: "bool-lit";
-}
-
-export interface StrLit extends Token {
-  type: "str-lit";
+export interface Comma extends Token {
+  type: "comma";
 }
 
 export interface IntLit extends Token {
@@ -39,6 +41,19 @@ export interface SignedFloatLit extends Span {
   type: "signed-float-lit";
   sign?: Token;
   value: FloatLit;
+}
+
+export interface BoolLit extends Token {
+  type: "bool-lit";
+}
+
+export interface StrLit extends Token {
+  type: "str-lit";
+}
+
+export interface Empty extends StatementBase {
+  type: "empty";
+  semi: Token;
 }
 
 export type Constant =
