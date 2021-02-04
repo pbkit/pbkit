@@ -1,5 +1,5 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { Constant, Empty, FullIdent, StrLit } from "./lexical-elements.ts";
+import { Constant, Dot, Empty, FullIdent, StrLit } from "./lexical-elements.ts";
 import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
 
 export interface Proto {
@@ -49,8 +49,20 @@ export interface Package extends StatementBase {
 export interface Option extends StatementBase {
   type: "option";
   keyword: Token;
-  optionName: Token;
+  optionName: OptionName;
   eq: Token;
   constant: Constant;
   semi: Token;
+}
+
+export interface OptionName extends Span {
+  type: "option-name";
+  optionNameSegmentOrDots: (OptionNameSegment | Dot)[];
+}
+
+export interface OptionNameSegment extends Span {
+  type: "option-name-segment";
+  bracketOpen?: Token;
+  name: FullIdent;
+  bracketClose?: Token;
 }

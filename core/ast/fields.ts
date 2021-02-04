@@ -1,5 +1,5 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { StatementBase } from "./index.ts";
+import { OptionName, StatementBase } from "./index.ts";
 import { Comma, Constant, Type } from "./lexical-elements.ts";
 import { MessageBody } from "./top-level-definitions.ts";
 
@@ -23,7 +23,7 @@ export interface FieldOptions extends Span {
 
 export interface FieldOption extends Span {
   type: "field-option";
-  optionName: Token;
+  optionName: OptionName;
   eq: Token;
   constant: Constant;
 }

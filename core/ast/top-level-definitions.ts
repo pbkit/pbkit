@@ -1,14 +1,30 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { Extensions, Reserved } from "./extensions-and-reserved.ts";
-import { Field, Group, MapField, Oneof } from "./fields.ts";
+import { Field, FieldOptions, Group, MapField, Oneof } from "./fields.ts";
 import { Option, StatementBase } from "./index.ts";
-import { Empty } from "./lexical-elements.ts";
+import { Empty, SignedIntLit } from "./lexical-elements.ts";
 
 export interface Enum extends StatementBase {
   type: "enum";
   keyword: Token;
   enumName: Token;
-  enumBody: unknown; // TODO
+  enumBody: EnumBody;
+}
+
+export interface EnumBody extends Span {
+  type: "enum-body";
+  bracketOpen: Token;
+  optionOrEnumFieldOrEmpties: (Option | EnumField | Empty)[];
+  bracketClose: Token;
+}
+
+export interface EnumField extends StatementBase {
+  type: "enum-field";
+  fieldName: Token;
+  eq: Token;
+  fieldNumber: SignedIntLit;
+  fieldOptions?: FieldOptions;
+  semi: Token;
 }
 
 export interface Message extends StatementBase {
