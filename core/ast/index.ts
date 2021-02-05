@@ -2,6 +2,11 @@ import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { Constant, Dot, Empty, FullIdent, StrLit } from "./lexical-elements.ts";
 import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
 
+export * from "./extensions-and-reserved.ts";
+export * from "./fields.ts";
+export * from "./lexical-elements.ts";
+export * from "./top-level-definitions.ts";
+
 export interface Proto {
   statements: TopLevelStatement[];
 }
