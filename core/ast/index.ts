@@ -40,7 +40,7 @@ export interface Import extends StatementBase {
   type: "import";
   keyword: Token;
   weakOrPublic: Token;
-  strLit: StrLit;
+  strLit: Token;
   semi: Token;
 }
 

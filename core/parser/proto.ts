@@ -12,11 +12,19 @@ export interface ParseResult {
 
 export function parse(text: string): ParseResult {
   const parser = createRecursiveDescentParser(text);
-  const syntax = parseSyntax(parser);
-  const ast: ast.Proto = { statements: [syntax] };
+  const ast: ast.Proto = { statements: [] };
   while (true) {
-    const comments = parseWhitespace(parser);
-    // TODO
+    const leadingComments = parseWhitespace(parser);
+    const syntax = parseSyntax(parser, leadingComments);
+    if (syntax) {
+      ast.statements.push(syntax);
+      continue;
+    }
+    const importStatement = parseImport(parser, leadingComments);
+    if (importStatement) {
+      ast.statements.push(importStatement);
+      continue;
+    }
     break;
   }
   return { ast, parser };
@@ -25,6 +33,8 @@ export function parse(text: string): ParseResult {
 export const whitespacePattern = /^\s+/;
 export const multilineCommentPattern = /^\/\*(?:.|\r?\n)*?\*\//;
 export const singlelineCommentPattern = /^\/\/.*(?:\r?\n|$)/;
+export const strLitPattern =
+  /'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
 
 function parseWhitespace(parser: RecursiveDescentParser) {
   const result: Token[] = [];
@@ -46,9 +56,12 @@ function parseWhitespace(parser: RecursiveDescentParser) {
   return result;
 }
 
-function parseSyntax(parser: RecursiveDescentParser): ast.Syntax {
-  const comments = parseWhitespace(parser);
-  const keyword = parser.expect("syntax");
+function parseSyntax(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Syntax | undefined {
+  const keyword = parser.accept("syntax");
+  if (!keyword) return;
   parseWhitespace(parser);
   const eq = parser.expect("=");
   parseWhitespace(parser);
@@ -60,7 +73,7 @@ function parseSyntax(parser: RecursiveDescentParser): ast.Syntax {
   return {
     start: keyword.start,
     end: semi.end,
-    leadingComments: comments,
+    leadingComments,
     trailingComments: [], // TODO
     leadingDetachedComments: [], // TODO
     type: "syntax",
@@ -69,6 +82,32 @@ function parseSyntax(parser: RecursiveDescentParser): ast.Syntax {
     quoteOpen,
     syntax,
     quoteClose,
+    semi,
+  };
+}
+
+function parseImport(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Import | undefined {
+  const keyword = parser.expect("import");
+  if (!keyword) return;
+  parseWhitespace(parser);
+  const weakOrPublic = parser.expect(/weak|public/);
+  parseWhitespace(parser);
+  const strLit = parser.expect("strLitPattern");
+  parseWhitespace(parser);
+  const semi = parser.expect(";");
+  return {
+    start: keyword.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "import",
+    keyword,
+    weakOrPublic,
+    strLit,
     semi,
   };
 }
