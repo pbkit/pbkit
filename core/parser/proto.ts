@@ -31,6 +31,11 @@ export function parse(text: string): ParseResult {
       ast.statements.push(packageStatement);
       continue;
     }
+    const option = parseOption(parser, leadingComments);
+    if (option) {
+      ast.statements.push(option);
+      continue;
+    }
     break;
   }
   return { ast, parser };
@@ -39,9 +44,13 @@ export function parse(text: string): ParseResult {
 const whitespacePattern = /^\s+/;
 const multilineCommentPattern = /^\/\*(?:.|\r?\n)*?\*\//;
 const singlelineCommentPattern = /^\/\/.*(?:\r?\n|$)/;
+const intLitPattern = /^0(?:[0-7]*|x[0-9a-f]+)|^[1-9]\d*/i;
+const floatLitPattern =
+  /^\d+\.\d*(?:e[-+]?\d+)?|^\de[-+]?\d+|^\.\d+(?:e[-+]?\d+)?|^inf|^nan/i;
+const boolLitPattern = /^true|^false/;
 const strLitPattern =
-  /'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
-const identPattern = /[a-z][a-z0-9_]*/i;
+  /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
+const identPattern = /^[a-z][a-z0-9_]*/i;
 
 function parseWhitespace(parser: RecursiveDescentParser) {
   const result: Token[] = [];
@@ -91,6 +100,119 @@ function parseFullIdent(
   };
 }
 
+function parseIntLit(parser: RecursiveDescentParser): ast.IntLit | undefined {
+  const intLit = parser.accept(intLitPattern);
+  if (!intLit) return;
+  return { type: "int-lit", ...intLit };
+}
+
+function parseSignedIntLit(
+  parser: RecursiveDescentParser,
+): ast.SignedIntLit | undefined {
+  const loc = parser.loc;
+  const sign = parser.accept("-") ?? parser.accept("+");
+  const intLit = parseIntLit(parser);
+  if (!intLit) {
+    parser.loc = loc;
+    return;
+  }
+  const start = sign?.start ?? intLit.start;
+  const end = intLit.end;
+  return { start, end, type: "signed-int-lit", sign, value: intLit };
+}
+
+function parseFloatLit(
+  parser: RecursiveDescentParser,
+): ast.FloatLit | undefined {
+  const floatLit = parser.accept(floatLitPattern);
+  if (!floatLit) return;
+  return { type: "float-lit", ...floatLit };
+}
+
+function parseSignedFloatLit(
+  parser: RecursiveDescentParser,
+): ast.SignedFloatLit | undefined {
+  const loc = parser.loc;
+  const sign = parser.accept("-") ?? parser.accept("+");
+  const floatLit = parseFloatLit(parser);
+  if (!floatLit) {
+    parser.loc = loc;
+    return;
+  }
+  const start = sign?.start ?? floatLit.start;
+  const end = floatLit.end;
+  return { start, end, type: "signed-float-lit", sign, value: floatLit };
+}
+
+function parseBoolLit(parser: RecursiveDescentParser): ast.BoolLit | undefined {
+  const boolLit = parser.accept(boolLitPattern);
+  if (!boolLit) return;
+  return { type: "bool-lit", ...boolLit };
+}
+
+function parseStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
+  const strLit = parser.accept(strLitPattern);
+  if (!strLit) return;
+  return { type: "str-lit", ...strLit };
+}
+
+function parseConstant(
+  parser: RecursiveDescentParser,
+): ast.Constant | undefined {
+  return parseFullIdent(parser) ?? parseSignedIntLit(parser) ??
+    parseSignedFloatLit(parser) ?? parseStrLit(parser) ?? parseBoolLit(parser);
+}
+
+function parseOptionNameSegment(
+  parser: RecursiveDescentParser,
+): ast.OptionNameSegment | undefined {
+  const bracketOpen = parser.accept("(");
+  const name = parseFullIdent(parser);
+  if (!name) {
+    if (bracketOpen) throw new SyntaxError(parser, [identPattern]);
+    return;
+  }
+  const bracketClose = parser[bracketOpen ? "expect" : "accept"](")");
+  const start = bracketOpen?.start ?? name.start;
+  const end = bracketClose?.end ?? name.end;
+  return {
+    start,
+    end,
+    type: "option-name-segment",
+    bracketOpen,
+    name,
+    bracketClose,
+  };
+}
+
+function parseOptionName(
+  parser: RecursiveDescentParser,
+): ast.OptionName | undefined {
+  const optionNameSegmentOrDots: ast.OptionName["optionNameSegmentOrDots"] = [];
+  while (true) {
+    const dot = parser.accept(".");
+    if (dot) {
+      optionNameSegmentOrDots.push({ type: "dot", ...dot });
+      continue;
+    }
+    const optionNameSegment = parseOptionNameSegment(parser);
+    if (optionNameSegment) {
+      optionNameSegmentOrDots.push(optionNameSegment);
+      continue;
+    }
+    break;
+  }
+  if (optionNameSegmentOrDots.length < 1) return;
+  const first = optionNameSegmentOrDots[0];
+  const last = optionNameSegmentOrDots[optionNameSegmentOrDots.length - 1];
+  return {
+    start: first.start,
+    end: last.end,
+    type: "option-name",
+    optionNameSegmentOrDots,
+  };
+}
+
 function parseSyntax(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
@@ -100,9 +222,9 @@ function parseSyntax(
   parseWhitespace(parser);
   const eq = parser.expect("=");
   parseWhitespace(parser);
-  const quoteOpen = parser.expect(/'|"/);
-  const syntax = parser.expect(/[^'"]+/);
-  const quoteClose = parser.expect(/'|"/);
+  const quoteOpen = parser.expect(/^['"]/);
+  const syntax = parser.expect(/^[^'"]+/);
+  const quoteClose = parser.expect(/^['"]/);
   parseWhitespace(parser);
   const semi = parser.expect(";");
   return {
@@ -128,7 +250,7 @@ function parseImport(
   const keyword = parser.expect("import");
   if (!keyword) return;
   parseWhitespace(parser);
-  const weakOrPublic = parser.expect(/weak|public/);
+  const weakOrPublic = parser.expect(/^weak|^public/);
   parseWhitespace(parser);
   const strLit = parser.expect(strLitPattern);
   parseWhitespace(parser);
@@ -167,6 +289,46 @@ function parsePackage(
     type: "package",
     keyword,
     fullIdent,
+    semi,
+  };
+}
+
+function parseOption(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Option | undefined {
+  const keyword = parser.expect("option");
+  if (!keyword) return;
+  parseWhitespace(parser);
+  const optionName = parseOptionName(parser);
+  if (!optionName) throw new SyntaxError(parser, ["(", identPattern]);
+  parseWhitespace(parser);
+  const eq = parser.expect("=");
+  parseWhitespace(parser);
+  const constant = parseConstant(parser);
+  if (!constant) {
+    throw new SyntaxError(parser, [
+      identPattern,
+      "-",
+      "+",
+      intLitPattern,
+      strLitPattern,
+      boolLitPattern,
+    ]);
+  }
+  parseWhitespace(parser);
+  const semi = parser.expect(";");
+  return {
+    start: keyword.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "option",
+    keyword,
+    optionName,
+    eq,
+    constant,
     semi,
   };
 }
