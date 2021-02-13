@@ -15,28 +15,28 @@ export function parse(text: string): ParseResult {
   const parser = createRecursiveDescentParser(text);
   const ast: ast.Proto = { statements: [] };
   while (true) {
-    const leadingComments = parseWhitespace(parser);
-    const syntax = parseSyntax(parser, leadingComments);
+    const leadingComments = acceptWhitespace(parser);
+    const syntax = acceptSyntax(parser, leadingComments);
     if (syntax) {
       ast.statements.push(syntax);
       continue;
     }
-    const importStatement = parseImport(parser, leadingComments);
+    const importStatement = acceptImport(parser, leadingComments);
     if (importStatement) {
       ast.statements.push(importStatement);
       continue;
     }
-    const packageStatement = parsePackage(parser, leadingComments);
+    const packageStatement = acceptPackage(parser, leadingComments);
     if (packageStatement) {
       ast.statements.push(packageStatement);
       continue;
     }
-    const option = parseOption(parser, leadingComments);
+    const option = acceptOption(parser, leadingComments);
     if (option) {
       ast.statements.push(option);
       continue;
     }
-    const empty = parseEmpty(parser, leadingComments);
+    const empty = acceptEmpty(parser, leadingComments);
     if (empty) {
       ast.statements.push(empty);
       continue;
@@ -57,7 +57,7 @@ const strLitPattern =
   /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
 const identPattern = /^[a-z][a-z0-9_]*/i;
 
-function parseWhitespace(parser: RecursiveDescentParser) {
+function acceptWhitespace(parser: RecursiveDescentParser) {
   const result: Token[] = [];
   while (true) {
     const whitespace = parser.accept(whitespacePattern);
@@ -77,7 +77,7 @@ function parseWhitespace(parser: RecursiveDescentParser) {
   return result;
 }
 
-function parseFullIdent(
+function acceptFullIdent(
   parser: RecursiveDescentParser,
 ): ast.FullIdent | undefined {
   const identOrDots: ast.FullIdent["identOrDots"] = [];
@@ -105,18 +105,24 @@ function parseFullIdent(
   };
 }
 
-function parseIntLit(parser: RecursiveDescentParser): ast.IntLit | undefined {
+function expectFullIdent(parser: RecursiveDescentParser): ast.FullIdent {
+  const fullIdent = acceptFullIdent(parser);
+  if (fullIdent) return fullIdent;
+  throw new SyntaxError(parser, [".", identPattern]);
+}
+
+function acceptIntLit(parser: RecursiveDescentParser): ast.IntLit | undefined {
   const intLit = parser.accept(intLitPattern);
   if (!intLit) return;
   return { type: "int-lit", ...intLit };
 }
 
-function parseSignedIntLit(
+function acceptSignedIntLit(
   parser: RecursiveDescentParser,
 ): ast.SignedIntLit | undefined {
   const loc = parser.loc;
   const sign = parser.accept("-") ?? parser.accept("+");
-  const intLit = parseIntLit(parser);
+  const intLit = acceptIntLit(parser);
   if (!intLit) {
     parser.loc = loc;
     return;
@@ -126,7 +132,13 @@ function parseSignedIntLit(
   return { start, end, type: "signed-int-lit", sign, value: intLit };
 }
 
-function parseFloatLit(
+function expectSignedIntLit(parser: RecursiveDescentParser): ast.SignedIntLit {
+  const signedIntLit = acceptSignedIntLit(parser);
+  if (signedIntLit) return signedIntLit;
+  throw new SyntaxError(parser, ["-", intLitPattern]);
+}
+
+function acceptFloatLit(
   parser: RecursiveDescentParser,
 ): ast.FloatLit | undefined {
   const floatLit = parser.accept(floatLitPattern);
@@ -134,12 +146,12 @@ function parseFloatLit(
   return { type: "float-lit", ...floatLit };
 }
 
-function parseSignedFloatLit(
+function acceptSignedFloatLit(
   parser: RecursiveDescentParser,
 ): ast.SignedFloatLit | undefined {
   const loc = parser.loc;
   const sign = parser.accept("-") ?? parser.accept("+");
-  const floatLit = parseFloatLit(parser);
+  const floatLit = acceptFloatLit(parser);
   if (!floatLit) {
     parser.loc = loc;
     return;
@@ -149,30 +161,46 @@ function parseSignedFloatLit(
   return { start, end, type: "signed-float-lit", sign, value: floatLit };
 }
 
-function parseBoolLit(parser: RecursiveDescentParser): ast.BoolLit | undefined {
+function acceptBoolLit(
+  parser: RecursiveDescentParser,
+): ast.BoolLit | undefined {
   const boolLit = parser.accept(boolLitPattern);
   if (!boolLit) return;
   return { type: "bool-lit", ...boolLit };
 }
 
-function parseStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
+function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   const strLit = parser.accept(strLitPattern);
   if (!strLit) return;
   return { type: "str-lit", ...strLit };
 }
 
-function parseConstant(
+function acceptConstant(
   parser: RecursiveDescentParser,
 ): ast.Constant | undefined {
-  return parseFullIdent(parser) ?? parseSignedIntLit(parser) ??
-    parseSignedFloatLit(parser) ?? parseStrLit(parser) ?? parseBoolLit(parser);
+  return acceptFullIdent(parser) ?? acceptSignedIntLit(parser) ??
+    acceptSignedFloatLit(parser) ?? acceptStrLit(parser) ??
+    acceptBoolLit(parser);
 }
 
-function parseOptionNameSegment(
+function expectConstant(parser: RecursiveDescentParser): ast.Constant {
+  const constant = acceptConstant(parser);
+  if (constant) return constant;
+  throw new SyntaxError(parser, [
+    identPattern,
+    "-",
+    "+",
+    intLitPattern,
+    strLitPattern,
+    boolLitPattern,
+  ]);
+}
+
+function acceptOptionNameSegment(
   parser: RecursiveDescentParser,
 ): ast.OptionNameSegment | undefined {
   const bracketOpen = parser.accept("(");
-  const name = parseFullIdent(parser);
+  const name = acceptFullIdent(parser);
   if (!name) {
     if (bracketOpen) throw new SyntaxError(parser, [identPattern]);
     return;
@@ -190,7 +218,7 @@ function parseOptionNameSegment(
   };
 }
 
-function parseOptionName(
+function acceptOptionName(
   parser: RecursiveDescentParser,
 ): ast.OptionName | undefined {
   const optionNameSegmentOrDots: ast.OptionName["optionNameSegmentOrDots"] = [];
@@ -200,7 +228,7 @@ function parseOptionName(
       optionNameSegmentOrDots.push({ type: "dot", ...dot });
       continue;
     }
-    const optionNameSegment = parseOptionNameSegment(parser);
+    const optionNameSegment = acceptOptionNameSegment(parser);
     if (optionNameSegment) {
       optionNameSegmentOrDots.push(optionNameSegment);
       continue;
@@ -218,19 +246,25 @@ function parseOptionName(
   };
 }
 
-function parseSyntax(
+function expectOptionName(parser: RecursiveDescentParser): ast.OptionName {
+  const optionName = acceptOptionName(parser);
+  if (optionName) return optionName;
+  throw new SyntaxError(parser, ["(", identPattern]);
+}
+
+function acceptSyntax(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Syntax | undefined {
   const keyword = parser.accept("syntax");
   if (!keyword) return;
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const eq = parser.expect("=");
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const quoteOpen = parser.expect(/^['"]/);
   const syntax = parser.expect(/^[^'"]+/);
   const quoteClose = parser.expect(/^['"]/);
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -248,17 +282,17 @@ function parseSyntax(
   };
 }
 
-function parseImport(
+function acceptImport(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Import | undefined {
   const keyword = parser.accept("import");
   if (!keyword) return;
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const weakOrPublic = parser.expect(/^weak|^public/);
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const strLit = parser.expect(strLitPattern);
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -274,16 +308,15 @@ function parseImport(
   };
 }
 
-function parsePackage(
+function acceptPackage(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Package | undefined {
   const keyword = parser.accept("package");
   if (!keyword) return;
-  parseWhitespace(parser);
-  const fullIdent = parseFullIdent(parser);
-  if (!fullIdent) throw new SyntaxError(parser, [".", identPattern]);
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
+  const fullIdent = expectFullIdent(parser);
+  acceptWhitespace(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -298,30 +331,19 @@ function parsePackage(
   };
 }
 
-function parseOption(
+function acceptOption(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Option | undefined {
   const keyword = parser.accept("option");
   if (!keyword) return;
-  parseWhitespace(parser);
-  const optionName = parseOptionName(parser);
-  if (!optionName) throw new SyntaxError(parser, ["(", identPattern]);
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
+  const optionName = expectOptionName(parser);
+  acceptWhitespace(parser);
   const eq = parser.expect("=");
-  parseWhitespace(parser);
-  const constant = parseConstant(parser);
-  if (!constant) {
-    throw new SyntaxError(parser, [
-      identPattern,
-      "-",
-      "+",
-      intLitPattern,
-      strLitPattern,
-      boolLitPattern,
-    ]);
-  }
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
+  const constant = expectConstant(parser);
+  acceptWhitespace(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -338,7 +360,7 @@ function parseOption(
   };
 }
 
-function parseEmpty(
+function acceptEmpty(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Empty | undefined {
@@ -355,25 +377,15 @@ function parseEmpty(
   };
 }
 
-function parseFieldOption(
+function acceptFieldOption(
   parser: RecursiveDescentParser,
 ): ast.FieldOption | undefined {
-  const optionName = parseOptionName(parser);
+  const optionName = acceptOptionName(parser);
   if (!optionName) return;
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const eq = parser.expect("=");
-  parseWhitespace(parser);
-  const constant = parseConstant(parser);
-  if (!constant) {
-    throw new SyntaxError(parser, [
-      identPattern,
-      "-",
-      "+",
-      intLitPattern,
-      strLitPattern,
-      boolLitPattern,
-    ]);
-  }
+  acceptWhitespace(parser);
+  const constant = expectConstant(parser);
   return {
     start: optionName.start,
     end: constant.end,
@@ -384,20 +396,20 @@ function parseFieldOption(
   };
 }
 
-function parseFieldOptions(
+function acceptFieldOptions(
   parser: RecursiveDescentParser,
 ): ast.FieldOptions | undefined {
   const bracketOpen = parser.accept("[");
   if (!bracketOpen) return;
   const fieldOptionOrCommas: ast.FieldOptions["fieldOptionOrCommas"] = [];
   while (true) {
-    parseWhitespace(parser);
+    acceptWhitespace(parser);
     const comma = parser.accept(",");
     if (comma) {
       fieldOptionOrCommas.push({ type: "comma", ...comma });
       continue;
     }
-    const fieldOption = parseFieldOption(parser);
+    const fieldOption = acceptFieldOption(parser);
     if (fieldOption) {
       fieldOptionOrCommas.push(fieldOption);
       continue;
@@ -415,20 +427,19 @@ function parseFieldOptions(
   };
 }
 
-function parseEnumField(
+function acceptEnumField(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.EnumField | undefined {
   const fieldName = parser.accept(identPattern);
   if (!fieldName) return;
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
   const eq = parser.expect("=");
-  parseWhitespace(parser);
-  const fieldNumber = parseSignedIntLit(parser);
-  if (!fieldNumber) throw new SyntaxError(parser, ["-", intLitPattern]);
-  parseWhitespace(parser);
-  const fieldOptions = parseFieldOptions(parser);
-  parseWhitespace(parser);
+  acceptWhitespace(parser);
+  const fieldNumber = expectSignedIntLit(parser);
+  acceptWhitespace(parser);
+  const fieldOptions = acceptFieldOptions(parser);
+  acceptWhitespace(parser);
   const semi = parser.expect(";");
   return {
     start: fieldName.start,
