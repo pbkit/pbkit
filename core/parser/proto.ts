@@ -36,6 +36,11 @@ export function parse(text: string): ParseResult {
       ast.statements.push(option);
       continue;
     }
+    const empty = parseEmpty(parser, leadingComments);
+    if (empty) {
+      ast.statements.push(empty);
+      continue;
+    }
     break;
   }
   return { ast, parser };
@@ -247,7 +252,7 @@ function parseImport(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Import | undefined {
-  const keyword = parser.expect("import");
+  const keyword = parser.accept("import");
   if (!keyword) return;
   parseWhitespace(parser);
   const weakOrPublic = parser.expect(/^weak|^public/);
@@ -273,7 +278,7 @@ function parsePackage(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Package | undefined {
-  const keyword = parser.expect("package");
+  const keyword = parser.accept("package");
   if (!keyword) return;
   parseWhitespace(parser);
   const fullIdent = parseFullIdent(parser);
@@ -297,7 +302,7 @@ function parseOption(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Option | undefined {
-  const keyword = parser.expect("option");
+  const keyword = parser.accept("option");
   if (!keyword) return;
   parseWhitespace(parser);
   const optionName = parseOptionName(parser);
@@ -329,6 +334,23 @@ function parseOption(
     optionName,
     eq,
     constant,
+    semi,
+  };
+}
+
+function parseEmpty(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Empty | undefined {
+  const semi = parser.accept(";");
+  if (!semi) return;
+  return {
+    start: semi.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "empty",
     semi,
   };
 }
