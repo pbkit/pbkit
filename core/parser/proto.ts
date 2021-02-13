@@ -354,3 +354,93 @@ function parseEmpty(
     semi,
   };
 }
+
+function parseFieldOption(
+  parser: RecursiveDescentParser,
+): ast.FieldOption | undefined {
+  const optionName = parseOptionName(parser);
+  if (!optionName) return;
+  parseWhitespace(parser);
+  const eq = parser.expect("=");
+  parseWhitespace(parser);
+  const constant = parseConstant(parser);
+  if (!constant) {
+    throw new SyntaxError(parser, [
+      identPattern,
+      "-",
+      "+",
+      intLitPattern,
+      strLitPattern,
+      boolLitPattern,
+    ]);
+  }
+  return {
+    start: optionName.start,
+    end: constant.end,
+    type: "field-option",
+    optionName,
+    eq,
+    constant,
+  };
+}
+
+function parseFieldOptions(
+  parser: RecursiveDescentParser,
+): ast.FieldOptions | undefined {
+  const bracketOpen = parser.accept("[");
+  if (!bracketOpen) return;
+  const fieldOptionOrCommas: ast.FieldOptions["fieldOptionOrCommas"] = [];
+  while (true) {
+    parseWhitespace(parser);
+    const comma = parser.accept(",");
+    if (comma) {
+      fieldOptionOrCommas.push({ type: "comma", ...comma });
+      continue;
+    }
+    const fieldOption = parseFieldOption(parser);
+    if (fieldOption) {
+      fieldOptionOrCommas.push(fieldOption);
+      continue;
+    }
+    break;
+  }
+  const bracketClose = parser.expect("]");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "field-options",
+    bracketOpen,
+    fieldOptionOrCommas,
+    bracketClose,
+  };
+}
+
+function parseEnumField(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.EnumField | undefined {
+  const fieldName = parser.accept(identPattern);
+  if (!fieldName) return;
+  parseWhitespace(parser);
+  const eq = parser.expect("=");
+  parseWhitespace(parser);
+  const fieldNumber = parseSignedIntLit(parser);
+  if (!fieldNumber) throw new SyntaxError(parser, ["-", intLitPattern]);
+  parseWhitespace(parser);
+  const fieldOptions = parseFieldOptions(parser);
+  parseWhitespace(parser);
+  const semi = parser.expect(";");
+  return {
+    start: fieldName.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "enum-field",
+    fieldName,
+    eq,
+    fieldNumber,
+    fieldOptions,
+    semi,
+  };
+}
