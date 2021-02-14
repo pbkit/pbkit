@@ -13,37 +13,39 @@ export interface ParseResult {
 
 export function parse(text: string): ParseResult {
   const parser = createRecursiveDescentParser(text);
-  const ast: ast.Proto = { statements: [] };
+  const statements = acceptStatements<ast.TopLevelStatement>(parser, [
+    acceptSyntax,
+    acceptImport,
+    acceptPackage,
+    acceptOption,
+    acceptEnum,
+    acceptEmpty,
+  ]);
+  const ast: ast.Proto = { statements };
+  return { ast, parser };
+}
+
+interface AcceptStatementFn<T extends ast.StatementBase> {
+  (parser: RecursiveDescentParser, leadingComments: Token[]): T | undefined;
+}
+function acceptStatements<T extends ast.StatementBase>(
+  parser: RecursiveDescentParser,
+  acceptStatementFns: AcceptStatementFn<T>[],
+) {
+  const statements: T[] = [];
+  statements:
   while (true) {
     const leadingComments = acceptWhitespace(parser);
-    const syntax = acceptSyntax(parser, leadingComments);
-    if (syntax) {
-      ast.statements.push(syntax);
-      continue;
-    }
-    const importStatement = acceptImport(parser, leadingComments);
-    if (importStatement) {
-      ast.statements.push(importStatement);
-      continue;
-    }
-    const packageStatement = acceptPackage(parser, leadingComments);
-    if (packageStatement) {
-      ast.statements.push(packageStatement);
-      continue;
-    }
-    const option = acceptOption(parser, leadingComments);
-    if (option) {
-      ast.statements.push(option);
-      continue;
-    }
-    const empty = acceptEmpty(parser, leadingComments);
-    if (empty) {
-      ast.statements.push(empty);
-      continue;
+    for (const acceptStatementFn of acceptStatementFns) {
+      const statement = acceptStatementFn(parser, leadingComments);
+      if (statement) {
+        statements.push(statement);
+        continue statements;
+      }
     }
     break;
   }
-  return { ast, parser };
+  return statements;
 }
 
 const whitespacePattern = /^\s+/;
@@ -453,5 +455,50 @@ function acceptEnumField(
     fieldNumber,
     fieldOptions,
     semi,
+  };
+}
+
+function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
+  const bracketOpen = parser.expect("{");
+  type OptionOrEnumFieldOrEmpty = ast.Option | ast.EnumField | ast.Empty;
+  const optionOrEnumFieldOrEmpties = acceptStatements<OptionOrEnumFieldOrEmpty>(
+    parser,
+    [
+      acceptOption,
+      acceptEnumField,
+      acceptEmpty,
+    ],
+  );
+  const bracketClose = parser.expect("}");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "enum-body",
+    bracketOpen,
+    optionOrEnumFieldOrEmpties,
+    bracketClose,
+  };
+}
+
+function acceptEnum(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Enum | undefined {
+  const keyword = parser.accept("enum");
+  if (!keyword) return;
+  acceptWhitespace(parser);
+  const enumName = parser.expect(identPattern);
+  acceptWhitespace(parser);
+  const enumBody = expectEnumBody(parser);
+  return {
+    start: keyword.start,
+    end: enumBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "enum",
+    keyword,
+    enumName,
+    enumBody,
   };
 }
