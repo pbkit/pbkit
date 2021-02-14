@@ -1,6 +1,7 @@
 import * as ast from "../ast/index.ts";
 import {
   createRecursiveDescentParser,
+  Pattern,
   RecursiveDescentParser,
   SyntaxError,
   Token,
@@ -25,6 +26,37 @@ export function parse(text: string): ParseResult {
   return { ast, parser };
 }
 
+interface AcceptFn<T> {
+  (parser: RecursiveDescentParser): T | undefined;
+}
+
+function acceptPatternAndThen<T>(
+  pattern: Pattern,
+  then: (token: Token) => T,
+): AcceptFn<T> {
+  return function accept(parser) {
+    const token = parser.accept(pattern);
+    if (!token) return;
+    return then(token);
+  };
+}
+
+function choice<T>(acceptFns: AcceptFn<T>[]): AcceptFn<T> {
+  return function accept(parser) {
+    for (const acceptFn of acceptFns) {
+      const node = acceptFn(parser);
+      if (node) return node;
+    }
+  };
+}
+
+function many<T>(parser: RecursiveDescentParser, acceptFn: AcceptFn<T>): T[] {
+  const nodes: T[] = [];
+  let node: ReturnType<typeof acceptFn>;
+  while (node = acceptFn(parser)) nodes.push(node);
+  return nodes;
+}
+
 interface AcceptStatementFn<T extends ast.StatementBase> {
   (parser: RecursiveDescentParser, leadingComments: Token[]): T | undefined;
 }
@@ -35,7 +67,7 @@ function acceptStatements<T extends ast.StatementBase>(
   const statements: T[] = [];
   statements:
   while (true) {
-    const leadingComments = acceptWhitespace(parser);
+    const leadingComments = skipWsAndSweepComments(parser);
     for (const acceptStatementFn of acceptStatementFns) {
       const statement = acceptStatementFn(parser, leadingComments);
       if (statement) {
@@ -59,7 +91,7 @@ const strLitPattern =
   /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
 const identPattern = /^[a-z][a-z0-9_]*/i;
 
-function acceptWhitespace(parser: RecursiveDescentParser) {
+function skipWsAndSweepComments(parser: RecursiveDescentParser): Token[] {
   const result: Token[] = [];
   while (true) {
     const whitespace = parser.accept(whitespacePattern);
@@ -79,23 +111,24 @@ function acceptWhitespace(parser: RecursiveDescentParser) {
   return result;
 }
 
+function skipWsAndComments(parser: RecursiveDescentParser): undefined {
+  skipWsAndSweepComments(parser);
+  return;
+}
+
 function acceptFullIdent(
   parser: RecursiveDescentParser,
 ): ast.FullIdent | undefined {
-  const identOrDots: ast.FullIdent["identOrDots"] = [];
-  while (true) {
-    const dot = parser.accept(".");
-    if (dot) {
-      identOrDots.push({ type: "dot", ...dot });
-      continue;
-    }
-    const ident = parser.accept(identPattern);
-    if (ident) {
-      identOrDots.push({ type: "ident", ...ident });
-      continue;
-    }
-    break;
-  }
+  const identOrDots = many(
+    parser,
+    choice<ast.Dot | ast.Ident>([
+      acceptPatternAndThen(".", (dot) => ({ type: "dot", ...dot })),
+      acceptPatternAndThen(
+        identPattern,
+        (ident) => ({ type: "ident", ...ident }),
+      ),
+    ]),
+  );
   if (identOrDots.length < 1) return;
   const first = identOrDots[0];
   const last = identOrDots[identOrDots.length - 1];
@@ -223,20 +256,13 @@ function acceptOptionNameSegment(
 function acceptOptionName(
   parser: RecursiveDescentParser,
 ): ast.OptionName | undefined {
-  const optionNameSegmentOrDots: ast.OptionName["optionNameSegmentOrDots"] = [];
-  while (true) {
-    const dot = parser.accept(".");
-    if (dot) {
-      optionNameSegmentOrDots.push({ type: "dot", ...dot });
-      continue;
-    }
-    const optionNameSegment = acceptOptionNameSegment(parser);
-    if (optionNameSegment) {
-      optionNameSegmentOrDots.push(optionNameSegment);
-      continue;
-    }
-    break;
-  }
+  const optionNameSegmentOrDots = many(
+    parser,
+    choice<ast.Dot | ast.OptionNameSegment>([
+      acceptPatternAndThen(".", (dot) => ({ type: "dot", ...dot })),
+      acceptOptionNameSegment,
+    ]),
+  );
   if (optionNameSegmentOrDots.length < 1) return;
   const first = optionNameSegmentOrDots[0];
   const last = optionNameSegmentOrDots[optionNameSegmentOrDots.length - 1];
@@ -260,13 +286,13 @@ function acceptSyntax(
 ): ast.Syntax | undefined {
   const keyword = parser.accept("syntax");
   if (!keyword) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const eq = parser.expect("=");
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const quoteOpen = parser.expect(/^['"]/);
   const syntax = parser.expect(/^[^'"]+/);
   const quoteClose = parser.expect(/^['"]/);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -290,11 +316,11 @@ function acceptImport(
 ): ast.Import | undefined {
   const keyword = parser.accept("import");
   if (!keyword) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const weakOrPublic = parser.expect(/^weak|^public/);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const strLit = parser.expect(strLitPattern);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -316,9 +342,9 @@ function acceptPackage(
 ): ast.Package | undefined {
   const keyword = parser.accept("package");
   if (!keyword) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const fullIdent = expectFullIdent(parser);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -339,13 +365,13 @@ function acceptOption(
 ): ast.Option | undefined {
   const keyword = parser.accept("option");
   if (!keyword) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const optionName = expectOptionName(parser);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const eq = parser.expect("=");
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const constant = expectConstant(parser);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {
     start: keyword.start,
@@ -384,9 +410,9 @@ function acceptFieldOption(
 ): ast.FieldOption | undefined {
   const optionName = acceptOptionName(parser);
   if (!optionName) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const eq = parser.expect("=");
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const constant = expectConstant(parser);
   return {
     start: optionName.start,
@@ -403,21 +429,14 @@ function acceptFieldOptions(
 ): ast.FieldOptions | undefined {
   const bracketOpen = parser.accept("[");
   if (!bracketOpen) return;
-  const fieldOptionOrCommas: ast.FieldOptions["fieldOptionOrCommas"] = [];
-  while (true) {
-    acceptWhitespace(parser);
-    const comma = parser.accept(",");
-    if (comma) {
-      fieldOptionOrCommas.push({ type: "comma", ...comma });
-      continue;
-    }
-    const fieldOption = acceptFieldOption(parser);
-    if (fieldOption) {
-      fieldOptionOrCommas.push(fieldOption);
-      continue;
-    }
-    break;
-  }
+  const fieldOptionOrCommas = many(
+    parser,
+    choice<ast.Comma | ast.FieldOption>([
+      skipWsAndComments,
+      acceptPatternAndThen(",", (comma) => ({ type: "comma", ...comma })),
+      acceptFieldOption,
+    ]),
+  );
   const bracketClose = parser.expect("]");
   return {
     start: bracketOpen.start,
@@ -435,13 +454,13 @@ function acceptEnumField(
 ): ast.EnumField | undefined {
   const fieldName = parser.accept(identPattern);
   if (!fieldName) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const eq = parser.expect("=");
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const fieldNumber = expectSignedIntLit(parser);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {
     start: fieldName.start,
@@ -486,9 +505,9 @@ function acceptEnum(
 ): ast.Enum | undefined {
   const keyword = parser.accept("enum");
   if (!keyword) return;
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const enumName = parser.expect(identPattern);
-  acceptWhitespace(parser);
+  skipWsAndComments(parser);
   const enumBody = expectEnumBody(parser);
   return {
     start: keyword.start,
