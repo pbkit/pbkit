@@ -146,6 +146,36 @@ function expectFullIdent(parser: RecursiveDescentParser): ast.FullIdent {
   throw new SyntaxError(parser, [".", identPattern]);
 }
 
+function acceptType(
+  parser: RecursiveDescentParser,
+): ast.Type | undefined {
+  const identOrDots = many(
+    parser,
+    choice<ast.Dot | ast.Ident>([
+      acceptPatternAndThen(".", (dot) => ({ type: "dot", ...dot })),
+      acceptPatternAndThen(
+        identPattern,
+        (ident) => ({ type: "ident", ...ident }),
+      ),
+    ]),
+  );
+  if (identOrDots.length < 1) return;
+  const first = identOrDots[0];
+  const last = identOrDots[identOrDots.length - 1];
+  return {
+    start: first.start,
+    end: last.end,
+    type: "type",
+    identOrDots,
+  };
+}
+
+function expectType(parser: RecursiveDescentParser): ast.Type {
+  const type = acceptType(parser);
+  if (type) return type;
+  throw new SyntaxError(parser, [".", identPattern]);
+}
+
 function acceptIntLit(parser: RecursiveDescentParser): ast.IntLit | undefined {
   const intLit = parser.accept(intLitPattern);
   if (!intLit) return;
@@ -519,5 +549,119 @@ function acceptEnum(
     keyword,
     enumName,
     enumBody,
+  };
+}
+
+function acceptField(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Field | undefined {
+  const fieldLabel = parser.accept(/^required|^optional|^repeated/);
+  if (!fieldLabel) return;
+  skipWsAndComments(parser);
+  const fieldType = expectType(parser);
+  skipWsAndComments(parser);
+  const fieldName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const fieldNumber = parser.expect(intLitPattern);
+  skipWsAndComments(parser);
+  const fieldOptions = acceptFieldOptions(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: fieldLabel.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "field",
+    fieldLabel,
+    fieldType,
+    fieldName,
+    eq,
+    fieldNumber,
+    fieldOptions,
+    semi,
+  };
+}
+
+function acceptOneofField(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.OneofField | undefined {
+  const fieldType = acceptType(parser);
+  if (!fieldType) return;
+  skipWsAndComments(parser);
+  const fieldName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const fieldNumber = parser.expect(intLitPattern);
+  skipWsAndComments(parser);
+  const fieldOptions = acceptFieldOptions(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: fieldType.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "oneof-field",
+    fieldType,
+    fieldName,
+    eq,
+    fieldNumber,
+    fieldOptions,
+    semi,
+  };
+}
+
+function acceptMapField(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.MapField | undefined {
+  const keyword = parser.accept("map");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const typeBracketOpen = parser.expect("<");
+  skipWsAndComments(parser);
+  const keyType = expectType(parser);
+  skipWsAndComments(parser);
+  const typeSep = parser.expect(",");
+  skipWsAndComments(parser);
+  const valueType = expectType(parser);
+  skipWsAndComments(parser);
+  const typeBracketClose = parser.expect(">");
+  skipWsAndComments(parser);
+  const mapName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const fieldNumber = parser.expect(intLitPattern);
+  skipWsAndComments(parser);
+  const fieldOptions = acceptFieldOptions(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: keyword.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "map-field",
+    keyword,
+    typeBracketOpen,
+    keyType,
+    typeSep,
+    valueType,
+    typeBracketClose,
+    mapName,
+    eq,
+    fieldNumber,
+    fieldOptions,
+    semi,
   };
 }
