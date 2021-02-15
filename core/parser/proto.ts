@@ -516,22 +516,18 @@ function acceptEnumField(
 
 function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
   const bracketOpen = parser.expect("{");
-  type OptionOrEnumFieldOrEmpty = ast.Option | ast.EnumField | ast.Empty;
-  const optionOrEnumFieldOrEmpties = acceptStatements<OptionOrEnumFieldOrEmpty>(
-    parser,
-    [
-      acceptOption,
-      acceptEnumField,
-      acceptEmpty,
-    ],
-  );
+  const statements = acceptStatements<ast.EnumBodyStatement>(parser, [
+    acceptOption,
+    acceptEnumField,
+    acceptEmpty,
+  ]);
   const bracketClose = parser.expect("}");
   return {
     start: bracketOpen.start,
     end: bracketClose.end,
     type: "enum-body",
     bracketOpen,
-    optionOrEnumFieldOrEmpties,
+    statements,
     bracketClose,
   };
 }
@@ -673,6 +669,47 @@ function acceptMapField(
   };
 }
 
+function expectOneofBody(parser: RecursiveDescentParser): ast.OneofBody {
+  const bracketOpen = parser.expect("{");
+  const statements = acceptStatements<ast.OneofBodyStatement>(parser, [
+    acceptOption,
+    acceptOneofField,
+    acceptEmpty,
+  ]);
+  const bracketClose = parser.expect("}");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "oneof-body",
+    bracketOpen,
+    statements,
+    bracketClose,
+  };
+}
+
+function acceptOneof(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Oneof | undefined {
+  const keyword = parser.accept("oneof");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const oneofName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const oneofBody = expectOneofBody(parser);
+  return {
+    start: keyword.start,
+    end: oneofBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "oneof",
+    keyword,
+    oneofName,
+    oneofBody,
+  };
+}
+
 const acceptMax = acceptPatternAndThen<ast.Max>(
   "max",
   (max) => ({ type: "max", ...max }),
@@ -790,22 +827,19 @@ function acceptReserved(
 
 function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
   const bracketOpen = parser.expect("{");
-  const statements = acceptStatements<ast.MessageBodyStatement>(
-    parser,
-    [
-      acceptField,
-      acceptEnum,
-      acceptMessage,
-      // acceptExted,
-      acceptExtensions,
-      // acceptGroup,
-      acceptOption,
-      // acceptOneOf,
-      acceptMapField,
-      acceptReserved,
-      acceptEmpty,
-    ],
-  );
+  const statements = acceptStatements<ast.MessageBodyStatement>(parser, [
+    acceptField,
+    acceptEnum,
+    acceptMessage,
+    // acceptExted,
+    acceptExtensions,
+    // acceptGroup,
+    acceptOption,
+    acceptOneof,
+    acceptMapField,
+    acceptReserved,
+    acceptEmpty,
+  ]);
   const bracketClose = parser.expect("}");
   return {
     start: bracketOpen.start,

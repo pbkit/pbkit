@@ -14,9 +14,14 @@ export interface Enum extends StatementBase {
 export interface EnumBody extends Span {
   type: "enum-body";
   bracketOpen: Token;
-  optionOrEnumFieldOrEmpties: (Option | EnumField | Empty)[];
+  statements: EnumBodyStatement[];
   bracketClose: Token;
 }
+
+export type EnumBodyStatement =
+  | Option
+  | EnumField
+  | Empty;
 
 export interface EnumField extends StatementBase {
   type: "enum-field";

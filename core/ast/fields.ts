@@ -1,6 +1,6 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { OptionName, StatementBase } from "./index.ts";
-import { Comma, Constant, Type } from "./lexical-elements.ts";
+import { Option, OptionName, StatementBase } from "./index.ts";
+import { Comma, Constant, Empty, Type } from "./lexical-elements.ts";
 import { MessageBody } from "./top-level-definitions.ts";
 
 export interface Field extends StatementBase {
@@ -48,9 +48,14 @@ export interface Oneof extends StatementBase {
 export interface OneofBody extends Span {
   type: "oneof-body";
   bracketOpen: Token;
-  fieldOptionOrCommas: (FieldOption | Comma)[];
+  statements: OneofBodyStatement[];
   bracketClose: Token;
 }
+
+export type OneofBodyStatement =
+  | Option
+  | OneofField
+  | Empty;
 
 export interface OneofField extends StatementBase {
   type: "oneof-field";
