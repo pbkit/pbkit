@@ -825,15 +825,97 @@ function acceptReserved(
   };
 }
 
+function expectExtendBody(parser: RecursiveDescentParser): ast.ExtendBody {
+  const bracketOpen = parser.expect("{");
+  const statements = acceptStatements<ast.ExtendBodyStatement>(parser, [
+    acceptGroup,
+    acceptField,
+    acceptEmpty,
+  ]);
+  const bracketClose = parser.expect("}");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "extend-body",
+    bracketOpen,
+    statements,
+    bracketClose,
+  };
+}
+
+function acceptExtend(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Extend | undefined {
+  const keyword = parser.accept("extend");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const messageType = expectType(parser);
+  skipWsAndComments(parser);
+  const extendBody = expectExtendBody(parser);
+  return {
+    start: keyword.start,
+    end: extendBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "extend",
+    keyword,
+    messageType,
+    extendBody,
+  };
+}
+
+function acceptGroup(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Group | undefined {
+  const loc = parser.loc;
+  const groupLabel = parser.accept(/^required|^optional|^repeated/);
+  if (!groupLabel) {
+    parser.loc = loc;
+    return;
+  }
+  const keyword = parser.accept("group");
+  if (!keyword) {
+    parser.loc = loc;
+    return;
+  }
+  skipWsAndComments(parser);
+  const groupName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const fieldNumber = parser.expect(intLitPattern);
+  skipWsAndComments(parser);
+  const messageBody = expectMessageBody(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: groupLabel.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "group",
+    groupLabel,
+    keyword,
+    groupName,
+    eq,
+    fieldNumber,
+    messageBody,
+  };
+}
+
 function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.MessageBodyStatement>(parser, [
+    acceptGroup,
     acceptField,
     acceptEnum,
     acceptMessage,
-    // acceptExted,
+    acceptExtend,
     acceptExtensions,
-    // acceptGroup,
     acceptOption,
     acceptOneof,
     acceptMapField,
