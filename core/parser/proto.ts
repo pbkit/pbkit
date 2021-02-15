@@ -91,6 +91,19 @@ const strLitPattern =
   /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
 const identPattern = /^[a-z][a-z0-9_]*/i;
 
+const acceptDot = acceptPatternAndThen<ast.Dot>(
+  ".",
+  (dot) => ({ type: "dot", ...dot }),
+);
+const acceptComma = acceptPatternAndThen<ast.Comma>(
+  ",",
+  (comma) => ({ type: "comma", ...comma }),
+);
+const acceptIdent = acceptPatternAndThen<ast.Ident>(
+  identPattern,
+  (ident) => ({ type: "ident", ...ident }),
+);
+
 function skipWsAndSweepComments(parser: RecursiveDescentParser): Token[] {
   const result: Token[] = [];
   while (true) {
@@ -122,11 +135,8 @@ function acceptFullIdent(
   const identOrDots = many(
     parser,
     choice<ast.Dot | ast.Ident>([
-      acceptPatternAndThen(".", (dot) => ({ type: "dot", ...dot })),
-      acceptPatternAndThen(
-        identPattern,
-        (ident) => ({ type: "ident", ...ident }),
-      ),
+      acceptDot,
+      acceptIdent,
     ]),
   );
   if (identOrDots.length < 1) return;
@@ -152,11 +162,8 @@ function acceptType(
   const identOrDots = many(
     parser,
     choice<ast.Dot | ast.Ident>([
-      acceptPatternAndThen(".", (dot) => ({ type: "dot", ...dot })),
-      acceptPatternAndThen(
-        identPattern,
-        (ident) => ({ type: "ident", ...ident }),
-      ),
+      acceptDot,
+      acceptIdent,
     ]),
   );
   if (identOrDots.length < 1) return;
@@ -289,7 +296,7 @@ function acceptOptionName(
   const optionNameSegmentOrDots = many(
     parser,
     choice<ast.Dot | ast.OptionNameSegment>([
-      acceptPatternAndThen(".", (dot) => ({ type: "dot", ...dot })),
+      acceptDot,
       acceptOptionNameSegment,
     ]),
   );
@@ -463,7 +470,7 @@ function acceptFieldOptions(
     parser,
     choice<ast.Comma | ast.FieldOption>([
       skipWsAndComments,
-      acceptPatternAndThen(",", (comma) => ({ type: "comma", ...comma })),
+      acceptComma,
       acceptFieldOption,
     ]),
   );
@@ -662,6 +669,121 @@ function acceptMapField(
     eq,
     fieldNumber,
     fieldOptions,
+    semi,
+  };
+}
+
+const acceptMax = acceptPatternAndThen<ast.Max>(
+  "max",
+  (max) => ({ type: "max", ...max }),
+);
+
+function acceptRange(parser: RecursiveDescentParser): ast.Range | undefined {
+  const rangeStart = acceptIntLit(parser);
+  if (!rangeStart) return;
+  skipWsAndComments(parser);
+  const to = parser.accept("to");
+  if (!to) {
+    return {
+      start: rangeStart.start,
+      end: rangeStart.end,
+      type: "range",
+      rangeStart,
+    };
+  }
+  skipWsAndComments(parser);
+  const rangeEnd = acceptIntLit(parser) ?? acceptMax(parser);
+  if (!rangeEnd) throw new SyntaxError(parser, [intLitPattern, "max"]);
+  return {
+    start: rangeStart.start,
+    end: rangeEnd.end,
+    type: "range",
+    rangeStart,
+    to,
+    rangeEnd,
+  };
+}
+
+function expectRanges(parser: RecursiveDescentParser): ast.Ranges {
+  const rangeOrCommas = many(
+    parser,
+    choice<ast.Range | ast.Comma>([
+      acceptComma,
+      acceptRange,
+    ]),
+  );
+  const first = rangeOrCommas[0];
+  const last = rangeOrCommas[rangeOrCommas.length - 1];
+  return {
+    start: first.start,
+    end: last.end,
+    type: "ranges",
+    rangeOrCommas,
+  };
+}
+
+function acceptExtensions(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Extensions | undefined {
+  const keyword = parser.accept("extensions");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const ranges = expectRanges(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: keyword.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "extensions",
+    keyword,
+    ranges,
+    semi,
+  };
+}
+
+function expectFieldNames(parser: RecursiveDescentParser): ast.FieldNames {
+  const strLitOrCommas = many(
+    parser,
+    choice<ast.StrLit | ast.Comma>([
+      acceptComma,
+      acceptStrLit,
+    ]),
+  );
+  const first = strLitOrCommas[0];
+  const last = strLitOrCommas[strLitOrCommas.length - 1];
+  return {
+    start: first.start,
+    end: last.end,
+    type: "field-names",
+    strLitOrCommas,
+  };
+}
+
+function acceptReserved(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Reserved | undefined {
+  const keyword = parser.accept("reserved");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const reserved = parser.try(intLitPattern)
+    ? expectRanges(parser)
+    : expectFieldNames(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: keyword.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "reserved",
+    keyword,
+    reserved,
     semi,
   };
 }

@@ -29,7 +29,6 @@ export interface Reserved extends StatementBase {
   type: "reserved";
   keyword: Token;
   reserved: Ranges | FieldNames;
-  ranges: Ranges;
   semi: Token;
 }
 
