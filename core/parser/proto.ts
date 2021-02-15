@@ -787,3 +787,55 @@ function acceptReserved(
     semi,
   };
 }
+
+function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
+  const bracketOpen = parser.expect("{");
+  const statements = acceptStatements<ast.MessageBodyStatement>(
+    parser,
+    [
+      acceptField,
+      acceptEnum,
+      acceptMessage,
+      // acceptExted,
+      acceptExtensions,
+      // acceptGroup,
+      acceptOption,
+      // acceptOneOf,
+      acceptMapField,
+      acceptReserved,
+      acceptEmpty,
+    ],
+  );
+  const bracketClose = parser.expect("}");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "message-body",
+    bracketOpen,
+    statements,
+    bracketClose,
+  };
+}
+
+function acceptMessage(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Message | undefined {
+  const keyword = parser.accept("message");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const messageName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const messageBody = expectMessageBody(parser);
+  return {
+    start: keyword.start,
+    end: messageBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "message",
+    keyword,
+    messageName,
+    messageBody,
+  };
+}
