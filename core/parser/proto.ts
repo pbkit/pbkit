@@ -19,7 +19,10 @@ export function parse(text: string): ParseResult {
     acceptImport,
     acceptPackage,
     acceptOption,
+    acceptMessage,
     acceptEnum,
+    acceptExtend,
+    acceptService,
     acceptEmpty,
   ]);
   const ast: ast.Proto = { statements };
@@ -953,5 +956,96 @@ function acceptMessage(
     keyword,
     messageName,
     messageBody,
+  };
+}
+
+function expectRpcType(parser: RecursiveDescentParser): ast.RpcType {
+  const bracketOpen = parser.expect("(");
+  skipWsAndComments(parser);
+  const stream = parser.accept("stream");
+  skipWsAndComments(parser);
+  const messageType = expectType(parser);
+  skipWsAndComments(parser);
+  const bracketClose = parser.expect(")");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    bracketOpen,
+    stream,
+    messageType,
+    bracketClose,
+  };
+}
+
+function acceptRpc(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Rpc | undefined {
+  const keyword = parser.accept("rpc");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const rpcName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const reqType = expectRpcType(parser);
+  skipWsAndComments(parser);
+  const returns = parser.expect("returns");
+  skipWsAndComments(parser);
+  const resType = expectRpcType(parser);
+  skipWsAndComments(parser);
+  const semi = parser.expect(";");
+  return {
+    start: keyword.start,
+    end: semi.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "rpc",
+    keyword,
+    rpcName,
+    reqType,
+    returns,
+    resType,
+    semi,
+  };
+}
+
+function expectServiceBody(parser: RecursiveDescentParser): ast.ServiceBody {
+  const bracketOpen = parser.expect("{");
+  const statements = acceptStatements<ast.ServiceBodyStatement>(parser, [
+    acceptOption,
+    acceptRpc,
+    acceptEmpty,
+  ]);
+  const bracketClose = parser.expect("}");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "service-body",
+    bracketOpen,
+    statements,
+    bracketClose,
+  };
+}
+
+function acceptService(
+  parser: RecursiveDescentParser,
+  leadingComments: Token[],
+): ast.Service | undefined {
+  const keyword = parser.accept("service");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const serviceName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const serviceBody = expectServiceBody(parser);
+  return {
+    start: keyword.start,
+    end: serviceBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "service",
+    keyword,
+    serviceName,
+    serviceBody,
   };
 }
