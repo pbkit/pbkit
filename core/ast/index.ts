@@ -1,5 +1,5 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { Constant, Dot, Empty, FullIdent, StrLit } from "./lexical-elements.ts";
+import { Constant, Dot, Empty, FullIdent } from "./lexical-elements.ts";
 import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
 
 export * from "./extensions-and-reserved.ts";
