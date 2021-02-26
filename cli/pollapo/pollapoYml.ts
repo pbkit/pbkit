@@ -19,15 +19,20 @@ export interface GetPollapoYmlConfig {
 }
 export async function getPollapoYml(
   config?: GetPollapoYmlConfig,
-): Promise<PollapoYml | null> {
+): Promise<PollapoYml> {
+  const ymlPath = config
+    ? getYmlPath(config.cacheDir, config.dep)
+    : "pollapo.yml";
   try {
-    const ymlPath = config
-      ? getYmlPath(config.cacheDir, config.dep)
-      : "pollapo.yml";
     const pollapoYmlText = await Deno.readTextFile(ymlPath);
     return parseYaml(pollapoYmlText) as PollapoYml;
   } catch {
-    return null;
+    throw new PollapoYmlNotFoundError(ymlPath);
+  }
+}
+export class PollapoYmlNotFoundError extends Error {
+  constructor(public ymlPath: string) {
+    super(`"${path.resolve(ymlPath)}" not found.`);
   }
 }
 
@@ -39,6 +44,10 @@ export function parseDep(dep: string): PollapoDep {
   const match = /(?<user>.+?)\/(?<repo>.+?)@(?<rev>.+)/.exec(dep);
   if (!match) throw new Error("invalid dep string: " + dep);
   return match.groups as unknown as PollapoDep;
+}
+
+export function depToString(dep: PollapoDep): string {
+  return `${dep.user}/${dep.repo}@${dep.rev}`;
 }
 
 export function getTgzPath(cacheDir: string, dep: PollapoDep): string {
@@ -57,8 +66,8 @@ export interface CacheDepsConfig {
 export async function cacheDeps(config: CacheDepsConfig) {
   const { pollapoYml, cacheDir, fetchTarball } = config;
   const queue = [...deps(pollapoYml)];
-  let dep;
-  while (dep = queue.shift()) {
+  let dep: PollapoDep;
+  while (dep = queue.shift()!) {
     const tgzPath = getTgzPath(cacheDir, dep);
     const ymlPath = getYmlPath(cacheDir, dep);
     if (await exists(ymlPath)) continue;
@@ -70,6 +79,46 @@ export async function cacheDeps(config: CacheDepsConfig) {
     await Deno.writeFile(tgzPath, tgz);
     await Deno.writeTextFile(ymlPath, pollapoYmlText);
   }
+}
+
+export interface AnalyzeDepsConfig {
+  pollapoYml: PollapoYml;
+  cacheDir: string;
+}
+export interface AnalyzeDepsResult {
+  [repo: string]: AnalyzeDepsResultRevs;
+}
+export interface AnalyzeDepsResultRevs {
+  [rev: string]: AnalyzeDepsResultRev;
+}
+export interface AnalyzeDepsResultRev {
+  froms: string[];
+}
+export async function analyzeDeps(
+  config: AnalyzeDepsConfig,
+): Promise<AnalyzeDepsResult> {
+  type Dep = PollapoDep & { from: string };
+  const result: AnalyzeDepsResult = {};
+  const { pollapoYml, cacheDir } = config;
+  const queue: Dep[] = [...deps(pollapoYml)].map((dep) => ({
+    ...dep,
+    from: "<root>",
+  }));
+  let dep: Dep;
+  while (dep = queue.shift()!) {
+    const repo = `${dep.user}/${dep.repo}`;
+    const froms = result[repo]?.[dep.rev].froms ?? [];
+    const revs: AnalyzeDepsResultRevs = result[repo] ?? {};
+    froms.push(dep.from);
+    revs[dep.rev] = { froms };
+    result[repo] = revs;
+    const pollapoYml = await getPollapoYml({ dep, cacheDir });
+    for (const innerDep of deps(pollapoYml)) {
+      if (depToString(dep) === depToString(innerDep)) continue;
+      queue.push({ ...innerDep, from: depToString(dep) });
+    }
+  }
+  return result;
 }
 
 async function extractPollapoYml(tgz: Uint8Array): Promise<string> {
