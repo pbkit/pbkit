@@ -30,7 +30,9 @@ export interface FetchTarballConfig {
   repo: string;
   rev: string;
 }
-export async function fetchTarball(config: FetchTarballConfig): Promise<Blob> {
+export async function fetchTarball(
+  config: FetchTarballConfig,
+): Promise<Response> {
   const { token, user, repo, rev } = config;
   const res = await fetch(
     `https://api.github.com/repos/${user}/${repo}/tarball/${rev}`,
@@ -42,5 +44,5 @@ export async function fetchTarball(config: FetchTarballConfig): Promise<Blob> {
     },
   );
   if (!res.ok) throw res;
-  return await res.blob();
+  return res;
 }
