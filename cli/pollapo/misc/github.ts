@@ -24,18 +24,20 @@ export async function readGhHosts(
   return parseYaml(hostsFile) as GhHosts;
 }
 
-export interface FetchTarballConfig {
+export interface FetchArchiveConfig {
+  type: "tgz" | "zip";
   token: string;
   user: string;
   repo: string;
   rev: string;
 }
-export async function fetchTarball(
-  config: FetchTarballConfig,
+export async function fetchArchive(
+  config: FetchArchiveConfig,
 ): Promise<Response> {
-  const { token, user, repo, rev } = config;
+  const { type, token, user, repo, rev } = config;
+  const archiveType = type === "tgz" ? "tarball" : "zipball";
   const res = await fetch(
-    `https://api.github.com/repos/${user}/${repo}/tarball/${rev}`,
+    `https://api.github.com/repos/${user}/${repo}/${archiveType}/${rev}`,
     {
       headers: {
         Authorization: "token " + token,
