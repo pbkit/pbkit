@@ -1,5 +1,6 @@
 import { Untar } from "https://deno.land/std@0.88.0/archive/tar.ts";
 import { gunzip } from "https://deno.land/x/denoflate@1.1/mod.ts";
+import { stripComponent } from "./index.ts";
 
 type ExtractTarEntry<T> = T extends Promise<infer U | null> ? U : never;
 export type TarEntry = ExtractTarEntry<ReturnType<Untar["extract"]>>;
@@ -18,9 +19,8 @@ export async function* stripComponents(
   number: number,
 ): AsyncGenerator<TarEntry> {
   for await (const entry of entries) {
-    const fragments = entry.fileName.split("/");
-    const fileName = fragments.slice(number).join("/");
-    if (!fileName || fileName === "/") continue;
+    const fileName = stripComponent(entry.fileName, number);
+    if (!fileName) continue;
     entry.fileName = fileName;
     yield entry;
   }

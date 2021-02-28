@@ -1,7 +1,7 @@
 import { parse as parseYaml } from "https://deno.land/std@0.84.0/encoding/yaml.ts";
 import { ensureDir, exists } from "https://deno.land/std@0.88.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
-import { pick, stripComponents, untgz } from "./misc/tar.ts";
+import { stripComponents, unzip } from "./misc/archive/zip.ts";
 
 export type PollapoYml = {
   deps?: string[];
@@ -50,8 +50,8 @@ export function depToString(dep: PollapoDep): string {
   return `${dep.user}/${dep.repo}@${dep.rev}`;
 }
 
-export function getTgzPath(cacheDir: string, dep: PollapoDep): string {
-  return path.resolve(cacheDir, dep.user, dep.repo + "@" + dep.rev + ".tgz");
+export function getZipPath(cacheDir: string, dep: PollapoDep): string {
+  return path.resolve(cacheDir, dep.user, dep.repo + "@" + dep.rev + ".zip");
 }
 
 export function getYmlPath(cacheDir: string, dep: PollapoDep): string {
@@ -61,22 +61,22 @@ export function getYmlPath(cacheDir: string, dep: PollapoDep): string {
 export interface CacheDepsConfig {
   pollapoYml: PollapoYml;
   cacheDir: string;
-  fetchTarball: (dep: PollapoDep) => Promise<Uint8Array>;
+  fetchZip: (dep: PollapoDep) => Promise<Uint8Array>;
 }
 export async function cacheDeps(config: CacheDepsConfig) {
-  const { pollapoYml, cacheDir, fetchTarball } = config;
+  const { pollapoYml, cacheDir, fetchZip } = config;
   const queue = [...deps(pollapoYml)];
   let dep: PollapoDep;
   while (dep = queue.shift()!) {
-    const tgzPath = getTgzPath(cacheDir, dep);
+    const zipPath = getZipPath(cacheDir, dep);
     const ymlPath = getYmlPath(cacheDir, dep);
     if (await exists(ymlPath)) continue;
-    const tgz = await fetchTarball(dep);
-    const pollapoYmlText = await extractPollapoYml(tgz);
+    const zip = await fetchZip(dep);
+    const pollapoYmlText = await extractPollapoYml(zip);
     const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
     queue.push(...deps(pollapoYml));
     await ensureDir(path.resolve(cacheDir, dep.user));
-    await Deno.writeFile(tgzPath, tgz);
+    await Deno.writeFile(zipPath, zip);
     await Deno.writeTextFile(ymlPath, pollapoYmlText);
   }
 }
@@ -121,13 +121,7 @@ export async function analyzeDeps(
   return result;
 }
 
-async function extractPollapoYml(tgz: Uint8Array): Promise<string> {
-  const pollapoYmlEntry = await pick(
-    stripComponents(untgz(tgz), 1),
-    "pollapo.yml",
-  );
-  if (!pollapoYmlEntry) return "";
-  const pollapoYml = await Deno.readAll(pollapoYmlEntry);
-  const decoder = new TextDecoder();
-  return decoder.decode(pollapoYml);
+async function extractPollapoYml(zip: Uint8Array): Promise<string> {
+  const files = stripComponents(await unzip(zip), 1);
+  return files["pollapo.yml"].async("text");
 }
