@@ -1,3 +1,5 @@
+import { ensureDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import JSZip from "https://dev.jspm.io/jszip@3.5.0";
 import { stripComponent } from "./index.ts";
 
@@ -22,12 +24,22 @@ export async function unzip(zip: Uint8Array): Promise<Files> {
 
 export function stripComponents(files: Files, number: number): Files {
   const result: Files = {};
-  for (const fileName in files) {
-    const file = files[fileName];
+  for (const [fileName, file] of Object.entries(files)) {
     const newFileName = stripComponent(fileName, number);
     if (!newFileName) continue;
     file.name = newFileName;
     result[newFileName] = file;
   }
   return result;
+}
+
+export async function save(targetDir: string, files: Files): Promise<void> {
+  await Promise.all(
+    Object.entries(files).map(async ([fileName, file]) => {
+      if (file.dir) return;
+      const filePath = path.resolve(targetDir, fileName);
+      await ensureDir(filePath);
+      await Deno.writeFile(filePath, await file.async("uint8array"));
+    }),
+  );
 }
