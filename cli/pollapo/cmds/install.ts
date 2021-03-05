@@ -1,7 +1,7 @@
-import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.17.2/command/mod.ts";
 import { fetchArchive, readGhHosts } from "../misc/github.ts";
 import { save, unzip } from "../misc/archive/zip.ts";
+import { getCacheDir } from "../config.ts";
 import {
   analyzeDeps,
   cacheDeps,
@@ -19,8 +19,7 @@ export default new Command()
     try {
       const ghHosts = await readGhHosts();
       const token = ghHosts["github.com"].oauth_token;
-      const home = Deno.env.get("HOME") ?? ".";
-      const cacheDir = path.resolve(home, ".pollapo/cache");
+      const cacheDir = getCacheDir();
       const pollapoYml = await getPollapoYml();
       const fetchZip = getFetchZip(token);
       await cacheDeps({ cacheDir, pollapoYml, fetchZip });
