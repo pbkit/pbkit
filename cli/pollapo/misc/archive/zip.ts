@@ -38,7 +38,7 @@ export async function save(targetDir: string, files: Files): Promise<void> {
     Object.entries(files).map(async ([fileName, file]) => {
       if (file.dir) return;
       const filePath = path.resolve(targetDir, fileName);
-      await ensureDir(filePath);
+      await ensureDir(path.dirname(filePath));
       await Deno.writeFile(filePath, await file.async("uint8array"));
     }),
   );

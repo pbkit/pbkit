@@ -14,7 +14,7 @@ pollapo는 [Protobuf][protobuf] 의존성 관리 도구입니다.
 git clone git@github.com:riiid/pbkit.git
 
 # pollapo 명령어를 설치합니다.
-deno install -n pollapo --unstable --allow-env --allow-net --allow-read pbkit/cli/pollapo/entrypoint.ts
+deno install -n pollapo --unstable --allow-env --allow-net --allow-read --allow-write pbkit/cli/pollapo/entrypoint.ts
 ```
 
 
