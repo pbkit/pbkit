@@ -107,7 +107,7 @@ export async function analyzeDeps(
   let dep: Dep;
   while (dep = queue.shift()!) {
     const repo = `${dep.user}/${dep.repo}`;
-    const froms = result[repo]?.[dep.rev].froms ?? [];
+    const froms = result[repo]?.[dep.rev]?.froms ?? [];
     const revs: AnalyzeDepsResultRevs = result[repo] ?? {};
     froms.push(dep.from);
     revs[dep.rev] = { froms };
