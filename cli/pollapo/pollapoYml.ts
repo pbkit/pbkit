@@ -2,6 +2,7 @@ import { parse as parseYaml } from "https://deno.land/std@0.84.0/encoding/yaml.t
 import { ensureDir, exists } from "https://deno.land/std@0.88.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import { stripComponents, unzip } from "./misc/archive/zip.ts";
+import { isSemver } from "./rev.ts";
 
 export type PollapoYml = {
   deps?: string[];
@@ -67,14 +68,17 @@ export async function cacheDeps(config: CacheDepsConfig) {
   const { pollapoYml, cacheDir, fetchZip } = config;
   const queue = [...deps(pollapoYml)];
   let dep: PollapoDep;
+  const cachedDeps: { [cachedDep: string]: true } = {};
   while (dep = queue.shift()!) {
     const zipPath = getZipPath(cacheDir, dep);
     const ymlPath = getYmlPath(cacheDir, dep);
-    if (await exists(ymlPath)) continue;
+    if (cachedDeps[depToString(dep)]) continue;
+    if (isSemver(dep.rev) && await exists(ymlPath)) continue;
     const zip = await fetchZip(dep);
     const pollapoYmlText = await extractPollapoYml(zip);
     const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
     queue.push(...deps(pollapoYml));
+    cachedDeps[depToString(dep)] = true;
     await ensureDir(path.resolve(cacheDir, dep.user));
     await Deno.writeFile(zipPath, zip);
     await Deno.writeTextFile(ymlPath, pollapoYmlText);

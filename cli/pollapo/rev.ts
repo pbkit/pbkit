@@ -1,5 +1,9 @@
 import * as semver from "https://deno.land/x/semver@v1.0.0/mod.ts";
 
+export function isSemver(rev: string): boolean {
+  return semver.clean(rev) != null;
+}
+
 export function compareRev(a: string, b: string): -1 | 0 | 1 {
   const aa = semver.clean(a);
   const bb = semver.clean(b);
