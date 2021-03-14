@@ -10,12 +10,22 @@ pollapo는 [Protobuf][protobuf] 의존성 관리 도구입니다.
 - [git](https://git-scm.com/)
 - [deno](https://deno.land/) 1.8.0 이상
 
+### Homebrew로 설치하기
+
+(이렇게 설치할 경우 deno는 직접 설치할 필요 없습니다)
+```sh
+brew tap riiid/riiid
+brew install pollapo
+```
+
+### 직접 빌드하기
+
 ```sh
 # pbkit 저장소를 클론받습니다.
 git clone git@github.com:riiid/pbkit.git
 
 # pollapo 명령어를 설치합니다.
-deno install -n pollapo --unstable --allow-env --allow-net --allow-read --allow-write pbkit/cli/pollapo/entrypoint.ts
+deno install -n pollapo -A --unstable pbkit/cli/pollapo/entrypoint.ts
 ```
 
 

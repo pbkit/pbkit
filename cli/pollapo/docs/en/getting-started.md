@@ -10,12 +10,22 @@
 - [git](https://git-scm.com/)
 - [deno](https://deno.land/) over 1.8.0
 
+### Using Homebrew
+
+(In this case, you don't need to install deno manually)
+```sh
+brew tap riiid/riiid
+brew install pollapo
+```
+
+### Install from source
+
 ```sh
 # Clone pbkit repo
 git clone git@github.com:riiid/pbkit.git
 
 # Install pollapo command
-deno install -n pollapo --unstable --allow-env --allow-net --allow-read --allow-write pbkit/cli/pollapo/entrypoint.ts
+deno install -n pollapo -A --unstable pbkit/cli/pollapo/entrypoint.ts
 ```
 
 
