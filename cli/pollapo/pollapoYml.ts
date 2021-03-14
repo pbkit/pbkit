@@ -64,7 +64,13 @@ export interface CacheDepsConfig {
   cacheDir: string;
   fetchZip: (dep: PollapoDep) => Promise<Uint8Array>;
 }
-export async function cacheDeps(config: CacheDepsConfig) {
+export interface CacheDepsCurrentItem {
+  dep: PollapoDep;
+  downloading: Promise<void>;
+}
+export async function* cacheDeps(
+  config: CacheDepsConfig,
+): AsyncGenerator<CacheDepsCurrentItem> {
   const { pollapoYml, cacheDir, fetchZip } = config;
   const queue = [...deps(pollapoYml)];
   let dep: PollapoDep;
@@ -74,14 +80,22 @@ export async function cacheDeps(config: CacheDepsConfig) {
     const ymlPath = getYmlPath(cacheDir, dep);
     if (cachedDeps[depToString(dep)]) continue;
     if (isSemver(dep.rev) && await exists(ymlPath)) continue;
-    const zip = await fetchZip(dep);
-    const pollapoYmlText = await extractPollapoYml(zip);
-    const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
-    queue.push(...deps(pollapoYml));
-    cachedDeps[depToString(dep)] = true;
-    await ensureDir(path.resolve(cacheDir, dep.user));
-    await Deno.writeFile(zipPath, zip);
-    await Deno.writeTextFile(ymlPath, pollapoYmlText);
+    const downloading = new Promise<void>(async (resolve, reject) => {
+      try {
+        const zip = await fetchZip(dep);
+        const pollapoYmlText = await extractPollapoYml(zip);
+        const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
+        queue.push(...deps(pollapoYml));
+        cachedDeps[depToString(dep)] = true;
+        await ensureDir(path.resolve(cacheDir, dep.user));
+        await Deno.writeFile(zipPath, zip);
+        await Deno.writeTextFile(ymlPath, pollapoYmlText);
+        resolve();
+      } catch (err) {
+        reject(err);
+      }
+    });
+    yield { dep, downloading };
   }
 }
 

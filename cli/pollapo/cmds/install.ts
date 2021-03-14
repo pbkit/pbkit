@@ -2,10 +2,12 @@ import { emptyDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.17.2/command/mod.ts";
 import { fetchArchive, readGhHosts } from "../misc/github.ts";
 import { save, stripComponents, unzip } from "../misc/archive/zip.ts";
+import { print, println } from "../misc/stdio.ts";
 import { getCacheDir } from "../config.ts";
 import {
   analyzeDeps,
   cacheDeps,
+  depToString,
   getPollapoYml,
   getZipPath,
   parseDep,
@@ -23,7 +25,12 @@ export default new Command()
       const cacheDir = getCacheDir();
       const pollapoYml = await getPollapoYml();
       const fetchZip = getFetchZip(token);
-      await cacheDeps({ cacheDir, pollapoYml, fetchZip });
+      const caching = cacheDeps({ cacheDir, pollapoYml, fetchZip });
+      for await (const { dep, downloading } of caching) {
+        await print(`Downloading ${depToString(dep)}...`);
+        await downloading;
+        await println("ok");
+      }
       const analyzeDepsResult = await analyzeDeps({ cacheDir, pollapoYml });
       const deps = Object.entries(analyzeDepsResult).map(([repo, revs]) => {
         const latest = Object.keys(revs).sort(compareRev).pop()!;
@@ -36,6 +43,7 @@ export default new Command()
         const files = stripComponents(await unzip(zipData), 1);
         await save(`.pollapo/${dep.user}/${dep.repo}`, files);
       }));
+      await println("Done.");
     } catch (err) {
       if (err instanceof PollapoYmlNotFoundError) {
         console.error(err.message);
