@@ -5,4 +5,4 @@
 
 
 ## cli
-[pollapo](../../cli/pollapo/docs/ko/getting-started.md) - protobuf dependency manager
+[pollapo](../../cli/pollapo/docs/en/getting-started.md) - protobuf dependency manager
