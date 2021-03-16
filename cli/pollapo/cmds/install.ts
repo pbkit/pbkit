@@ -1,5 +1,6 @@
 import { emptyDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
-import { Command } from "https://deno.land/x/cliffy@v0.17.2/command/mod.ts";
+import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { fetchArchive, readGhHosts } from "../misc/github.ts";
 import { save, stripComponents, unzip } from "../misc/archive/zip.ts";
 import { print, println } from "../misc/stdio.ts";
@@ -16,9 +17,16 @@ import {
 } from "../pollapoYml.ts";
 import { compareRev } from "../rev.ts";
 
+interface Options {
+  outDir: string;
+}
+
 export default new Command()
   .description("Install dependencies.")
-  .action(async () => {
+  .option("-o, --out-dir <value:string>", "Set out directory", {
+    default: ".pollapo",
+  })
+  .action(async (options: Options) => {
     try {
       const ghHosts = await readGhHosts();
       const token = ghHosts["github.com"].oauth_token;
@@ -36,12 +44,12 @@ export default new Command()
         const latest = Object.keys(revs).sort(compareRev).pop()!;
         return `${repo}@${latest}`;
       }).map(parseDep);
-      await emptyDir(".pollapo");
+      await emptyDir(options.outDir);
       await Promise.all(deps.map(async (dep) => {
         const zipPath = getZipPath(cacheDir, dep);
         const zipData = await Deno.readFile(zipPath);
         const files = stripComponents(await unzip(zipData), 1);
-        await save(`.pollapo/${dep.user}/${dep.repo}`, files);
+        await save(path.resolve(options.outDir, dep.user, dep.repo), files);
       }));
       await println("Done.");
     } catch (err) {
