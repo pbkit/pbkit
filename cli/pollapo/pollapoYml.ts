@@ -1,5 +1,9 @@
 import { parse as parseYaml } from "https://deno.land/std@0.84.0/encoding/yaml.ts";
-import { ensureDir, exists } from "https://deno.land/std@0.88.0/fs/mod.ts";
+import {
+  emptyDir,
+  ensureDir,
+  exists,
+} from "https://deno.land/std@0.88.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import { stripComponents, unzip } from "./misc/archive/zip.ts";
 import { isSemver } from "./rev.ts";
@@ -61,6 +65,7 @@ export function getYmlPath(cacheDir: string, dep: PollapoDep): string {
 
 export interface CacheDepsConfig {
   pollapoYml: PollapoYml;
+  clean: boolean;
   cacheDir: string;
   fetchZip: (dep: PollapoDep) => Promise<Uint8Array>;
 }
@@ -71,7 +76,8 @@ export interface CacheDepsCurrentItem {
 export async function* cacheDeps(
   config: CacheDepsConfig,
 ): AsyncGenerator<CacheDepsCurrentItem> {
-  const { pollapoYml, cacheDir, fetchZip } = config;
+  const { pollapoYml, clean, cacheDir, fetchZip } = config;
+  if (clean) await emptyDir(cacheDir);
   const queue = [...deps(pollapoYml)];
   let dep: PollapoDep;
   const cachedDeps: { [cachedDep: string]: true } = {};
@@ -96,6 +102,7 @@ export async function* cacheDeps(
       }
     });
     yield { dep, downloading };
+    await downloading;
   }
 }
 

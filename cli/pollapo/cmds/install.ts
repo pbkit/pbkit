@@ -18,12 +18,14 @@ import {
 import { compareRev } from "../rev.ts";
 
 interface Options {
+  clean?: true;
   outDir: string;
 }
 
 export default new Command()
   .description("Install dependencies.")
-  .option("-o, --out-dir <value:string>", "Set out directory", {
+  .option("-c, --clean", "Don't use cache")
+  .option("-o, --out-dir <value:string>", "Out directory", {
     default: ".pollapo",
   })
   .action(async (options: Options) => {
@@ -33,7 +35,12 @@ export default new Command()
       const cacheDir = getCacheDir();
       const pollapoYml = await getPollapoYml();
       const fetchZip = getFetchZip(token);
-      const caching = cacheDeps({ cacheDir, pollapoYml, fetchZip });
+      const caching = cacheDeps({
+        cacheDir,
+        clean: !!options.clean,
+        pollapoYml,
+        fetchZip,
+      });
       for await (const { dep, downloading } of caching) {
         await print(`Downloading ${depToString(dep)}...`);
         await downloading;
