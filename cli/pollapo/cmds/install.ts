@@ -20,6 +20,7 @@ import { compareRev } from "../rev.ts";
 interface Options {
   clean?: true;
   outDir: string;
+  token?: string;
 }
 
 export default new Command()
@@ -28,10 +29,10 @@ export default new Command()
   .option("-o, --out-dir <value:string>", "Out directory", {
     default: ".pollapo",
   })
+  .option("-t, --token <value:string>", "GitHub OAuth token")
   .action(async (options: Options) => {
     try {
-      const ghHosts = await readGhHosts();
-      const token = ghHosts["github.com"].oauth_token;
+      const token = options.token ?? await getToken();
       const cacheDir = getCacheDir();
       const pollapoYml = await getPollapoYml();
       const fetchZip = getFetchZip(token);
@@ -60,7 +61,10 @@ export default new Command()
       }));
       await println("Done.");
     } catch (err) {
-      if (err instanceof PollapoYmlNotFoundError) {
+      if (
+        err instanceof PollapoNotLoggedInError ||
+        err instanceof PollapoYmlNotFoundError
+      ) {
         console.error(err.message);
         return Deno.exit(1);
       }
@@ -68,6 +72,21 @@ export default new Command()
       throw err;
     }
   });
+
+class PollapoNotLoggedInError extends Error {
+  constructor() {
+    super("Login required.");
+  }
+}
+
+async function getToken(): Promise<string> {
+  try {
+    const ghHosts = await readGhHosts();
+    const token = ghHosts["github.com"].oauth_token;
+    if (token) return token;
+  } catch {}
+  throw new PollapoNotLoggedInError();
+}
 
 function getFetchZip(token: string) {
   return async function fetchZip(dep: PollapoDep): Promise<Uint8Array> {
