@@ -99,7 +99,7 @@ export const visitor: Visitor = {
   visitImport(visitor, node) {
     visitStatementBase(visitor, node, () => {
       visitor.visitToken(visitor, node.keyword);
-      visitor.visitToken(visitor, node.weakOrPublic);
+      node.weakOrPublic && visitor.visitToken(visitor, node.weakOrPublic);
       visitor.visitToken(visitor, node.strLit);
       visitor.visitToken(visitor, node.semi);
     });
@@ -294,7 +294,7 @@ export const visitor: Visitor = {
   },
   visitField(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.fieldLabel);
+      node.fieldLabel && visitor.visitToken(visitor, node.fieldLabel);
       visitor.visitType(visitor, node.fieldType);
       visitor.visitToken(visitor, node.fieldName);
       visitor.visitToken(visitor, node.eq);

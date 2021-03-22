@@ -253,9 +253,8 @@ function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
 function acceptConstant(
   parser: RecursiveDescentParser,
 ): ast.Constant | undefined {
-  return acceptFullIdent(parser) ?? acceptSignedIntLit(parser) ??
-    acceptSignedFloatLit(parser) ?? acceptStrLit(parser) ??
-    acceptBoolLit(parser);
+  return acceptSignedIntLit(parser) ?? acceptSignedFloatLit(parser) ??
+    acceptStrLit(parser) ?? acceptBoolLit(parser) ?? acceptFullIdent(parser);
 }
 
 function expectConstant(parser: RecursiveDescentParser): ast.Constant {
@@ -357,7 +356,7 @@ function acceptImport(
   const keyword = parser.accept("import");
   if (!keyword) return;
   skipWsAndComments(parser);
-  const weakOrPublic = parser.expect(/^weak|^public/);
+  const weakOrPublic = parser.accept(/^weak|^public/);
   skipWsAndComments(parser);
   const strLit = parser.expect(strLitPattern);
   skipWsAndComments(parser);
@@ -562,10 +561,14 @@ function acceptField(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Field | undefined {
+  const loc = parser.loc;
   const fieldLabel = parser.accept(/^required|^optional|^repeated/);
-  if (!fieldLabel) return;
   skipWsAndComments(parser);
-  const fieldType = expectType(parser);
+  const fieldType = acceptType(parser);
+  if (!fieldType) {
+    parser.loc = loc;
+    return;
+  }
   skipWsAndComments(parser);
   const fieldName = parser.expect(identPattern);
   skipWsAndComments(parser);
@@ -577,7 +580,7 @@ function acceptField(
   skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {
-    start: fieldLabel.start,
+    start: (fieldLabel ?? fieldType).start,
     end: semi.end,
     leadingComments,
     trailingComments: [], // TODO
@@ -914,7 +917,6 @@ function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.MessageBodyStatement>(parser, [
     acceptGroup,
-    acceptField,
     acceptEnum,
     acceptMessage,
     acceptExtend,
@@ -923,6 +925,7 @@ function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
     acceptOneof,
     acceptMapField,
     acceptReserved,
+    acceptField,
     acceptEmpty,
   ]);
   const bracketClose = parser.expect("}");

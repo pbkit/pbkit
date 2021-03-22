@@ -5,7 +5,7 @@ import { MessageBody } from "./top-level-definitions.ts";
 
 export interface Field extends StatementBase {
   type: "field";
-  fieldLabel: Token;
+  fieldLabel?: Token;
   fieldType: Type;
   fieldName: Token;
   eq: Token;

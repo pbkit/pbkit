@@ -39,7 +39,7 @@ export interface Syntax extends StatementBase {
 export interface Import extends StatementBase {
   type: "import";
   keyword: Token;
-  weakOrPublic: Token;
+  weakOrPublic?: Token;
   strLit: Token;
   semi: Token;
 }
