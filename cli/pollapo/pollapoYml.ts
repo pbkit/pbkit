@@ -148,5 +148,7 @@ export async function analyzeDeps(
 
 async function extractPollapoYml(zip: Uint8Array): Promise<string> {
   const files = stripComponents(await unzip(zip), 1);
-  return files["pollapo.yml"].async("text");
+  const pollapoYml = files["pollapo.yml"];
+  if (!pollapoYml) return "";
+  return pollapoYml.async("text");
 }
