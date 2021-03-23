@@ -1,6 +1,10 @@
 import { StatementBase } from "./index.ts";
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 
+export interface Keyword extends Token {
+  type: "keyword";
+}
+
 export interface Type extends Span {
   type: "type";
   identOrDots: (Ident | Dot)[];

@@ -2,11 +2,11 @@ import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { Extensions, Reserved } from "./extensions-and-reserved.ts";
 import { Field, FieldOptions, Group, MapField, Oneof } from "./fields.ts";
 import { Option, StatementBase } from "./index.ts";
-import { Empty, SignedIntLit, Type } from "./lexical-elements.ts";
+import { Empty, Keyword, SignedIntLit, Type } from "./lexical-elements.ts";
 
 export interface Enum extends StatementBase {
   type: "enum";
-  keyword: Token;
+  keyword: Keyword;
   enumName: Token;
   enumBody: EnumBody;
 }
@@ -34,7 +34,7 @@ export interface EnumField extends StatementBase {
 
 export interface Message extends StatementBase {
   type: "message";
-  keyword: Token;
+  keyword: Keyword;
   messageName: Token;
   messageBody: MessageBody;
 }
@@ -61,7 +61,7 @@ export type MessageBodyStatement =
 
 export interface Extend extends StatementBase {
   type: "extend";
-  keyword: Token;
+  keyword: Keyword;
   messageType: Type;
   extendBody: ExtendBody;
 }
@@ -80,7 +80,7 @@ export type ExtendBodyStatement =
 
 export interface Service extends StatementBase {
   type: "service";
-  keyword: Token;
+  keyword: Keyword;
   serviceName: Token;
   serviceBody: ServiceBody;
 }
@@ -96,7 +96,7 @@ export type ServiceBodyStatement = Option | Rpc | Empty;
 
 export interface Rpc extends StatementBase {
   type: "rpc";
-  keyword: Token;
+  keyword: Keyword;
   rpcName: Token;
   reqType: RpcType;
   returns: Token;
@@ -106,7 +106,7 @@ export interface Rpc extends StatementBase {
 
 export interface RpcType extends Span {
   bracketOpen: Token;
-  stream?: Token;
+  stream?: Keyword;
   messageType: Type;
   bracketClose: Token;
 }

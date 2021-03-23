@@ -107,6 +107,15 @@ const acceptIdent = acceptPatternAndThen<ast.Ident>(
   (ident) => ({ type: "ident", ...ident }),
 );
 
+function acceptKeyword(
+  parser: RecursiveDescentParser,
+  pattern: Pattern = identPattern,
+): ast.Keyword | undefined {
+  const token = parser.accept(pattern);
+  if (!token) return;
+  return { type: "keyword", ...token };
+}
+
 function skipWsAndSweepComments(parser: RecursiveDescentParser): Token[] {
   const result: Token[] = [];
   while (true) {
@@ -323,7 +332,7 @@ function acceptSyntax(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Syntax | undefined {
-  const keyword = parser.accept("syntax");
+  const keyword = acceptKeyword(parser, "syntax");
   if (!keyword) return;
   skipWsAndComments(parser);
   const eq = parser.expect("=");
@@ -353,7 +362,7 @@ function acceptImport(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Import | undefined {
-  const keyword = parser.accept("import");
+  const keyword = acceptKeyword(parser, "import");
   if (!keyword) return;
   skipWsAndComments(parser);
   const weakOrPublic = parser.accept(/^weak|^public/);
@@ -379,7 +388,7 @@ function acceptPackage(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Package | undefined {
-  const keyword = parser.accept("package");
+  const keyword = acceptKeyword(parser, "package");
   if (!keyword) return;
   skipWsAndComments(parser);
   const fullIdent = expectFullIdent(parser);
@@ -402,7 +411,7 @@ function acceptOption(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Option | undefined {
-  const keyword = parser.accept("option");
+  const keyword = acceptKeyword(parser, "option");
   if (!keyword) return;
   skipWsAndComments(parser);
   const optionName = expectOptionName(parser);
@@ -538,7 +547,7 @@ function acceptEnum(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Enum | undefined {
-  const keyword = parser.accept("enum");
+  const keyword = acceptKeyword(parser, "enum");
   if (!keyword) return;
   skipWsAndComments(parser);
   const enumName = parser.expect(identPattern);
@@ -562,7 +571,7 @@ function acceptField(
   leadingComments: Token[],
 ): ast.Field | undefined {
   const loc = parser.loc;
-  const fieldLabel = parser.accept(/^required|^optional|^repeated/);
+  const fieldLabel = acceptKeyword(parser, /^required|^optional|^repeated/);
   skipWsAndComments(parser);
   const fieldType = acceptType(parser);
   if (!fieldType) {
@@ -632,7 +641,7 @@ function acceptMapField(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.MapField | undefined {
-  const keyword = parser.accept("map");
+  const keyword = acceptKeyword(parser, "map");
   if (!keyword) return;
   skipWsAndComments(parser);
   const typeBracketOpen = parser.expect("<");
@@ -697,7 +706,7 @@ function acceptOneof(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Oneof | undefined {
-  const keyword = parser.accept("oneof");
+  const keyword = acceptKeyword(parser, "oneof");
   if (!keyword) return;
   skipWsAndComments(parser);
   const oneofName = parser.expect(identPattern);
@@ -725,7 +734,7 @@ function acceptRange(parser: RecursiveDescentParser): ast.Range | undefined {
   const rangeStart = acceptIntLit(parser);
   if (!rangeStart) return;
   skipWsAndComments(parser);
-  const to = parser.accept("to");
+  const to = acceptKeyword(parser, "to");
   if (!to) {
     return {
       start: rangeStart.start,
@@ -769,7 +778,7 @@ function acceptExtensions(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Extensions | undefined {
-  const keyword = parser.accept("extensions");
+  const keyword = acceptKeyword(parser, "extensions");
   if (!keyword) return;
   skipWsAndComments(parser);
   const ranges = expectRanges(parser);
@@ -810,7 +819,7 @@ function acceptReserved(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Reserved | undefined {
-  const keyword = parser.accept("reserved");
+  const keyword = acceptKeyword(parser, "reserved");
   if (!keyword) return;
   skipWsAndComments(parser);
   const reserved = parser.try(intLitPattern)
@@ -853,7 +862,7 @@ function acceptExtend(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Extend | undefined {
-  const keyword = parser.accept("extend");
+  const keyword = acceptKeyword(parser, "extend");
   if (!keyword) return;
   skipWsAndComments(parser);
   const messageType = expectType(parser);
@@ -877,12 +886,12 @@ function acceptGroup(
   leadingComments: Token[],
 ): ast.Group | undefined {
   const loc = parser.loc;
-  const groupLabel = parser.accept(/^required|^optional|^repeated/);
+  const groupLabel = acceptKeyword(parser, /^required|^optional|^repeated/);
   if (!groupLabel) {
     parser.loc = loc;
     return;
   }
-  const keyword = parser.accept("group");
+  const keyword = acceptKeyword(parser, "group");
   if (!keyword) {
     parser.loc = loc;
     return;
@@ -943,7 +952,7 @@ function acceptMessage(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Message | undefined {
-  const keyword = parser.accept("message");
+  const keyword = acceptKeyword(parser, "message");
   if (!keyword) return;
   skipWsAndComments(parser);
   const messageName = parser.expect(identPattern);
@@ -965,7 +974,7 @@ function acceptMessage(
 function expectRpcType(parser: RecursiveDescentParser): ast.RpcType {
   const bracketOpen = parser.expect("(");
   skipWsAndComments(parser);
-  const stream = parser.accept("stream");
+  const stream = acceptKeyword(parser, "stream");
   skipWsAndComments(parser);
   const messageType = expectType(parser);
   skipWsAndComments(parser);
@@ -984,7 +993,7 @@ function acceptRpc(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Rpc | undefined {
-  const keyword = parser.accept("rpc");
+  const keyword = acceptKeyword(parser, "rpc");
   if (!keyword) return;
   skipWsAndComments(parser);
   const rpcName = parser.expect(identPattern);
@@ -1034,7 +1043,7 @@ function acceptService(
   parser: RecursiveDescentParser,
   leadingComments: Token[],
 ): ast.Service | undefined {
-  const keyword = parser.accept("service");
+  const keyword = acceptKeyword(parser, "service");
   if (!keyword) return;
   skipWsAndComments(parser);
   const serviceName = parser.expect(identPattern);

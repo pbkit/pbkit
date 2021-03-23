@@ -1,5 +1,11 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { Constant, Dot, Empty, FullIdent } from "./lexical-elements.ts";
+import {
+  Constant,
+  Dot,
+  Empty,
+  FullIdent,
+  Keyword,
+} from "./lexical-elements.ts";
 import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
 
 export * from "./extensions-and-reserved.ts";
@@ -28,7 +34,7 @@ export interface StatementBase extends Span {
 
 export interface Syntax extends StatementBase {
   type: "syntax";
-  keyword: Token;
+  keyword: Keyword;
   eq: Token;
   quoteOpen: Token;
   syntax: Token;
@@ -38,7 +44,7 @@ export interface Syntax extends StatementBase {
 
 export interface Import extends StatementBase {
   type: "import";
-  keyword: Token;
+  keyword: Keyword;
   weakOrPublic?: Token;
   strLit: Token;
   semi: Token;
@@ -46,14 +52,14 @@ export interface Import extends StatementBase {
 
 export interface Package extends StatementBase {
   type: "package";
-  keyword: Token;
+  keyword: Keyword;
   fullIdent: FullIdent;
   semi: Token;
 }
 
 export interface Option extends StatementBase {
   type: "option";
-  keyword: Token;
+  keyword: Keyword;
   optionName: OptionName;
   eq: Token;
   constant: Constant;

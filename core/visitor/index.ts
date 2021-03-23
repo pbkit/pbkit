@@ -43,6 +43,7 @@ export interface Visitor {
   visitReserved: VisitFn<ast.Reserved>;
   visitFieldNames: VisitFn<ast.FieldNames>;
   visitConstant: VisitFn<ast.Constant>;
+  visitKeyword: VisitFn<ast.Keyword>;
   visitType: VisitFn<ast.Type>;
   visitFullIdent: VisitFn<ast.FullIdent>;
   visitIntLit: VisitFn<ast.IntLit>;
@@ -88,7 +89,7 @@ export const visitor: Visitor = {
   },
   visitSyntax(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.eq);
       visitor.visitToken(visitor, node.quoteOpen);
       visitor.visitToken(visitor, node.syntax);
@@ -98,7 +99,7 @@ export const visitor: Visitor = {
   },
   visitImport(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       node.weakOrPublic && visitor.visitToken(visitor, node.weakOrPublic);
       visitor.visitToken(visitor, node.strLit);
       visitor.visitToken(visitor, node.semi);
@@ -106,14 +107,14 @@ export const visitor: Visitor = {
   },
   visitPackage(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitFullIdent(visitor, node.fullIdent);
       visitor.visitToken(visitor, node.semi);
     });
   },
   visitOption(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitOptionName(visitor, node.optionName);
       visitor.visitToken(visitor, node.eq);
       visitor.visitConstant(visitor, node.constant);
@@ -151,7 +152,7 @@ export const visitor: Visitor = {
   },
   visitMessage(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.messageName);
       visitor.visitMessageBody(visitor, node.messageBody);
     });
@@ -191,7 +192,7 @@ export const visitor: Visitor = {
   },
   visitEnum(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.enumName);
       visitor.visitEnumBody(visitor, node.enumBody);
     });
@@ -225,7 +226,7 @@ export const visitor: Visitor = {
   },
   visitExtend(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitType(visitor, node.messageType);
       visitor.visitExtendBody(visitor, node.extendBody);
     });
@@ -249,7 +250,7 @@ export const visitor: Visitor = {
   },
   visitService(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.serviceName);
       visitor.visitServiceBody(visitor, node.serviceBody);
     });
@@ -273,7 +274,7 @@ export const visitor: Visitor = {
   },
   visitRpc(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.rpcName);
       visitor.visitRpcType(visitor, node.reqType);
       visitor.visitToken(visitor, node.returns);
@@ -283,7 +284,7 @@ export const visitor: Visitor = {
   },
   visitRpcType(visitor, node) {
     visitor.visitToken(visitor, node.bracketOpen);
-    node.stream && visitor.visitToken(visitor, node.stream);
+    node.stream && visitor.visitKeyword(visitor, node.stream);
     visitor.visitType(visitor, node.messageType);
     visitor.visitToken(visitor, node.bracketClose);
   },
@@ -294,7 +295,7 @@ export const visitor: Visitor = {
   },
   visitField(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      node.fieldLabel && visitor.visitToken(visitor, node.fieldLabel);
+      node.fieldLabel && visitor.visitKeyword(visitor, node.fieldLabel);
       visitor.visitType(visitor, node.fieldType);
       visitor.visitToken(visitor, node.fieldName);
       visitor.visitToken(visitor, node.eq);
@@ -325,8 +326,8 @@ export const visitor: Visitor = {
   },
   visitGroup(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.groupLabel);
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.groupLabel);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.groupName);
       visitor.visitToken(visitor, node.eq);
       visitor.visitToken(visitor, node.fieldNumber);
@@ -335,7 +336,7 @@ export const visitor: Visitor = {
   },
   visitOneof(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.oneofName);
       visitor.visitOneofBody(visitor, node.oneofBody);
     });
@@ -370,7 +371,7 @@ export const visitor: Visitor = {
   },
   visitMapField(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.typeBracketOpen);
       visitor.visitType(visitor, node.keyType);
       visitor.visitToken(visitor, node.typeSep);
@@ -386,7 +387,7 @@ export const visitor: Visitor = {
   },
   visitExtensions(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       visitor.visitRanges(visitor, node.ranges);
       visitor.visitToken(visitor, node.semi);
     });
@@ -405,7 +406,7 @@ export const visitor: Visitor = {
   },
   visitRange(visitor, node) {
     visitor.visitIntLit(visitor, node.rangeStart);
-    node.to && visitor.visitToken(visitor, node.to);
+    node.to && visitor.visitKeyword(visitor, node.to);
     if (node.rangeEnd) {
       switch (node.rangeEnd.type) {
         case "int-lit":
@@ -422,7 +423,7 @@ export const visitor: Visitor = {
   },
   visitReserved(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.keyword);
+      visitor.visitKeyword(visitor, node.keyword);
       switch (node.reserved.type) {
         case "ranges":
           visitor.visitRanges(visitor, node.reserved);
@@ -459,6 +460,9 @@ export const visitor: Visitor = {
       case "bool-lit":
         return visitor.visitBoolLit(visitor, node);
     }
+  },
+  visitKeyword(visitor, node) {
+    visitor.visitToken(visitor, node);
   },
   visitType(visitor, node) {
     for (const identOrDot of node.identOrDots) {

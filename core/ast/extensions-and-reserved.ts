@@ -1,10 +1,10 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { StatementBase } from "./index.ts";
-import { Comma, IntLit, StrLit } from "./lexical-elements.ts";
+import { Comma, IntLit, Keyword, StrLit } from "./lexical-elements.ts";
 
 export interface Extensions extends StatementBase {
   type: "extensions";
-  keyword: Token;
+  keyword: Keyword;
   ranges: Ranges;
   semi: Token;
 }
@@ -17,7 +17,7 @@ export interface Ranges extends Span {
 export interface Range extends Span {
   type: "range";
   rangeStart: IntLit;
-  to?: Token;
+  to?: Keyword;
   rangeEnd?: IntLit | Max;
 }
 
@@ -27,7 +27,7 @@ export interface Max extends Token {
 
 export interface Reserved extends StatementBase {
   type: "reserved";
-  keyword: Token;
+  keyword: Keyword;
   reserved: Ranges | FieldNames;
   semi: Token;
 }
