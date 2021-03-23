@@ -18,6 +18,7 @@ export default function minify(ast: ast.Proto): string {
       defaultVisitor.visitKeyword(visitor, node);
       printer.print(" ");
     },
+    visitComment() {},
     visitToken(_, node) {
       printer.print(node.text);
     },

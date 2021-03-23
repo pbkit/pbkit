@@ -43,6 +43,9 @@ export interface Visitor {
   visitReserved: VisitFn<ast.Reserved>;
   visitFieldNames: VisitFn<ast.FieldNames>;
   visitConstant: VisitFn<ast.Constant>;
+  visitComment: VisitFn<ast.Comment>;
+  visitSinglelineComment: VisitFn<ast.SinglelineComment>;
+  visitMultilineComment: VisitFn<ast.MultilineComment>;
   visitKeyword: VisitFn<ast.Keyword>;
   visitType: VisitFn<ast.Type>;
   visitFullIdent: VisitFn<ast.FullIdent>;
@@ -461,6 +464,20 @@ export const visitor: Visitor = {
         return visitor.visitBoolLit(visitor, node);
     }
   },
+  visitComment(visitor, node) {
+    switch (node.type) {
+      case "singleline-comment":
+        return visitor.visitSinglelineComment(visitor, node);
+      case "multiline-comment":
+        return visitor.visitMultilineComment(visitor, node);
+    }
+  },
+  visitSinglelineComment(visitor, node) {
+    visitor.visitToken(visitor, node);
+  },
+  visitMultilineComment(visitor, node) {
+    visitor.visitToken(visitor, node);
+  },
   visitKeyword(visitor, node) {
     visitor.visitToken(visitor, node);
   },
@@ -525,14 +542,14 @@ function visitStatementBase<T extends ast.StatementBase>(
   node: T,
   visit: () => void,
 ): void {
-  for (const token of node.leadingDetachedComments) {
-    visitor.visitToken(visitor, token);
+  for (const comment of node.leadingDetachedComments) {
+    visitor.visitComment(visitor, comment);
   }
-  for (const token of node.leadingComments) {
-    visitor.visitToken(visitor, token);
+  for (const comment of node.leadingComments) {
+    visitor.visitComment(visitor, comment);
   }
   visit();
-  for (const token of node.trailingComments) {
-    visitor.visitToken(visitor, token);
+  for (const comment of node.trailingComments) {
+    visitor.visitComment(visitor, comment);
   }
 }

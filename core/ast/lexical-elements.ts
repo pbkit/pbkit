@@ -1,6 +1,16 @@
 import { StatementBase } from "./index.ts";
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 
+export type Comment = SinglelineComment | MultilineComment;
+
+export interface SinglelineComment extends Token {
+  type: "singleline-comment";
+}
+
+export interface MultilineComment extends Token {
+  type: "multiline-comment";
+}
+
 export interface Keyword extends Token {
   type: "keyword";
 }
