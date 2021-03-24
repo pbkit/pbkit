@@ -10,12 +10,26 @@ import { isSemver } from "./rev.ts";
 
 export type PollapoYml = {
   deps?: string[];
+  root?: PollapoRoot;
 } | undefined;
 
 export interface PollapoDep {
   user: string;
   repo: string;
   rev: string;
+}
+
+export interface PollapoRoot {
+  "replace-file-option"?: PollapoRootReplaceFileOption;
+}
+
+export interface PollapoRootReplaceFileOption {
+  [optionName: string]: PollapoRootReplaceFileOptionItem;
+}
+
+export interface PollapoRootReplaceFileOptionItem {
+  regex: string;
+  value: string;
 }
 
 export interface GetPollapoYmlConfig {
