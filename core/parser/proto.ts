@@ -7,8 +7,8 @@ import {
   Token,
 } from "./recursive-descent-parser.ts";
 
-export interface ParseResult {
-  ast: ast.Proto;
+export interface ParseResult<T = ast.Proto> {
+  ast: T;
   parser: RecursiveDescentParser;
 }
 
@@ -27,6 +27,12 @@ export function parse(text: string): ParseResult {
   ]);
   const ast: ast.Proto = { statements };
   return { ast, parser };
+}
+
+export function parseConstant(text: string): ParseResult<ast.Constant> {
+  const parser = createRecursiveDescentParser(text);
+  const constant = expectConstant(parser);
+  return { ast: constant, parser };
 }
 
 interface AcceptFn<T> {

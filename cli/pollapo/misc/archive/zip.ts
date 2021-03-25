@@ -43,3 +43,10 @@ export async function save(targetDir: string, files: Files): Promise<void> {
     }),
   );
 }
+
+export async function* iterFiles(files: Files) {
+  for (const [fileName, file] of Object.entries(files)) {
+    if (file.dir) return;
+    yield { fileName, data: await file.async("uint8array") };
+  }
+}

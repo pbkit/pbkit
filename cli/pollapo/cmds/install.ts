@@ -1,18 +1,23 @@
-import { emptyDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
+import { emptyDir, ensureDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
+import { parse } from "../../../core/parser/proto.ts";
+import minify from "../../../core/stringifier/minify.ts";
+import replaceFileOption from "../postprocess/replaceFileOption.ts";
 import { fetchArchive, readGhHosts } from "../misc/github.ts";
-import { save, stripComponents, unzip } from "../misc/archive/zip.ts";
+import { iterFiles, stripComponents, unzip } from "../misc/archive/zip.ts";
 import { print, println } from "../misc/stdio.ts";
 import { getCacheDir } from "../config.ts";
 import {
   analyzeDeps,
+  AnalyzeDepsResultRevs,
   cacheDeps,
   depToString,
   getPollapoYml,
   getZipPath,
   parseDep,
   PollapoDep,
+  PollapoYml,
   PollapoYmlNotFoundError,
 } from "../pollapoYml.ts";
 import { compareRev } from "../rev.ts";
@@ -48,17 +53,10 @@ export default new Command()
         await println("ok");
       }
       const analyzeDepsResult = await analyzeDeps({ cacheDir, pollapoYml });
-      const deps = Object.entries(analyzeDepsResult).map(([repo, revs]) => {
-        const latest = Object.keys(revs).sort(compareRev).pop()!;
-        return `${repo}@${latest}`;
-      }).map(parseDep);
       await emptyDir(options.outDir);
-      await Promise.all(deps.map(async (dep) => {
-        const zipPath = getZipPath(cacheDir, dep);
-        const zipData = await Deno.readFile(zipPath);
-        const files = stripComponents(await unzip(zipData), 1);
-        await save(path.resolve(options.outDir, dep.user, dep.repo), files);
-      }));
+      for (const [repo, revs] of Object.entries(analyzeDepsResult)) {
+        await installDep(options, cacheDir, pollapoYml, repo, revs);
+      }
       await println("Done.");
     } catch (err) {
       if (
@@ -72,6 +70,37 @@ export default new Command()
       throw err;
     }
   });
+
+async function installDep(
+  options: Options,
+  cacheDir: string,
+  pollapoYml: PollapoYml,
+  repo: string,
+  revs: AnalyzeDepsResultRevs,
+): Promise<void> {
+  const latest = Object.keys(revs).sort(compareRev).pop()!;
+  const dep = parseDep(`${repo}@${latest}`);
+  const zipPath = getZipPath(cacheDir, dep);
+  const zipData = await Deno.readFile(zipPath);
+  const files = stripComponents(await unzip(zipData), 1);
+  const targetDir = path.resolve(options.outDir, dep.user, dep.repo);
+  const pollapoRootReplaceFileOption = (
+    pollapoYml?.root?.["replace-file-option"]
+  );
+  for await (let { fileName, data } of iterFiles(files)) {
+    if (fileName.endsWith(".proto") && pollapoRootReplaceFileOption) {
+      const textDecoder = new TextDecoder();
+      const textEncoder = new TextEncoder();
+      const text = textDecoder.decode(data);
+      let { ast } = parse(text);
+      ast = replaceFileOption(ast, pollapoRootReplaceFileOption);
+      data = textEncoder.encode(minify(ast));
+    }
+    const filePath = path.resolve(targetDir, fileName);
+    await ensureDir(path.dirname(filePath));
+    await Deno.writeFile(filePath, data);
+  }
+}
 
 class PollapoNotLoggedInError extends Error {
   constructor() {
