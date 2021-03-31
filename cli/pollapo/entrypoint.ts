@@ -6,4 +6,5 @@ command
   .arguments("<command> [options]")
   .action(() => command.showHelp())
   .command("install", (await import("./cmds/install.ts")).default)
+  .command("why", (await import("./cmds/why.ts")).default)
   .parse(Deno.args);
