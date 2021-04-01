@@ -15,10 +15,14 @@ interface Options {
 
 export default new Command()
   .arguments("<targets...:string>")
-  .description("Show information about why dependency is installed")
-  .option("-d, --depth <depth:number>", "Depth of display dependency tree", {
-    default: 3,
-  })
+  .description("Show information about why dependency is installed.")
+  .option(
+    "-d, --depth <depth:number>",
+    "Maximum depth of dependency tree to display",
+    {
+      default: 3,
+    },
+  )
   .action(async (options: Options, targets: string[]) => {
     try {
       const { depth } = options;
@@ -58,7 +62,6 @@ export default new Command()
       };
 
       await println(bold(`Pollapo why`));
-      await println(`Current tree depth: ${yellow(depth.toString())}`);
       await println(``);
 
       for (const target of targets) {
