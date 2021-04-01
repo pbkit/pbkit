@@ -1,4 +1,15 @@
 import { emptyDir, ensureDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
+import {
+  bgBlue,
+  bgRgb24,
+  bgRgb8,
+  bold,
+  italic,
+  red,
+  rgb24,
+  rgb8,
+  yellow,
+} from "https://deno.land/std@0.91.0/fmt/colors.ts";
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { jsonTree } from "https://deno.land/x/json_tree/mod.ts";
@@ -22,48 +33,61 @@ import {
   PollapoYmlNotFoundError,
 } from "../pollapoYml.ts";
 import { compareRev } from "../rev.ts";
+
 interface Options {
-  clean?: true;
-  outDir: string;
-  token?: string;
-  target: string;
+  depth: number;
 }
 
 export default new Command()
-  .description("Install dependencies.")
-  .option("-t, --target <value:string>", "asdsa", {
-    default: "riiid/interface-content-model",
+  .arguments("<targets...:string>")
+  .description("Show information about why dependency is installed")
+  .option("-d, --depth <depth:number>", "Depth of display dependency tree", {
+    default: 3,
   })
-  .option("-c, --clean", "Don't use cache")
-  .option("-o, --out-dir <value:string>", "Out directory", {
-    default: ".pollapo",
-  })
-  .action(async (options: any) => {
+  .action(async (options: Options, targets: string[]) => {
     try {
-      const targetDep = options.target;
+      const { depth } = options;
       const cacheDir = getCacheDir();
       const pollapoYml = await getPollapoYml();
 
       const analyzeDepsResult = await analyzeDeps({ cacheDir, pollapoYml });
 
-      const makeWhyTree = (depName: string) => {
+      const makeWhyTree = (depName: string, depArray: string[]) => {
         if (depName === "<root>") {
           return null;
         }
 
-        const tree: Record<string, any> = {};
-        const [name, version] = depName.split("@");
+        if (depArray.length > depth) {
+          return "...";
+        }
 
+        type TreeNode = string | Tree | null;
+        interface Tree {
+          [key: string]: TreeNode;
+        }
+
+        const tree: Tree = {};
+        const [name, version] = depName.split("@");
         analyzeDepsResult[name][version].froms.map((from: string) => {
-          tree[from] = makeWhyTree(from);
+          tree[from] = depArray.includes(from)
+            ? "cycle"
+            : makeWhyTree(from, [...depArray, from]);
         });
 
         return tree;
       };
 
-      Object.keys(analyzeDepsResult[targetDep]).map((version) => {
-        console.log(jsonTree(makeWhyTree(`${targetDep}@${version}`), true));
-      });
+      await println(bold(`Pollapo why`));
+      await println(`Current tree depth: ${depth}`);
+      await println(``);
+
+      for (const target of targets) {
+        Object.keys(analyzeDepsResult[target]).map(async (version) => {
+          const depName = [target, version].join("@");
+          await println(yellow(`📚 ${depName}`));
+          await println(jsonTree(makeWhyTree(depName, [depName]), true));
+        });
+      }
     } catch (err) {
       if (
         err instanceof PollapoNotLoggedInError ||
