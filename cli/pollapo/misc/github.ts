@@ -1,5 +1,6 @@
 import * as path from "https://deno.land/std@0.88.0/path/mod.ts";
 import { parse as parseYaml } from "https://deno.land/std@0.88.0/encoding/yaml.ts";
+import { getHomeDir } from "../config.ts";
 
 export interface GhHosts {
   [hostname: string]: GhHost;
@@ -12,8 +13,7 @@ export interface GhHost {
 }
 
 export function getDefaultGhConfigPath(configFile = ".") {
-  const home = Deno.env.get("HOME") ?? ".";
-  const ghConfigPath = path.resolve(home, ".config/gh", configFile);
+  const ghConfigPath = path.resolve(getHomeDir(), ".config/gh", configFile);
   return ghConfigPath;
 }
 
