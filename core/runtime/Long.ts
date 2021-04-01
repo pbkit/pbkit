@@ -44,7 +44,7 @@ export default class Long extends Uint32Array {
 const zero = new Long(0);
 const one = new Long(1);
 
-function makeChunk(value: Long): number[] {
+function makeChunk(value: Long): [number, number, number, number] {
   const [lo, hi] = value;
   return [lo & UINT16_MAX, lo >>> 16, hi & UINT16_MAX, hi >>> 16];
 }
