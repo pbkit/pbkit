@@ -1,38 +1,13 @@
-import { emptyDir, ensureDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
-import {
-  bgBlue,
-  bgRgb24,
-  bgRgb8,
-  bold,
-  italic,
-  red,
-  rgb24,
-  rgb8,
-  yellow,
-} from "https://deno.land/std@0.91.0/fmt/colors.ts";
-import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
+import { bold, yellow } from "https://deno.land/std@0.91.0/fmt/colors.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { jsonTree } from "https://deno.land/x/json_tree/mod.ts";
-import { parse } from "../../../core/parser/proto.ts";
-import minify from "../../../core/stringifier/minify.ts";
-import replaceFileOption from "../postprocess/replaceFileOption.ts";
-import { fetchArchive, readGhHosts } from "../misc/github.ts";
-import { iterFiles, stripComponents, unzip } from "../misc/archive/zip.ts";
-import { print, println } from "../misc/stdio.ts";
+import { println } from "../misc/stdio.ts";
 import { getCacheDir } from "../config.ts";
 import {
   analyzeDeps,
-  AnalyzeDepsResultRevs,
-  cacheDeps,
-  depToString,
   getPollapoYml,
-  getZipPath,
-  parseDep,
-  PollapoDep,
-  PollapoYml,
   PollapoYmlNotFoundError,
 } from "../pollapoYml.ts";
-import { compareRev } from "../rev.ts";
 
 interface Options {
   depth: number;
