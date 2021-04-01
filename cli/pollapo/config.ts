@@ -1,8 +1,13 @@
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 
+export function getHomeDir() {
+  return Deno.env.get(
+    Deno.build.os === "windows" ? "USERPROFILE" : "HOME",
+  ) || ".";
+}
+
 export function getConfigDir() {
-  const home = Deno.env.get("HOME") ?? ".";
-  return path.resolve(home, ".config/pollapo");
+  return path.resolve(getHomeDir(), ".config/pollapo");
 }
 
 export function getCacheDir() {
