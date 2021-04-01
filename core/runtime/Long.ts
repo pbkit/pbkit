@@ -25,7 +25,7 @@ export default class Long extends Uint32Array {
     const sign = parsedValue < 0;
     if (Number.isNaN(parsedValue)) return new Long(0);
     if (text.length < 10) {
-      if (parsedValue < 0) return add(negate(new Long(-1 * parsedValue)), one);
+      if (parsedValue < 0) return add(negate(new Long(-parsedValue)), one);
       return new Long(parsedValue);
     }
     let result = new Long();
