@@ -29,7 +29,9 @@ export async function requestCode(): Promise<RequestCodeResult> {
       scope: scopes.join(" "),
     }),
   });
-  const parsedRes = new URLSearchParams(await res.text());
+  const resText = await res.text(); // make resText for debugging
+  console.log(resText);
+  const parsedRes = new URLSearchParams(resText);
   return {
     deviceCode: parsedRes.get("device_code") ?? "",
     expiresIn: Number(parsedRes.get("expires_in")),
@@ -39,6 +41,29 @@ export async function requestCode(): Promise<RequestCodeResult> {
   };
 }
 
-export async function pollToken() {
-  getTokenUrl("github.com"); // TODO
+export async function pollToken(code: RequestCodeResult) {
+  const { interval } = code;
+  const sleep = (delay: number) => {
+    return new Promise((resolve) => {
+      setTimeout(resolve, delay);
+    });
+  };
+  while (true) {
+    await sleep(interval * 1000);
+
+    const res = await fetch(getTokenUrl("github.com"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_id: oauthClientId,
+        device_code: code.deviceCode,
+        grant_type: grantType,
+      }),
+    });
+    const parsedRes = await res.text();
+    console.log(parsedRes);
+    getTokenUrl("github.com"); // TODO
+  }
 }
