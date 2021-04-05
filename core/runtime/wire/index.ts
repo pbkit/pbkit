@@ -1,6 +1,6 @@
 import Long from "../Long.ts";
 
-export type WireMessage = Map<FieldNumber, Field>;
+export type WireMessage = [FieldNumber, Field][];
 export type FieldNumber = number;
 export type Field =
   | Varint
