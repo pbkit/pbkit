@@ -1,4 +1,5 @@
 import { stringify } from "https://deno.land/std@0.92.0/encoding/yaml.ts";
+import { wait } from "./async.ts";
 import { getDefaultGhConfigPath } from "./github.ts";
 
 // https://github.com/cli/cli/blob/trunk/internal/authflow/flow.go#L18-L23
@@ -57,13 +58,8 @@ export async function pollToken(
   expireDate.setSeconds(
     startDate.getSeconds() + code.expiresIn,
   );
-  const sleep = (delay: number) => {
-    return new Promise((resolve) => {
-      setTimeout(resolve, delay);
-    });
-  };
   while (true) {
-    await sleep(interval * 1000);
+    await wait(interval * 1000);
     try {
       const res = await fetch(getTokenUrl("github.com"), {
         method: "POST",
@@ -95,12 +91,15 @@ export async function pollToken(
   }
 }
 
-export async function writeGhHosts(token: string, hostsFilePath = getDefaultGhConfigPath("hosts.yml")) {
+export async function writeGhHosts(
+  token: string,
+  hostsFilePath = getDefaultGhConfigPath("hosts.yml"),
+) {
   const hostsData = {
-    "github.com" : {
+    "github.com": {
       "oauth_token": token,
       "git_protocol": "ssh",
-    }
-  }
+    },
+  };
   await Deno.writeTextFile(hostsFilePath, stringify(hostsData));
 }

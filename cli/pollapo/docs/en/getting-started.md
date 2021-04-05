@@ -6,7 +6,6 @@
 
 ## How to install
 ### Prerequisites
-- [gh](https://cli.github.com/)
 - [git](https://git-scm.com/)
 - [deno](https://deno.land/) over 1.8.0
 
@@ -32,10 +31,10 @@ deno install -n pollapo -A --unstable pbkit/cli/pollapo/entrypoint.ts
 ## Usage
 
 ### Login
-pollapo downloads the repository using the github api.\
-Login to github cli to get authentication information.
+Pollapo downloads repositories using the GitHub api.\
+Sign in with GitHub account to get authentication information.
 ```sh
-gh auth login
+pollapo login
 ```
 
 ### Install dependencies
