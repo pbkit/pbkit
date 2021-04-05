@@ -33,6 +33,6 @@ export interface LengthDelimited extends FieldBase<WireType.LengthDelimited> {
 }
 export interface StartGroup extends FieldBase<WireType.StartGroup> {}
 export interface EndGroup extends FieldBase<WireType.EndGroup> {}
-export interface Fixed32 extends FieldBase<WireType.Fixed64> {
+export interface Fixed32 extends FieldBase<WireType.Fixed32> {
   value: number;
 }
