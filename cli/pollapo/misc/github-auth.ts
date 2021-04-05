@@ -1,3 +1,6 @@
+import { stringify } from "https://deno.land/std@0.92.0/encoding/yaml.ts";
+import { getDefaultGhConfigPath } from "./github.ts";
+
 // https://github.com/cli/cli/blob/trunk/internal/authflow/flow.go#L18-L23
 const oauthClientId = "178c6fc778ccc68e1d6a";
 const oauthClientSecret = "34ddeff2b558a23d38fba8a6de74f086ede1cc0b";
@@ -29,8 +32,7 @@ export async function requestCode(): Promise<RequestCodeResult> {
       scope: scopes.join(" "),
     }),
   });
-  const resText = await res.text(); // make resText for debugging
-  console.log(resText);
+  const resText = await res.text();
   const parsedRes = new URLSearchParams(resText);
   return {
     deviceCode: parsedRes.get("device_code") ?? "",
@@ -41,8 +43,20 @@ export async function requestCode(): Promise<RequestCodeResult> {
   };
 }
 
-export async function pollToken(code: RequestCodeResult) {
+interface PollTokenResponse {
+  accessToken: string;
+  tokenType: string;
+  scope: string;
+}
+export async function pollToken(
+  code: RequestCodeResult,
+): Promise<PollTokenResponse> {
   const { interval } = code;
+  const startDate = new Date();
+  const expireDate = new Date(startDate);
+  expireDate.setSeconds(
+    startDate.getSeconds() + code.expiresIn,
+  );
   const sleep = (delay: number) => {
     return new Promise((resolve) => {
       setTimeout(resolve, delay);
@@ -50,20 +64,43 @@ export async function pollToken(code: RequestCodeResult) {
   };
   while (true) {
     await sleep(interval * 1000);
-
-    const res = await fetch(getTokenUrl("github.com"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        client_id: oauthClientId,
-        device_code: code.deviceCode,
-        grant_type: grantType,
-      }),
-    });
-    const parsedRes = await res.text();
-    console.log(parsedRes);
-    getTokenUrl("github.com"); // TODO
+    try {
+      const res = await fetch(getTokenUrl("github.com"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: oauthClientId,
+          device_code: code.deviceCode,
+          grant_type: grantType,
+        }),
+      });
+      const resText = await res.text();
+      const parsedRes = new URLSearchParams(resText);
+      const resError = parsedRes.get("error");
+      if (resError) {
+        throw new Error(resError);
+      }
+      return {
+        accessToken: parsedRes.get("access_token") ?? "",
+        tokenType: parsedRes.get("token_type") ?? "",
+        scope: parsedRes.get("scope") ?? "",
+      };
+    } catch (err) {
+      if (err.message !== "authorization_pending") {
+        throw err;
+      }
+    }
   }
+}
+
+export async function writeGhHosts(token: string, hostsFilePath = getDefaultGhConfigPath("hosts.yml")) {
+  const hostsData = {
+    "github.com" : {
+      "oauth_token": token,
+      "git_protocol": "ssh",
+    }
+  }
+  await Deno.writeTextFile(hostsFilePath, stringify(hostsData));
 }

@@ -24,6 +24,15 @@ export async function readGhHosts(
   return parseYaml(hostsFile) as GhHosts;
 }
 
+export async function getToken(): Promise<string> {
+  try {
+    const ghHosts = await readGhHosts();
+    const token = ghHosts["github.com"].oauth_token;
+    if (token) return token;
+  } catch {}
+  throw new PollapoNotLoggedInError();
+}
+
 export interface FetchArchiveConfig {
   type: "tgz" | "zip";
   token: string;
@@ -47,4 +56,10 @@ export async function fetchArchive(
   );
   if (!res.ok) throw res;
   return res;
+}
+
+export class PollapoNotLoggedInError extends Error {
+  constructor() {
+    super("Login required.");
+  }
 }
