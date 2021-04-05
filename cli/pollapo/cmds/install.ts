@@ -4,7 +4,11 @@ import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { parse } from "../../../core/parser/proto.ts";
 import minify from "../../../core/stringifier/minify.ts";
 import replaceFileOption from "../postprocess/replaceFileOption.ts";
-import { fetchArchive, readGhHosts } from "../misc/github.ts";
+import {
+  fetchArchive,
+  getToken,
+  PollapoNotLoggedInError,
+} from "../misc/github.ts";
 import { iterFiles, stripComponents, unzip } from "../misc/archive/zip.ts";
 import { print, println } from "../misc/stdio.ts";
 import { getCacheDir } from "../config.ts";
@@ -100,21 +104,6 @@ async function installDep(
     await ensureDir(path.dirname(filePath));
     await Deno.writeFile(filePath, data);
   }
-}
-
-class PollapoNotLoggedInError extends Error {
-  constructor() {
-    super("Login required.");
-  }
-}
-
-async function getToken(): Promise<string> {
-  try {
-    const ghHosts = await readGhHosts();
-    const token = ghHosts["github.com"].oauth_token;
-    if (token) return token;
-  } catch {}
-  throw new PollapoNotLoggedInError();
 }
 
 function getFetchZip(token: string) {

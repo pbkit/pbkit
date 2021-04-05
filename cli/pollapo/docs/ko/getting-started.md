@@ -6,7 +6,6 @@ pollapo는 [Protobuf][protobuf] 의존성 관리 도구입니다.
 
 ## 설치
 ### 전제조건
-- [gh](https://cli.github.com/)
 - [git](https://git-scm.com/)
 - [deno](https://deno.land/) 1.8.0 이상
 
@@ -33,9 +32,9 @@ deno install -n pollapo -A --unstable pbkit/cli/pollapo/entrypoint.ts
 
 ### 로그인
 pollapo는 github api를 사용해서 저장소를 내려받습니다.\
-인증 정보를 얻어오기 위해 github cli 로그인을 합니다.
+인증 정보를 얻어오기 위해 github 계정으로 로그인을 합니다.
 ```sh
-gh auth login
+pollapo login
 ```
 
 ### 의존성 설치
