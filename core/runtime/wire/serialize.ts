@@ -25,7 +25,7 @@ export default function serialize(wireMessage: WireMessage): Uint8Array {
   return concat(result);
 }
 
-function concat(arrays: Uint8Array[]): Uint8Array {
+export function concat(arrays: Uint8Array[]): Uint8Array {
   const totalLength = arrays.reduce((acc, value) => {
     return acc + value.byteLength;
   }, 0);
