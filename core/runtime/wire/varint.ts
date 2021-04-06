@@ -34,7 +34,7 @@ export function decode(dataview: DataView): DecodeResult {
     result = add(result, mul(powByByte, new Long(value)));
     powByByte = mul(powByByte, new Long(1 << 7));
     if (!isContinue) {
-      return [idx + 1, result];
+      return [idx + 1, result[0] > 0 ? result : result[1]];
     }
   }
   return [0, 0];
