@@ -4,17 +4,20 @@ import { decode } from "./varint.ts";
 
 export default function deserialize(uint8array: Uint8Array): WireMessage {
   let idx = 0;
+  const offset = uint8array.byteOffset;
   const result: WireMessage = [];
-  const dataview = new DataView(uint8array.buffer);
+  const dataview = new DataView(uint8array.buffer, offset);
   while (idx < uint8array.length) {
-    const decodeResult = decode(new DataView(uint8array.buffer, idx));
+    const decodeResult = decode(new DataView(uint8array.buffer, offset + idx));
     const key = get32(decodeResult[1]);
     idx += decodeResult[0];
     const type = (key & 0b111) as WireType;
     const fieldNumber = key >>> 3;
     switch (type) {
       case WireType.Varint: {
-        const [len, value] = decode(new DataView(uint8array.buffer, idx));
+        const [len, value] = decode(
+          new DataView(uint8array.buffer, offset + idx),
+        );
         result.push([fieldNumber, { type, value }]);
         idx += len;
         break;
@@ -29,7 +32,9 @@ export default function deserialize(uint8array: Uint8Array): WireMessage {
         }]);
         break;
       case WireType.LengthDelimited: {
-        const [len, value] = decode(new DataView(uint8array.buffer, idx));
+        const [len, value] = decode(
+          new DataView(uint8array.buffer, offset + idx),
+        );
         result.push([fieldNumber, {
           type,
           value: uint8array.subarray(idx += len, idx += get32(value)),

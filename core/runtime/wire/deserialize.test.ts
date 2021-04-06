@@ -84,4 +84,13 @@ Deno.test("deserialize", () => {
     ),
     longMessage,
   );
+
+  assertEquals(
+    deserialize(new Uint8Array([0x08, 0x00, 0x0A, 0x01, 0x18, 0x02])),
+    [
+      [1, { type: 0, value: 0 }],
+      [2, { type: 0, value: 1 }],
+      [3, { type: 0, value: 2 }],
+    ],
+  );
 });
