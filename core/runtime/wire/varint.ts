@@ -1,18 +1,17 @@
-import Long, { add, compare, mul } from "../Long.ts";
+import Long from "../Long.ts";
 
 export function encode(value: number | Long): Uint8Array {
   const result: number[] = [];
-  const zero = new Long(0);
-  const chunkMax = 0b1111111;
+  const mask = 0b1111111;
   const head = 1 << 7;
   let long = typeof value === "number" ? new Long(value) : value;
-  while (compare(long, zero) !== 0) {
+  while (long[0] || long[1]) {
     const [lo, hi] = long;
-    const chunk = lo & chunkMax;
+    const chunk = lo & mask;
     const nextHi = hi >>> 7;
-    const nextLo = (lo >>> 7) | ((hi & chunkMax) << (32 - 7));
+    const nextLo = (lo >>> 7) | ((hi & mask) << (32 - 7));
     long = new Long(nextLo, nextHi);
-    const resultChunk = compare(long, zero) === 0 ? chunk : chunk | head;
+    const resultChunk = !(long[0] || long[1]) ? chunk : chunk | head;
     result.push(resultChunk);
   }
   return Uint8Array.from(result);
@@ -23,19 +22,29 @@ export type DecodeResult = [
   number | Long, // value
 ];
 export function decode(dataview: DataView): DecodeResult {
-  const chunkMax = 0b1111111;
-  const length = dataview.byteLength;
   let result = new Long(0);
-  let powByByte = new Long(1);
-  for (let idx = 0; idx < length; idx++) {
-    const byte = dataview.getUint8(idx);
-    const isContinue = byte & (1 << 7);
-    const value = byte & chunkMax;
-    result = add(result, mul(powByByte, new Long(value)));
-    powByByte = mul(powByByte, new Long(1 << 7));
-    if (!isContinue) {
-      return [idx + 1, result[0] > 0 ? result : result[1]];
-    }
+  let i = 0;
+  while (true) {
+    const curr = dataview.getUint8(i);
+    result = or(
+      result,
+      leftshift(new Long(curr & 0b1111111), i * 7),
+    );
+    ++i;
+    if (curr >>> 7) continue;
+    return [i, result[1] ? result : result[0]];
   }
-  return [0, 0];
+}
+
+function or(a: Long, b: Long): Long {
+  return new Long(a[0] | b[0], a[1] | b[1]);
+}
+
+function leftshift(a: Long, count: number): Long {
+  if (count === 0) return a;
+  if (count >= 32) return new Long(0, a[0] << (count - 32));
+  return new Long(
+    a[0] << count,
+    (a[1] << count) | (a[0] >>> (32 - count)),
+  );
 }
