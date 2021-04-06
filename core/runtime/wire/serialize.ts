@@ -14,6 +14,7 @@ export default function serialize(wireMessage: WireMessage): Uint8Array {
         result.push(new Uint8Array(new Uint32Array([lo, hi]).buffer));
         break;
       case WireType.LengthDelimited:
+        result.push(encode(field.value.byteLength));
         result.push(field.value);
         break;
       case WireType.Fixed32:
