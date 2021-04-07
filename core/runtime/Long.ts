@@ -100,7 +100,7 @@ export function divByTen(value: Long): [Long, number] {
   ];
 }
 
-function compare(a: Long, b: Long): number {
+export function compare(a: Long, b: Long): number {
   const [l1, h1] = a;
   const [l2, h2] = b;
   if (h1 !== h2) return h1 - h2;
