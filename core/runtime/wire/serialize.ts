@@ -9,17 +9,25 @@ export default function serialize(wireMessage: WireMessage): Uint8Array {
       case WireType.Varint:
         result.push(encode(field.value));
         break;
-      case WireType.Fixed64:
-        const [lo, hi] = field.value;
-        result.push(new Uint8Array(new Uint32Array([lo, hi]).buffer));
+      case WireType.Fixed64: {
+        const arr = new Uint8Array(8);
+        const dataview = new DataView(arr.buffer);
+        dataview.setUint32(0, field.value[0], true);
+        dataview.setUint32(4, field.value[1], true);
+        result.push(arr);
         break;
+      }
       case WireType.LengthDelimited:
         result.push(encode(field.value.byteLength));
         result.push(field.value);
         break;
-      case WireType.Fixed32:
-        result.push(new Uint8Array(new Uint32Array([field.value]).buffer));
+      case WireType.Fixed32: {
+        const arr = new Uint8Array(4);
+        const dataview = new DataView(arr.buffer);
+        dataview.setUint32(0, field.value, true);
+        result.push(arr);
         break;
+      }
     }
   });
   return concat(result);
