@@ -65,6 +65,10 @@ export interface StrLit extends Token {
   type: "str-lit";
 }
 
+export interface Aggregate extends Span {
+  type: "aggregate";
+}
+
 export interface Empty extends StatementBase {
   type: "empty";
   semi: Token;
@@ -75,4 +79,5 @@ export type Constant =
   | SignedIntLit
   | SignedFloatLit
   | StrLit
-  | BoolLit;
+  | BoolLit
+  | Aggregate;

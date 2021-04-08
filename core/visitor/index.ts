@@ -55,6 +55,7 @@ export interface Visitor {
   visitSignedFloatLit: VisitFn<ast.SignedFloatLit>;
   visitStrLit: VisitFn<ast.StrLit>;
   visitBoolLit: VisitFn<ast.BoolLit>;
+  visitAggregate: VisitFn<ast.Aggregate>;
   visitIdent: VisitFn<ast.Ident>;
   visitDot: VisitFn<ast.Dot>;
   visitComma: VisitFn<ast.Comma>;
@@ -462,6 +463,8 @@ export const visitor: Visitor = {
         return visitor.visitStrLit(visitor, node);
       case "bool-lit":
         return visitor.visitBoolLit(visitor, node);
+      case "aggregate":
+        return visitor.visitAggregate(visitor, node);
     }
   },
   visitComment(visitor, node) {
@@ -525,6 +528,7 @@ export const visitor: Visitor = {
   visitBoolLit(visitor, node) {
     visitor.visitToken(visitor, node);
   },
+  visitAggregate() {},
   visitIdent(visitor, node) {
     visitor.visitToken(visitor, node);
   },
