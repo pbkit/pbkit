@@ -284,6 +284,7 @@ function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   return { type: "str-lit", ...strLit };
 }
 
+// https://github.com/protocolbuffers/protobuf/blob/c2148566c7/src/google/protobuf/compiler/parser.cc#L1429-L1452
 function acceptAggregate(
   parser: RecursiveDescentParser,
 ): ast.Aggregate | undefined {
