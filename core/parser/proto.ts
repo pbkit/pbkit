@@ -284,11 +284,38 @@ function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   return { type: "str-lit", ...strLit };
 }
 
+// https://github.com/protocolbuffers/protobuf/blob/c2148566c7/src/google/protobuf/compiler/parser.cc#L1429-L1452
+function acceptAggregate(
+  parser: RecursiveDescentParser,
+): ast.Aggregate | undefined {
+  const parenthesisOpen = parser.accept("{");
+  if (!parenthesisOpen) return;
+  let character = parenthesisOpen;
+  let depth = 1;
+  while (character = parser.expect(/^./)) {
+    switch (character.text) {
+      case "{":
+        ++depth;
+        break;
+      case "}":
+        --depth;
+        break;
+    }
+    if (depth === 0) {
+      break;
+    }
+  }
+  const start = parenthesisOpen.start;
+  const end = character.end;
+  return { type: "aggregate", start, end };
+}
+
 function acceptConstant(
   parser: RecursiveDescentParser,
 ): ast.Constant | undefined {
   return acceptSignedIntLit(parser) ?? acceptSignedFloatLit(parser) ??
-    acceptStrLit(parser) ?? acceptBoolLit(parser) ?? acceptFullIdent(parser);
+    acceptStrLit(parser) ?? acceptBoolLit(parser) ?? acceptFullIdent(parser) ??
+    acceptAggregate(parser);
 }
 
 function expectConstant(parser: RecursiveDescentParser): ast.Constant {
