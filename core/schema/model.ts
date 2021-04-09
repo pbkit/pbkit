@@ -7,12 +7,17 @@ export interface Schema {
   // extends
 }
 
+export type OptionValue = boolean | number | string;
+export interface Options {
+  [optionName: string]: OptionValue;
+}
+
 export interface File {
   parseResult?: ParseResult;
   syntax: "proto2" | "proto3";
   package: string;
   imports: Import[];
-  // options
+  options: Options;
 }
 
 export interface Import {
@@ -20,42 +25,52 @@ export interface Import {
   filePath: string;
 }
 
-export interface Type {
+export type Type = Message | Enum;
+interface TypeBase {
   filePath: string;
-  // options
+  options: Options;
+  comment: string;
+}
+interface FieldBase {
+  comment: string;
 }
 
-export interface Message extends Type {
-  fields: Map<number, Field>;
+export interface Message extends TypeBase {
+  fields: Map<number, MessageField>;
   reservedFieldNumberRanges: Range[];
   reservedFieldNames: string[];
   extensions: Range[];
 }
 
-export interface Enum extends Type {
-  fields: Map<number, string>;
+export interface Enum extends TypeBase {
+  fields: Map<number, EnumField>;
 }
 
-export type Field =
+export interface EnumField extends FieldBase {
+  name: string;
+}
+
+export type MessageField =
   | NormalField
   | RequiredField
   | OptionalField
   | RepeatedField
   | OneofField
   | MapField;
-interface FieldBase<TKind extends string> {
+interface MessageFieldBase<TKind extends string> extends FieldBase {
   kind: TKind;
   type: string; // relative
   name: string;
+  comment: string;
 }
-export interface NormalField extends FieldBase<"normal"> {}
-export interface RequiredField extends FieldBase<"required"> {}
-export interface OptionalField extends FieldBase<"optional"> {}
-export interface RepeatedField extends FieldBase<"repeated"> {}
-export interface OneofField extends FieldBase<"oneof"> {
+export interface NormalField extends MessageFieldBase<"normal"> {}
+export interface RequiredField extends MessageFieldBase<"required"> {}
+export interface OptionalField extends MessageFieldBase<"optional"> {}
+export interface RepeatedField extends MessageFieldBase<"repeated"> {}
+export interface OneofField extends MessageFieldBase<"oneof"> {
   oneof: string;
 }
-export interface MapField extends FieldBase<"map"> {
+export interface MapField extends MessageFieldBase<"map"> {
   keyType: string; // relative
 }
 
