@@ -2,9 +2,9 @@ import { ParseResult } from "../parser/proto.ts";
 
 export interface Schema {
   files: { [filePath: string]: File };
-  types: { [typePath: string]: Type };
+  types: { [typePath: string]: Type }; // type name is included in typePath
   extends: { [typePath: string]: Extend[] };
-  // services
+  services: { [typePath: string]: Service }; // service name is included in typePath
 }
 
 export type OptionValue = boolean | number | string;
@@ -28,7 +28,6 @@ export interface Import {
 export type Type = Message | Enum;
 interface TypeBase {
   filePath: string;
-  name: string;
   options: Options;
   description: string;
 }
@@ -111,4 +110,23 @@ export interface RepeatedGroupField
 export interface Range {
   from: number;
   to: number; // max: Infinity
+}
+
+export interface Service {
+  filePath: string;
+  options: Options;
+  description: string;
+  rpcs: Map<string, Rpc>;
+}
+
+export interface Rpc {
+  options: Options;
+  description: string;
+  reqType: RpcType;
+  resType: RpcType;
+}
+
+export interface RpcType {
+  stream: boolean;
+  type: string; // relative
 }
