@@ -1,4 +1,6 @@
 import { stringify } from "https://deno.land/std@0.92.0/encoding/yaml.ts";
+import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.84.0/fs/mod.ts";
 import { wait } from "./async.ts";
 import { getDefaultGhConfigPath } from "./github.ts";
 
@@ -101,5 +103,6 @@ export async function writeGhHosts(
       "git_protocol": "ssh",
     },
   };
+  await ensureDir(path.dirname(hostsFilePath));
   await Deno.writeTextFile(hostsFilePath, stringify(hostsData));
 }
