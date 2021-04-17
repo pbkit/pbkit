@@ -36,14 +36,17 @@ export default new Command()
     );
     await Deno.stdin.read(new Uint8Array(1));
     try {
-      await open(code.verificationUri);
+      const { success } = await open(code.verificationUri);
+      if (!success) {
+        await println(
+          "Failed opening a browser. Please try entering the URL in your browser manually.",
+        );
+        await println(code.verificationUri);
+      }
       const pollTokenResult = await pollToken(code);
-      await println("You are all set!");
       await writeGhHosts(pollTokenResult.accessToken);
-    } catch {
-      await println(
-        "Failed opening a browser. Please try entering the URL in your browser manually.",
-      );
-      await println(code.verificationUri);
+      await println("You are all set!");
+    } catch (err) {
+      throw err;
     }
   });
