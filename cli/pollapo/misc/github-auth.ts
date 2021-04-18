@@ -1,6 +1,7 @@
 import { stringify } from "https://deno.land/std@0.92.0/encoding/yaml.ts";
 import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
 import { ensureDir } from "https://deno.land/std@0.84.0/fs/mod.ts";
+import { wait as spinner } from "https://deno.land/x/wait@0.1.10/mod.ts";
 import { wait } from "./async.ts";
 import { getDefaultGhConfigPath } from "./github.ts";
 
@@ -60,6 +61,7 @@ export async function pollToken(
   expireDate.setSeconds(
     startDate.getSeconds() + code.expiresIn,
   );
+  const loading = spinner("Wait for authorization complete...").start();
   while (true) {
     await wait(interval * 1000);
     try {
@@ -80,6 +82,7 @@ export async function pollToken(
       if (resError) {
         throw new Error(resError);
       }
+      loading.stop();
       return {
         accessToken: parsedRes.get("access_token") ?? "",
         tokenType: parsedRes.get("token_type") ?? "",
@@ -87,6 +90,7 @@ export async function pollToken(
       };
     } catch (err) {
       if (err.message !== "authorization_pending") {
+        loading.stop();
         throw err;
       }
     }

@@ -35,15 +35,14 @@ export default new Command()
       `- ${bold("Press Enter")} to open github.com in your browser... `,
     );
     await Deno.stdin.read(new Uint8Array(1));
-    try {
-      await open(code.verificationUri);
-      const pollTokenResult = await pollToken(code);
-      await println("You are all set!");
-      await writeGhHosts(pollTokenResult.accessToken);
-    } catch {
+    const { success } = await open(code.verificationUri);
+    if (!success) {
       await println(
         "Failed opening a browser. Please try entering the URL in your browser manually.",
       );
       await println(code.verificationUri);
     }
+    const pollTokenResult = await pollToken(code);
+    await writeGhHosts(pollTokenResult.accessToken);
+    await println("You are all set!");
   });
