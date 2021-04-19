@@ -1,6 +1,6 @@
-import { stringify } from "https://deno.land/std@0.92.0/encoding/yaml.ts";
-import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
-import { ensureDir } from "https://deno.land/std@0.84.0/fs/mod.ts";
+import { stringify } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
+import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.93.0/fs/mod.ts";
 import { wait as spinner } from "https://deno.land/x/wait@0.1.10/mod.ts";
 import { wait } from "./async.ts";
 import { getDefaultGhConfigPath } from "./github.ts";

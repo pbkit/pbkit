@@ -1,10 +1,10 @@
-import { parse as parseYaml } from "https://deno.land/std@0.84.0/encoding/yaml.ts";
+import { parse as parseYaml } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
 import {
   emptyDir,
   ensureDir,
   exists,
-} from "https://deno.land/std@0.88.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
+} from "https://deno.land/std@0.93.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
 import { stripComponents, unzip } from "./misc/archive/zip.ts";
 import { isSemver } from "./rev.ts";
 

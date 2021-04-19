@@ -1,5 +1,5 @@
-import { emptyDir, ensureDir } from "https://deno.land/std@0.88.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.84.0/path/mod.ts";
+import { emptyDir, ensureDir } from "https://deno.land/std@0.93.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { parse } from "../../../core/parser/proto.ts";
 import minify from "../../../core/stringifier/minify.ts";

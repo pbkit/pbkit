@@ -1,5 +1,5 @@
-import { exists } from "https://deno.land/std@0.88.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.88.0/path/mod.ts";
+import { exists } from "https://deno.land/std@0.93.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
 
 export default async function which(command: string): Promise<string | null> {
   const pathEnv = Deno.env.get("PATH") ?? "";
