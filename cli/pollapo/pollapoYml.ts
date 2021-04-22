@@ -70,11 +70,27 @@ export function depToString(dep: PollapoDep): string {
 }
 
 export function getZipPath(cacheDir: string, dep: PollapoDep): string {
-  return path.resolve(cacheDir, dep.user, dep.repo + "@" + dep.rev + ".zip");
+  return getCachePath(cacheDir, dep) + ".zip";
 }
 
 export function getYmlPath(cacheDir: string, dep: PollapoDep): string {
-  return path.resolve(cacheDir, dep.user, dep.repo + "@" + dep.rev + ".yml");
+  return getCachePath(cacheDir, dep) + ".yml";
+}
+
+function getCachePath(cacheDir: string, dep: PollapoDep): string {
+  return path.resolve(
+    cacheDir,
+    encode(dep.user),
+    encode(dep.repo) + "@" + encode(dep.rev),
+  );
+}
+
+// https://en.wikipedia.org/wiki/Filename#Reserved_characters_and_words
+function encode(rev: string): string {
+  return rev.replaceAll(
+    /[%\\/:*"<>|]/g,
+    (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
 }
 
 export interface CacheDepsConfig {
