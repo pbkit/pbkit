@@ -284,6 +284,12 @@ function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   return { type: "str-lit", ...strLit };
 }
 
+function expectStrLit(parser: RecursiveDescentParser): ast.StrLit {
+  const strLit = acceptStrLit(parser);
+  if (strLit) return strLit;
+  throw new SyntaxError(parser, [strLitPattern]);
+}
+
 // https://github.com/protocolbuffers/protobuf/blob/c2148566c7/src/google/protobuf/compiler/parser.cc#L1429-L1452
 function acceptAggregate(
   parser: RecursiveDescentParser,
@@ -419,7 +425,7 @@ function acceptImport(
   skipWsAndComments(parser);
   const weakOrPublic = parser.accept(/^weak|^public/);
   skipWsAndComments(parser);
-  const strLit = parser.expect(strLitPattern);
+  const strLit = expectStrLit(parser);
   skipWsAndComments(parser);
   const semi = parser.expect(";");
   return {

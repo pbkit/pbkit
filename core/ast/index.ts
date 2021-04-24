@@ -6,6 +6,7 @@ import {
   Empty,
   FullIdent,
   Keyword,
+  StrLit,
 } from "./lexical-elements.ts";
 import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
 
@@ -47,7 +48,7 @@ export interface Import extends StatementBase {
   type: "import";
   keyword: Keyword;
   weakOrPublic?: Token;
-  strLit: Token;
+  strLit: StrLit;
   semi: Token;
 }
 
