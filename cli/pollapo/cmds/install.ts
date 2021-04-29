@@ -17,8 +17,8 @@ import {
   AnalyzeDepsResultRevs,
   cacheDeps,
   depToString,
-  getPollapoYml,
   getZipPath,
+  loadPollapoYml,
   parseDep,
   PollapoDep,
   PollapoYml,
@@ -30,6 +30,7 @@ interface Options {
   clean?: true;
   outDir: string;
   token?: string;
+  config: string;
 }
 
 export default new Command()
@@ -39,11 +40,14 @@ export default new Command()
     default: ".pollapo",
   })
   .option("-t, --token <value:string>", "GitHub OAuth token")
+  .option("-C, --config <value:string>", "Pollapo config", {
+    default: "pollapo.yml",
+  })
   .action(async (options: Options) => {
     try {
       const token = options.token ?? await getToken();
       const cacheDir = getCacheDir();
-      const pollapoYml = await getPollapoYml();
+      const pollapoYml = await loadPollapoYml(options.config);
       const fetchZip = getFetchZip(token);
       const caching = cacheDeps({
         cacheDir,
