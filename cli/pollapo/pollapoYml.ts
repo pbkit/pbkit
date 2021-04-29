@@ -42,6 +42,9 @@ export async function getPollapoYml(
   const ymlPath = config
     ? getYmlPath(config.cacheDir, config.dep)
     : "pollapo.yml";
+  return loadPollapoYml(ymlPath);
+}
+export async function loadPollapoYml(ymlPath: string): Promise<PollapoYml> {
   try {
     const pollapoYmlText = await Deno.readTextFile(ymlPath);
     return parseYaml(pollapoYmlText) as PollapoYml;
