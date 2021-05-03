@@ -60,6 +60,6 @@ export async function fetchArchive(
 
 export class PollapoNotLoggedInError extends Error {
   constructor() {
-    super("Login required.");
+    super("Login required. Run `pollapo login` first.");
   }
 }
