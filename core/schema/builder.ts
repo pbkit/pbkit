@@ -2,7 +2,7 @@ import * as ast from "../ast/index.ts";
 import { Loader } from "../loader/index.ts";
 import { parse } from "../parser/proto.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
-import { File, Import, Schema } from "./model.ts";
+import { File, Import, Options, Schema, Service } from "./model.ts";
 
 export interface BuildConfig {
   loader: Loader;
@@ -15,36 +15,49 @@ export async function build(config: BuildConfig): Promise<Schema> {
     extends: {},
     services: {},
   };
-  for (const file of config.files) {
-    const loadResult = await config.loader.load(file);
+  for (const filePath of config.files) {
+    const loadResult = await config.loader.load(filePath);
     if (!loadResult) continue;
     const parseResult = parse(loadResult.data);
-    result.files[file] = {
+    const statements = parseResult.ast.statements;
+    const file: File = {
       parseResult,
-      syntax: getSyntax(parseResult.ast),
-      package: getPackage(parseResult.ast),
-      imports: getImports(parseResult.ast),
-      options: getOptions(parseResult.ast),
+      syntax: getSyntax(statements),
+      package: getPackage(statements),
+      imports: getImports(statements),
+      options: getOptions(statements),
     };
-    // TODO: types, extends, services
+    result.files[filePath] = file;
+    // TODO: types, extends
+    const services = iterServices(statements, file.package, filePath);
+    for (const [typePath, service] of services) {
+      result.services[typePath] = service;
+    }
   }
   return result;
 }
 
-function getSyntax(ast: ast.Proto): File["syntax"] {
-  const syntaxStatement = findStatementByType(ast.statements, "syntax");
+type Statement =
+  | ast.TopLevelStatement
+  | ast.MessageBodyStatement
+  | ast.EnumBodyStatement
+  | ast.ExtendBodyStatement
+  | ast.ServiceBodyStatement;
+
+function getSyntax(statements: Statement[]): File["syntax"] {
+  const syntaxStatement = findStatementByType(statements, "syntax");
   const syntax = syntaxStatement?.syntax.text;
   return syntax === "proto3" ? "proto3" : "proto2";
 }
 
-function getPackage(ast: ast.Proto): File["package"] {
-  const packageStatement = findStatementByType(ast.statements, "package");
+function getPackage(statements: Statement[]): string {
+  const packageStatement = findStatementByType(statements, "package");
   if (!packageStatement) return "";
   return stringifyFullIdent(packageStatement.fullIdent);
 }
 
-function getImports(ast: ast.Proto): File["imports"] {
-  const importStatements = filterStatementsByType(ast.statements, "import");
+function getImports(statements: Statement[]): Import[] {
+  const importStatements = filterStatementsByType(statements, "import");
   return importStatements.map((statement) => {
     const kind = (statement.weakOrPublic?.text || "") as Import["kind"];
     const filePath = evalStrLit(statement.strLit);
@@ -55,8 +68,8 @@ function getImports(ast: ast.Proto): File["imports"] {
   });
 }
 
-function getOptions(ast: ast.Proto): File["options"] {
-  const optionStatements = filterStatementsByType(ast.statements, "option");
+function getOptions(statements: Statement[]): Options {
+  const optionStatements = filterStatementsByType(statements, "option");
   const result: File["options"] = {};
   for (const statement of optionStatements) {
     const optionName = stringifyOptionName(statement.optionName);
@@ -64,6 +77,24 @@ function getOptions(ast: ast.Proto): File["options"] {
     result[optionName] = optionValue;
   }
   return result;
+}
+
+function* iterServices(
+  statements: Statement[],
+  typePath: string,
+  filePath: string,
+): Generator<[string, Service]> {
+  const serviceStatements = filterStatementsByType(statements, "service");
+  for (const statement of serviceStatements) {
+    const serviceTypePath = typePath + "." + statement.serviceName.text;
+    const service: Service = {
+      filePath,
+      options: getOptions(statement.serviceBody.statements),
+      description: "", // TODO
+      rpcs: new Map(), // TODO
+    };
+    yield [serviceTypePath, service];
+  }
 }
 
 function evalConstant(constant: ast.Constant): boolean | number | string {
@@ -118,17 +149,17 @@ function evalStrLit(strLit: ast.StrLit): string {
   return JSON.parse(strLit.text); // TODO
 }
 
-function findStatementByType<TType extends ast.TopLevelStatement["type"]>(
-  statements: ast.TopLevelStatement[],
+function findStatementByType<TType extends Statement["type"]>(
+  statements: Statement[],
   type: TType,
-): Extract<ast.TopLevelStatement, { type: TType }> | undefined {
+): Extract<Statement, { type: TType }> | undefined {
   return statements.find((statement) => statement.type === type) as any;
 }
 
-function filterStatementsByType<TType extends ast.TopLevelStatement["type"]>(
-  statements: ast.TopLevelStatement[],
+function filterStatementsByType<TType extends Statement["type"]>(
+  statements: Statement[],
   type: TType,
-): Extract<ast.TopLevelStatement, { type: TType }>[] {
+): Extract<Statement, { type: TType }>[] {
   return statements.filter((statement) => statement.type === type) as any;
 }
 
@@ -152,6 +183,6 @@ function stringifyFullIdent(fullIdent: ast.FullIdent): string {
 
 function stringifyOptionName(optionName: ast.OptionName): string {
   const stringifier = createNaiveAstStringifier();
-  stringifier.visitor.visitOptionNameSegment(stringifier.visitor, optionName);
+  stringifier.visitor.visitOptionName(stringifier.visitor, optionName);
   return stringifier.finish();
 }
