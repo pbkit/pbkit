@@ -111,6 +111,15 @@ const acceptComma = acceptPatternAndThen<ast.Comma>(
   ",",
   (comma) => ({ type: "comma", ...comma }),
 );
+const acceptSemi = acceptPatternAndThen<ast.Semi>(
+  ";",
+  (semi) => ({ type: "semi", ...semi }),
+);
+function expectSemi(parser: RecursiveDescentParser): ast.Semi {
+  const semi = acceptSemi(parser);
+  if (semi) return semi;
+  throw new SyntaxError(parser, [";"]);
+}
 const acceptIdent = acceptPatternAndThen<ast.Ident>(
   identPattern,
   (ident) => ({ type: "ident", ...ident }),
@@ -399,7 +408,7 @@ function acceptSyntax(
   const syntax = parser.expect(/^[^'"]+/);
   const quoteClose = parser.expect(/^['"]/);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -427,7 +436,7 @@ function acceptImport(
   skipWsAndComments(parser);
   const strLit = expectStrLit(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -451,7 +460,7 @@ function acceptPackage(
   skipWsAndComments(parser);
   const fullIdent = expectFullIdent(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -478,7 +487,7 @@ function acceptOption(
   skipWsAndComments(parser);
   const constant = expectConstant(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -498,7 +507,7 @@ function acceptEmpty(
   parser: RecursiveDescentParser,
   leadingComments: ast.Comment[],
 ): ast.Empty | undefined {
-  const semi = parser.accept(";");
+  const semi = acceptSemi(parser);
   if (!semi) return;
   return {
     start: semi.start,
@@ -567,7 +576,7 @@ function acceptEnumField(
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: fieldName.start,
     end: semi.end,
@@ -645,7 +654,7 @@ function acceptField(
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: (fieldLabel ?? fieldType).start,
     end: semi.end,
@@ -678,7 +687,7 @@ function acceptOneofField(
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: fieldType.start,
     end: semi.end,
@@ -720,7 +729,7 @@ function acceptMapField(
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -841,7 +850,7 @@ function acceptExtensions(
   skipWsAndComments(parser);
   const ranges = expectRanges(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -884,7 +893,7 @@ function acceptReserved(
     ? expectRanges(parser)
     : expectFieldNames(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: keyword.start,
     end: semi.end,
@@ -963,7 +972,7 @@ function acceptGroup(
   skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semi = expectSemi(parser);
   return {
     start: groupLabel.start,
     end: semi.end,
@@ -1062,10 +1071,10 @@ function acceptRpc(
   skipWsAndComments(parser);
   const resType = expectRpcType(parser);
   skipWsAndComments(parser);
-  const semi = parser.expect(";");
+  const semiOrRpcBody = acceptSemi(parser) ?? expectRpcBody(parser);
   return {
     start: keyword.start,
-    end: semi.end,
+    end: semiOrRpcBody.end,
     leadingComments,
     trailingComments: [], // TODO
     leadingDetachedComments: [], // TODO
@@ -1075,7 +1084,24 @@ function acceptRpc(
     reqType,
     returns,
     resType,
-    semi,
+    semiOrRpcBody,
+  };
+}
+
+function expectRpcBody(parser: RecursiveDescentParser): ast.RpcBody {
+  const bracketOpen = parser.expect("{");
+  const statements = acceptStatements<ast.RpcBodyStatement>(parser, [
+    acceptOption,
+    acceptEmpty,
+  ]);
+  const bracketClose = parser.expect("}");
+  return {
+    start: bracketOpen.start,
+    end: bracketClose.end,
+    type: "rpc-body",
+    bracketOpen,
+    statements,
+    bracketClose,
   };
 }
 

@@ -25,6 +25,8 @@ export interface Visitor {
   visitServiceBody: VisitFn<ast.ServiceBody>;
   visitServiceBodyStatement: VisitFn<ast.ServiceBodyStatement>;
   visitRpc: VisitFn<ast.Rpc>;
+  visitRpcBody: VisitFn<ast.RpcBody>;
+  visitRpcBodyStatement: VisitFn<ast.RpcBodyStatement>;
   visitRpcType: VisitFn<ast.RpcType>;
   visitEmpty: VisitFn<ast.Empty>;
   visitField: VisitFn<ast.Field>;
@@ -59,6 +61,7 @@ export interface Visitor {
   visitIdent: VisitFn<ast.Ident>;
   visitDot: VisitFn<ast.Dot>;
   visitComma: VisitFn<ast.Comma>;
+  visitSemi: VisitFn<ast.Semi>;
   visitToken: VisitFn<Token>;
 }
 
@@ -98,7 +101,7 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.quoteOpen);
       visitor.visitToken(visitor, node.syntax);
       visitor.visitToken(visitor, node.quoteClose);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitImport(visitor, node) {
@@ -106,14 +109,14 @@ export const visitor: Visitor = {
       visitor.visitKeyword(visitor, node.keyword);
       node.weakOrPublic && visitor.visitToken(visitor, node.weakOrPublic);
       visitor.visitToken(visitor, node.strLit);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitPackage(visitor, node) {
     visitStatementBase(visitor, node, () => {
       visitor.visitKeyword(visitor, node.keyword);
       visitor.visitFullIdent(visitor, node.fullIdent);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitOption(visitor, node) {
@@ -122,7 +125,7 @@ export const visitor: Visitor = {
       visitor.visitOptionName(visitor, node.optionName);
       visitor.visitToken(visitor, node.eq);
       visitor.visitConstant(visitor, node.constant);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitOptionName(visitor, node) {
@@ -225,7 +228,7 @@ export const visitor: Visitor = {
       visitor.visitSignedIntLit(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitExtend(visitor, node) {
@@ -283,8 +286,27 @@ export const visitor: Visitor = {
       visitor.visitRpcType(visitor, node.reqType);
       visitor.visitToken(visitor, node.returns);
       visitor.visitRpcType(visitor, node.resType);
-      visitor.visitToken(visitor, node.semi);
+      if (node.semiOrRpcBody.type === "semi") {
+        visitor.visitSemi(visitor, node.semiOrRpcBody);
+      } else {
+        visitor.visitRpcBody(visitor, node.semiOrRpcBody);
+      }
     });
+  },
+  visitRpcBody(visitor, node) {
+    node.bracketOpen && visitor.visitToken(visitor, node.bracketOpen);
+    for (const statement of node.statements) {
+      visitor.visitRpcBodyStatement(visitor, statement);
+    }
+    node.bracketClose && visitor.visitToken(visitor, node.bracketClose);
+  },
+  visitRpcBodyStatement(visitor, node) {
+    switch (node.type) {
+      case "option":
+        return visitor.visitOption(visitor, node);
+      case "empty":
+        return visitor.visitEmpty(visitor, node);
+    }
   },
   visitRpcType(visitor, node) {
     visitor.visitToken(visitor, node.bracketOpen);
@@ -294,7 +316,7 @@ export const visitor: Visitor = {
   },
   visitEmpty(visitor, node) {
     visitStatementBase(visitor, node, () => {
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitField(visitor, node) {
@@ -306,7 +328,7 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitFieldOptions(visitor, node) {
@@ -370,7 +392,7 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitMapField(visitor, node) {
@@ -386,14 +408,14 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitExtensions(visitor, node) {
     visitStatementBase(visitor, node, () => {
       visitor.visitKeyword(visitor, node.keyword);
       visitor.visitRanges(visitor, node.ranges);
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitRanges(visitor, node) {
@@ -436,7 +458,7 @@ export const visitor: Visitor = {
           visitor.visitFieldNames(visitor, node.reserved);
           break;
       }
-      visitor.visitToken(visitor, node.semi);
+      visitor.visitSemi(visitor, node.semi);
     });
   },
   visitFieldNames(visitor, node) {
@@ -536,6 +558,9 @@ export const visitor: Visitor = {
     visitor.visitToken(visitor, node);
   },
   visitComma(visitor, node) {
+    visitor.visitToken(visitor, node);
+  },
+  visitSemi(visitor, node) {
     visitor.visitToken(visitor, node);
   },
   visitToken() {},

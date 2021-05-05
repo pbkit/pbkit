@@ -37,6 +37,10 @@ export interface Comma extends Token {
   type: "comma";
 }
 
+export interface Semi extends Token {
+  type: "semi";
+}
+
 export interface IntLit extends Token {
   type: "int-lit";
 }
@@ -71,7 +75,7 @@ export interface Aggregate extends Span {
 
 export interface Empty extends StatementBase {
   type: "empty";
-  semi: Token;
+  semi: Semi;
 }
 
 export type Constant =

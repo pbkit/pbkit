@@ -3,7 +3,7 @@ import { Loader } from "../loader/index.ts";
 import { parse } from "../parser/proto.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
 import { isDocComment, parseDocComment } from "./doc-comment.ts";
-import { File, Import, Options, Schema, Service } from "./model.ts";
+import { File, Import, Options, RpcType, Schema, Service } from "./model.ts";
 
 export interface BuildConfig {
   loader: Loader;
@@ -88,17 +88,43 @@ function* iterServices(
   const serviceStatements = filterStatementsByType(statements, "service");
   for (const statement of serviceStatements) {
     const serviceTypePath = typePath + "." + statement.serviceName.text;
-    const docComment = statement.leadingComments.find(
-      (comment) => isDocComment(comment.text),
-    );
     const service: Service = {
       filePath,
       options: getOptions(statement.serviceBody.statements),
-      description: parseDocComment(docComment?.text ?? ""),
-      rpcs: new Map(), // TODO
+      description: getDescription(statement.leadingComments),
+      rpcs: getRpcs(statement.serviceBody.statements),
     };
     yield [serviceTypePath, service];
   }
+}
+
+function getRpcs(statements: Statement[]): Service["rpcs"] {
+  const rpcStatements = filterStatementsByType(statements, "rpc");
+  const rpcs: Service["rpcs"] = {};
+  for (const statement of rpcStatements) {
+    const options = statement.semiOrRpcBody.type === "rpc-body"
+      ? getOptions(statement.semiOrRpcBody.statements)
+      : {};
+    rpcs[statement.rpcName.text] = {
+      options,
+      description: getDescription(statement.leadingComments),
+      reqType: getRpcType(statement.reqType),
+      resType: getRpcType(statement.resType),
+    };
+  }
+  return rpcs;
+}
+
+function getRpcType(rpcType: ast.RpcType): RpcType {
+  return {
+    stream: !!rpcType.stream,
+    type: stringifyType(rpcType.messageType),
+  };
+}
+
+function getDescription(comments: ast.Comment[]): string {
+  const docComment = comments.find((comment) => isDocComment(comment.text));
+  return parseDocComment(docComment?.text ?? "");
 }
 
 function evalConstant(constant: ast.Constant): boolean | number | string {
@@ -177,6 +203,12 @@ function createNaiveAstStringifier() {
     },
   };
   return { visitor, finish: () => result.join("") };
+}
+
+function stringifyType(type: ast.Type): string {
+  const stringifier = createNaiveAstStringifier();
+  stringifier.visitor.visitType(stringifier.visitor, type);
+  return stringifier.finish();
 }
 
 function stringifyFullIdent(fullIdent: ast.FullIdent): string {

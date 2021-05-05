@@ -6,6 +6,7 @@ import {
   Empty,
   FullIdent,
   Keyword,
+  Semi,
   StrLit,
 } from "./lexical-elements.ts";
 import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
@@ -41,7 +42,7 @@ export interface Syntax extends StatementBase {
   quoteOpen: Token;
   syntax: Token;
   quoteClose: Token;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface Import extends StatementBase {
@@ -49,14 +50,14 @@ export interface Import extends StatementBase {
   keyword: Keyword;
   weakOrPublic?: Token;
   strLit: StrLit;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface Package extends StatementBase {
   type: "package";
   keyword: Keyword;
   fullIdent: FullIdent;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface Option extends StatementBase {
@@ -65,7 +66,7 @@ export interface Option extends StatementBase {
   optionName: OptionName;
   eq: Token;
   constant: Constant;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface OptionName extends Span {

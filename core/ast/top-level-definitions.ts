@@ -2,7 +2,13 @@ import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { Extensions, Reserved } from "./extensions-and-reserved.ts";
 import { Field, FieldOptions, Group, MapField, Oneof } from "./fields.ts";
 import { Option, StatementBase } from "./index.ts";
-import { Empty, Keyword, SignedIntLit, Type } from "./lexical-elements.ts";
+import {
+  Empty,
+  Keyword,
+  Semi,
+  SignedIntLit,
+  Type,
+} from "./lexical-elements.ts";
 
 export interface Enum extends StatementBase {
   type: "enum";
@@ -29,7 +35,7 @@ export interface EnumField extends StatementBase {
   eq: Token;
   fieldNumber: SignedIntLit;
   fieldOptions?: FieldOptions;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface Message extends StatementBase {
@@ -101,8 +107,19 @@ export interface Rpc extends StatementBase {
   reqType: RpcType;
   returns: Token;
   resType: RpcType;
-  semi: Token;
+  semiOrRpcBody: Semi | RpcBody;
 }
+
+export interface RpcBody extends Span {
+  type: "rpc-body";
+  bracketOpen: Token;
+  statements: RpcBodyStatement[];
+  bracketClose: Token;
+}
+
+export type RpcBodyStatement =
+  | Option
+  | Empty;
 
 export interface RpcType extends Span {
   bracketOpen: Token;

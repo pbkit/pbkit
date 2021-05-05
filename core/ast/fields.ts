@@ -1,6 +1,13 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { Option, OptionName, StatementBase } from "./index.ts";
-import { Comma, Constant, Empty, Keyword, Type } from "./lexical-elements.ts";
+import {
+  Comma,
+  Constant,
+  Empty,
+  Keyword,
+  Semi,
+  Type,
+} from "./lexical-elements.ts";
 import { MessageBody } from "./top-level-definitions.ts";
 
 export interface Field extends StatementBase {
@@ -11,7 +18,7 @@ export interface Field extends StatementBase {
   eq: Token;
   fieldNumber: Token;
   fieldOptions?: FieldOptions;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface FieldOptions extends Span {
@@ -64,7 +71,7 @@ export interface OneofField extends StatementBase {
   eq: Token;
   fieldNumber: Token;
   fieldOptions?: FieldOptions;
-  semi: Token;
+  semi: Semi;
 }
 
 export interface MapField extends StatementBase {
@@ -79,5 +86,5 @@ export interface MapField extends StatementBase {
   eq: Token;
   fieldNumber: Token;
   fieldOptions?: FieldOptions;
-  semi: Token;
+  semi: Semi;
 }

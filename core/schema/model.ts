@@ -116,7 +116,7 @@ export interface Service {
   filePath: string;
   options: Options;
   description: string;
-  rpcs: Map<string, Rpc>;
+  rpcs: { [rpcName: string]: Rpc };
 }
 
 export interface Rpc {
