@@ -2,6 +2,7 @@ import * as ast from "../ast/index.ts";
 import { Loader } from "../loader/index.ts";
 import { parse } from "../parser/proto.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
+import { isDocComment, parseDocComment } from "./doc-comment.ts";
 import { File, Import, Options, Schema, Service } from "./model.ts";
 
 export interface BuildConfig {
@@ -87,10 +88,13 @@ function* iterServices(
   const serviceStatements = filterStatementsByType(statements, "service");
   for (const statement of serviceStatements) {
     const serviceTypePath = typePath + "." + statement.serviceName.text;
+    const docComment = statement.leadingComments.find(
+      (comment) => isDocComment(comment.text),
+    );
     const service: Service = {
       filePath,
       options: getOptions(statement.serviceBody.statements),
-      description: "", // TODO
+      description: parseDocComment(docComment?.text ?? ""),
       rpcs: new Map(), // TODO
     };
     yield [serviceTypePath, service];
