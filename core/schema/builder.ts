@@ -1,9 +1,19 @@
 import * as ast from "../ast/index.ts";
 import { Loader } from "../loader/index.ts";
-import { parse } from "../parser/proto.ts";
+import { parse, ParseResult } from "../parser/proto.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
 import { isDocComment, parseDocComment } from "./doc-comment.ts";
-import { File, Import, Options, RpcType, Schema, Service } from "./model.ts";
+import {
+  Enum,
+  File,
+  Import,
+  Message,
+  Options,
+  RpcType,
+  Schema,
+  Service,
+  Type,
+} from "./model.ts";
 
 export interface BuildConfig {
   loader: Loader;
@@ -16,8 +26,34 @@ export async function build(config: BuildConfig): Promise<Schema> {
     extends: {},
     services: {},
   };
-  for (const filePath of config.files) {
-    const loadResult = await config.loader.load(filePath);
+  const iterFileResults = iterFiles(config.files, config.loader);
+  for await (const { filePath, parseResult, file } of iterFileResults) {
+    result.files[filePath] = file;
+    const statements = parseResult.ast.statements;
+    const services = iterServices(statements, file.package, filePath);
+    for (const [typePath, service] of services) {
+      result.services[typePath] = service;
+    }
+    const types = iterTypes(statements, file.package, filePath);
+    for (const [typePath, type] of types) {
+      result.types[typePath] = type;
+    }
+    // TODO: extends
+  }
+  return result;
+}
+
+interface IterFileResult {
+  filePath: string;
+  parseResult: ParseResult;
+  file: File;
+}
+async function* iterFiles(
+  files: string[],
+  loader: Loader,
+): AsyncGenerator<IterFileResult> {
+  for (const filePath of files) {
+    const loadResult = await loader.load(filePath);
     if (!loadResult) continue;
     const parseResult = parse(loadResult.data);
     const statements = parseResult.ast.statements;
@@ -28,14 +64,8 @@ export async function build(config: BuildConfig): Promise<Schema> {
       imports: getImports(statements),
       options: getOptions(statements),
     };
-    result.files[filePath] = file;
-    // TODO: types, extends
-    const services = iterServices(statements, file.package, filePath);
-    for (const [typePath, service] of services) {
-      result.services[typePath] = service;
-    }
+    yield { filePath, parseResult, file };
   }
-  return result;
 }
 
 type Statement =
@@ -120,6 +150,66 @@ function getRpcType(rpcType: ast.RpcType): RpcType {
     stream: !!rpcType.stream,
     type: stringifyType(rpcType.messageType),
   };
+}
+
+function* iterTypes(
+  statements: Statement[],
+  typePath: string,
+  filePath: string,
+): Generator<[string, Type]> {
+  yield* iterMessages(statements, typePath, filePath);
+  yield* iterEnums(statements, typePath, filePath);
+}
+
+function* iterMessages(
+  statements: Statement[],
+  typePath: string,
+  filePath: string,
+): Generator<[string, Message]> {
+  const messageStatements = filterStatementsByType(statements, "message");
+  for (const statement of messageStatements) {
+    const messageTypePath = typePath + "." + statement.messageName.text;
+    const message: Message = {
+      filePath,
+      options: getOptions(statement.messageBody.statements),
+      description: getDescription(statement.leadingComments),
+      fields: getMessageFields(statement.messageBody.statements),
+      reservedFieldNumberRanges: [], // TODO
+      reservedFieldNames: [], // TODO
+      extensions: [], // TODO
+    };
+    yield [messageTypePath, message];
+  }
+}
+
+function getMessageFields(statements: Statement[]): Message["fields"] {
+  const fields: Message["fields"] = {};
+  // TODO
+  return fields;
+}
+
+function* iterEnums(
+  statements: Statement[],
+  typePath: string,
+  filePath: string,
+): Generator<[string, Enum]> {
+  const enumStatements = filterStatementsByType(statements, "enum");
+  for (const statement of enumStatements) {
+    const enumTypePath = typePath + "." + statement.enumName.text;
+    const _enum: Enum = {
+      filePath,
+      options: getOptions(statement.enumBody.statements),
+      description: getDescription(statement.leadingComments),
+      fields: getEnumFields(statement.enumBody.statements),
+    };
+    yield [enumTypePath, _enum];
+  }
+}
+
+function getEnumFields(statements: Statement[]): Enum["fields"] {
+  const fields: Enum["fields"] = {};
+  // TODO
+  return fields;
 }
 
 function getDescription(comments: ast.Comment[]): string {

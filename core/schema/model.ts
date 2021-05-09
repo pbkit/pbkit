@@ -36,7 +36,7 @@ interface FieldBase {
 }
 
 export interface Message extends TypeBase {
-  fields: Map<number, MessageField>;
+  fields: { [fieldNumber: number]: MessageField };
   reservedFieldNumberRanges: Range[];
   reservedFieldNames: string[];
   extensions: Range[];
@@ -46,11 +46,11 @@ export interface Extend {
   filePath: string;
   message: string;
   description: string;
-  fields: Map<number, ExtendField>;
+  fields: { [fieldNumber: number]: ExtendField };
 }
 
 export interface Enum extends TypeBase {
-  fields: Map<number, EnumField>;
+  fields: { [fieldNumber: number]: EnumField };
 }
 
 export interface EnumField extends FieldBase {
