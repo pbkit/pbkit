@@ -11,6 +11,10 @@ const oauthClientSecret = "34ddeff2b558a23d38fba8a6de74f086ede1cc0b";
 const scopes = ["repo", "read:org", "gist"];
 const grantType = "urn:ietf:params:oauth:grant-type:device_code";
 
+function getValidateUrl(host: string) {
+  return `https://${host}/`;
+}
+
 function getDeviceInitUrl(host: string) {
   return `https://${host}/login/device/code`;
 }
@@ -45,6 +49,28 @@ export async function requestCode(): Promise<RequestCodeResult> {
     userCode: parsedRes.get("user_code") ?? "",
     verificationUri: parsedRes.get("verification_uri") ?? "",
   };
+}
+
+export async function validateToken(token: string): Promise<void> {
+  const res = await fetch(getValidateUrl("api.github.com"), {
+    headers: {
+      Authorization: `token ${token}`,
+    },
+  });
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new PollapoTokenValidationError("Unauthorized Github API token.");
+    }
+    throw new PollapoTokenValidationError(
+      `Unexpected HTTP request failure with response ${res.status}`,
+    );
+  }
+}
+
+export class PollapoTokenValidationError extends Error {
+  constructor(msg: string) {
+    super(`Error occurred when validate token: ${msg}`);
+  }
 }
 
 interface PollTokenResponse {

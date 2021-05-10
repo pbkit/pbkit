@@ -25,6 +25,10 @@ import {
   PollapoYmlNotFoundError,
 } from "../pollapoYml.ts";
 import { compareRev } from "../rev.ts";
+import {
+  PollapoTokenValidationError,
+  validateToken,
+} from "../misc/github-auth.ts";
 
 interface Options {
   clean?: true;
@@ -45,6 +49,7 @@ export default new Command()
   })
   .action(async (options: Options) => {
     try {
+      if (options.token) await validateToken(options.token);
       const token = options.token ?? await getToken();
       const cacheDir = getCacheDir();
       const pollapoYml = await loadPollapoYml(options.config);
@@ -69,7 +74,8 @@ export default new Command()
     } catch (err) {
       if (
         err instanceof PollapoNotLoggedInError ||
-        err instanceof PollapoYmlNotFoundError
+        err instanceof PollapoYmlNotFoundError ||
+        err instanceof PollapoTokenValidationError
       ) {
         console.error(err.message);
         return Deno.exit(1);
