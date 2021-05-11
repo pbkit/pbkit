@@ -4,6 +4,7 @@ import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { parse } from "../../../core/parser/proto.ts";
 import minify from "../../../core/stringifier/minify.ts";
 import replaceFileOption from "../postprocess/replaceFileOption.ts";
+import backoff from "../misc/exponential-backoff.ts";
 import {
   fetchArchive,
   getToken,
@@ -26,7 +27,7 @@ import {
 } from "../pollapoYml.ts";
 import { compareRev } from "../rev.ts";
 import {
-  PollapoTokenValidationError,
+  PollapoUnauthorizedError,
   validateToken,
 } from "../misc/github-auth.ts";
 
@@ -49,16 +50,18 @@ export default new Command()
   })
   .action(async (options: Options) => {
     try {
-      if (options.token) await validateToken(options.token);
       const token = options.token ?? await getToken();
+      await backoff(
+        () => validateToken(token),
+        (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
+      );
       const cacheDir = getCacheDir();
       const pollapoYml = await loadPollapoYml(options.config);
-      const fetchZip = getFetchZip(token);
       const caching = cacheDeps({
         cacheDir,
         clean: !!options.clean,
         pollapoYml,
-        fetchZip,
+        fetchZip: getFetchZip(token),
       });
       for await (const { dep, downloading } of caching) {
         await print(`Downloading ${depToString(dep)}...`);
@@ -75,7 +78,7 @@ export default new Command()
       if (
         err instanceof PollapoNotLoggedInError ||
         err instanceof PollapoYmlNotFoundError ||
-        err instanceof PollapoTokenValidationError
+        err instanceof PollapoUnauthorizedError
       ) {
         console.error(err.message);
         return Deno.exit(1);
@@ -118,7 +121,9 @@ async function installDep(
 
 function getFetchZip(token: string) {
   return async function fetchZip(dep: PollapoDep): Promise<Uint8Array> {
-    const res = await fetchArchive({ type: "zip", token, ...dep });
+    const res = await backoff(() =>
+      fetchArchive({ type: "zip", token, ...dep })
+    );
     return new Uint8Array(await res.arrayBuffer());
   };
 }

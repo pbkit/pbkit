@@ -54,18 +54,16 @@ export async function validateToken(token: string): Promise<void> {
     },
   });
   if (!res.ok) {
-    if (res.status === 401) {
-      throw new PollapoTokenValidationError("Unauthorized Github API token.");
-    }
-    throw new PollapoTokenValidationError(
+    if (res.status === 401) throw new PollapoUnauthorizedError();
+    throw new Error(
       `Unexpected HTTP request failure with response ${res.status}`,
     );
   }
 }
 
-export class PollapoTokenValidationError extends Error {
-  constructor(msg: string) {
-    super(`Error occurred when validate token: ${msg}`);
+export class PollapoUnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized Github API token.");
   }
 }
 
