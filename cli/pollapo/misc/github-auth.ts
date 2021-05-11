@@ -47,6 +47,28 @@ export async function requestCode(): Promise<RequestCodeResult> {
   };
 }
 
+export async function validateToken(token: string): Promise<void> {
+  const res = await fetch("https://api.github.com/", {
+    headers: {
+      Authorization: `token ${token}`,
+    },
+  });
+  if (!res.ok) {
+    if (res.status === 401) {
+      throw new PollapoTokenValidationError("Unauthorized Github API token.");
+    }
+    throw new PollapoTokenValidationError(
+      `Unexpected HTTP request failure with response ${res.status}`,
+    );
+  }
+}
+
+export class PollapoTokenValidationError extends Error {
+  constructor(msg: string) {
+    super(`Error occurred when validate token: ${msg}`);
+  }
+}
+
 interface PollTokenResponse {
   accessToken: string;
   tokenType: string;
