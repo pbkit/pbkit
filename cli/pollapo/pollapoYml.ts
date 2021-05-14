@@ -19,6 +19,12 @@ export interface PollapoDep {
   rev: string;
 }
 
+export interface PollapoOptionalDep {
+  user: string;
+  repo: string;
+  rev?: string;
+}
+
 export interface PollapoRoot {
   "replace-file-option"?: PollapoRootReplaceFileOption;
 }
@@ -64,6 +70,12 @@ export function* deps(pollapoYml: PollapoYml) {
 
 export function parseDep(dep: string): PollapoDep {
   const match = /(?<user>.+?)\/(?<repo>.+?)@(?<rev>.+)/.exec(dep);
+  if (!match) throw new Error("invalid dep string: " + dep);
+  return match.groups as unknown as PollapoDep;
+}
+
+export function parseOptionalDep(dep: string): PollapoOptionalDep {
+  const match = /(?<user>.+?)\/(?<repo>.+?)(@(?<rev>.+))?$/.exec(dep);
   if (!match) throw new Error("invalid dep string: " + dep);
   return match.groups as unknown as PollapoDep;
 }
