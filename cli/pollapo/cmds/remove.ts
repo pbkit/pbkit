@@ -26,8 +26,9 @@ export default new Command()
         ...pollapoYml,
         deps: pollapoYml?.deps
           ?.filter((dep) => {
-            for (const targetDep of targetDeps) {
-              if (isDepMatch(dep, targetDep)) return false;
+            for (const { user, repo, rev } of targetDeps) {
+              const pattern = new RegExp(`^${user}/${repo}@${rev || ".*"}$`);
+              if (dep.match(pattern)) return false;
             }
             return true;
           })
@@ -42,11 +43,3 @@ export default new Command()
       }
     }
   });
-
-function isDepMatch(dep: string, targetDep: PollapoOptionalDep) {
-  return dep.match(
-    new RegExp(
-      `^${targetDep.user}/${targetDep.repo}@${targetDep.rev || ".*"}$`,
-    ),
-  );
-}
