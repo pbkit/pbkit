@@ -61,7 +61,8 @@ export default new Command()
         err instanceof PollapoNotLoggedInError ||
         err instanceof PollapoYmlNotFoundError ||
         err instanceof PollapoUnauthorizedError ||
-        err instanceof Error
+        err instanceof PollapoRevNotFoundError ||
+        err instanceof PollapoRepoNotFoundError
       ) {
         console.error(err.message);
         return Deno.exit(1);
@@ -81,7 +82,7 @@ async function add(
   );
 
   if (!isRepoExists) {
-    throw new Error(`Repository \`${repo}\` is not found.`);
+    throw new PollapoRepoNotFoundError(repo);
   }
 
   const { tags, branches } = await backoff(() =>
@@ -99,7 +100,7 @@ async function add(
     if (isRevExists) {
       pollapoYml?.deps?.push(dep);
     } else {
-      throw new Error(`Revision \`${rev}\` is not found.`);
+      throw new PollapoRevNotFoundError(rev);
     }
   } else {
     const selectedRevName = await Select.prompt({
@@ -114,5 +115,17 @@ async function add(
     });
 
     pollapoYml?.deps?.push(`${user}/${repo}@${selectedRevName}`);
+  }
+}
+
+class PollapoRevNotFoundError extends Error {
+  constructor(rev: string) {
+    super(`Revision \`${rev}\` is not found.`);
+  }
+}
+
+class PollapoRepoNotFoundError extends Error {
+  constructor(repo: string) {
+    super(`Repository \`${repo}\` is not found.`);
   }
 }
