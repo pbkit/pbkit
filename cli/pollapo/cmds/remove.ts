@@ -21,15 +21,16 @@ export default new Command()
   .action(async (options: Options, targets: string[]) => {
     try {
       const pollapoYml = await loadPollapoYml(options.config);
+      const targetDeps = targets.map(parseOptionalDep);
       const pollapoYmlText = stringify({
         ...pollapoYml,
-        deps: targets
-          .map(parseOptionalDep)
-          .reduce(
-            (filteredDeps, targetDep) =>
-              filteredDeps.filter((dep) => !isDepMatch(dep, targetDep)),
-            pollapoYml?.deps || [],
-          )
+        deps: pollapoYml?.deps
+          ?.filter((dep) => {
+            for (const targetDep of targetDeps) {
+              if (isDepMatch(dep, targetDep)) return false;
+            }
+            return true;
+          })
           .sort(),
       });
 
