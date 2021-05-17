@@ -5,6 +5,7 @@ import { PollapoUnauthorizedError } from "../misc/github-auth.ts";
 import {
   loadPollapoYml,
   parseOptionalDep,
+  PollapoOptionalDep,
   PollapoYmlNotFoundError,
 } from "../pollapoYml.ts";
 
@@ -27,15 +28,8 @@ export default new Command()
         deps: targets
           .map(parseOptionalDep)
           .reduce(
-            (filteredDeps, parsedTargetDep) =>
-              filteredDeps.filter((dep) =>
-                !dep.match(
-                  new RegExp(
-                    `^${parsedTargetDep.user}/${parsedTargetDep.repo}@${parsedTargetDep
-                      .rev || ".*"}$`,
-                  ),
-                )
-              ),
+            (filteredDeps, targetDep) =>
+              filteredDeps.filter((dep) => !isDepMatch(dep, targetDep)),
             pollapoYml?.deps || [],
           )
           .sort(),
@@ -54,3 +48,11 @@ export default new Command()
       }
     }
   });
+
+function isDepMatch(dep: string, targetDep: PollapoOptionalDep) {
+  return dep.match(
+    new RegExp(
+      `^${targetDep.user}/${targetDep.repo}@${targetDep.rev || ".*"}$`,
+    ),
+  );
+}
