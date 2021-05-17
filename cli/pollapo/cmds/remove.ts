@@ -1,7 +1,12 @@
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
+import { stringify } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
 import { PollapoNotLoggedInError } from "../misc/github.ts";
 import { PollapoUnauthorizedError } from "../misc/github-auth.ts";
-import { PollapoYmlNotFoundError } from "../pollapoYml.ts";
+import {
+  loadPollapoYml,
+  parseOptionalDep,
+  PollapoYmlNotFoundError,
+} from "../pollapoYml.ts";
 
 interface Options {
   token?: string;
@@ -16,7 +21,27 @@ export default new Command()
   })
   .action(async (options: Options, targets: string[]) => {
     try {
-      // Remove dependencies...
+      const pollapoYml = await loadPollapoYml(options.config);
+      const pollapoYmlText = stringify({
+        ...pollapoYml,
+        deps: targets
+          .map(parseOptionalDep)
+          .reduce(
+            (filteredDeps, parsedTargetDep) =>
+              filteredDeps.filter((dep) =>
+                !dep.match(
+                  new RegExp(
+                    `^${parsedTargetDep.user}/${parsedTargetDep.repo}@${parsedTargetDep
+                      .rev || ".*"}$`,
+                  ),
+                )
+              ),
+            pollapoYml?.deps || [],
+          )
+          .sort(),
+      });
+
+      await Deno.writeTextFile(options.config, pollapoYmlText);
     } catch (err) {
       if (
         err instanceof PollapoNotLoggedInError ||
