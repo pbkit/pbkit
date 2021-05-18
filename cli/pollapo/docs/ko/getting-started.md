@@ -38,14 +38,14 @@ pollapo login
 ```
 
 ### 의존성 설치
-의존성을 설치하고 싶은 저장소에서 다음과 같이 `pollapo.yml` 파일을 작성합니다.
-```yml
-deps:
-  - riiid/interface-common-model@main
-  - riiid/interface-inside-model@main
-```
-
-아래 명령을 실행하면 `.pollapo` 디렉토리가 만들어지고 거기에 의존성들이 설치됩니다.
+의존성을 설치하고 싶은 디렉토리에서 다음과 같이 명령을 실행합니다.
 ```sh
-pollapo install
+# pollapo 설정파일 생성
+touch pollapo.yml
+
+# 원하는 의존성 추가
+pollapo add riiid/interface-common-model riiid/interface-inside-model
+
+# 의존성 설치
+pollapo install # 생성된 `.pollapo` 디렉토리 확인
 ```

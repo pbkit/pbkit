@@ -1,6 +1,10 @@
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
-import { Select } from "https://deno.land/x/cliffy@v0.18.0/prompt/select.ts";
+import {
+  Select,
+  SelectValueOptions,
+} from "https://deno.land/x/cliffy@v0.18.0/prompt/select.ts";
 import { stringify } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
+import { cyan, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
 import {
   getIsRepoExists,
   getRepoRevGroup,
@@ -14,9 +18,10 @@ import {
 import backoff from "../misc/exponential-backoff.ts";
 import {
   loadPollapoYml,
-  parseOptionalDep,
+  parseDepFrag,
   PollapoYml,
   PollapoYmlNotFoundError,
+  sanitizeDeps,
 } from "../pollapoYml.ts";
 
 interface Options {
@@ -37,24 +42,13 @@ export default new Command()
         () => validateToken(token),
         (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
       );
-
-      const pollapoYml = await loadPollapoYml(options.config);
-
+      let pollapoYml = await loadPollapoYml(options.config);
       for (const target of targets) {
-        await add(pollapoYml, target, token);
+        pollapoYml = await add(pollapoYml, target, token);
       }
-
-      const pollapoYmlText = stringify({
-        ...pollapoYml,
-        deps: pollapoYml?.deps
-          ?.reduce(
-            (uniqDeps: string[], dep) =>
-              uniqDeps.includes(dep) ? uniqDeps : [...uniqDeps, dep],
-            [],
-          )
-          .sort(),
-      });
-
+      const pollapoYmlText = stringify(
+        sanitizeDeps(pollapoYml) as Record<string, unknown>,
+      );
       await Deno.writeTextFile(options.config, pollapoYmlText);
     } catch (err) {
       if (
@@ -74,48 +68,53 @@ async function add(
   pollapoYml: PollapoYml,
   dep: string,
   token: string,
-): Promise<void> {
-  const { user, repo, rev } = parseOptionalDep(dep);
-
+): Promise<PollapoYml> {
+  const { user, repo, rev } = parseDepFrag(dep);
   const isRepoExists = await backoff(() =>
     getIsRepoExists({ token, user, repo })
   );
-
-  if (!isRepoExists) {
-    throw new PollapoRepoNotFoundError(repo);
-  }
-
+  if (!isRepoExists) throw new PollapoRepoNotFoundError(repo);
   const { tags, branches } = await backoff(() =>
     getRepoRevGroup({ token, user, repo })
   );
-
-  if (!!rev) {
-    const allRev = [
-      ...tags,
-      ...branches,
-    ];
-
-    const isRevExists = !!allRev.find(({ name }) => name === rev);
-
-    if (isRevExists) {
-      pollapoYml?.deps?.push(dep);
-    } else {
+  if (rev) {
+    if (![...tags, ...branches].find(({ name }) => name === rev)) {
       throw new PollapoRevNotFoundError(rev);
     }
+    return pushDep(pollapoYml, dep);
   } else {
+    const selectTargetMessage = (
+      (tags.length && branches.length)
+        ? "Tag or Branch"
+        : tags.length
+        ? "Tag"
+        : "Branch"
+    );
+    const tagOptions = tags.map((tag) => ({ value: tag.name }));
+    const branchOptions = branches.map((branch) => ({ value: branch.name }));
+    const options: SelectValueOptions = (
+      (tags.length && branches.length)
+        ? [
+          Select.separator(cyan("Tag")),
+          ...tagOptions,
+          Select.separator(cyan("Branch")),
+          ...branchOptions,
+        ]
+        : [...tagOptions, ...branchOptions]
+    );
     const selectedRevName = await Select.prompt({
-      message: `Select a Tag or Branch in \`${user}/${repo}\``,
+      message: `Select ${selectTargetMessage} in ${yellow(user + "/" + repo)}`,
       search: true,
-      options: [
-        Select.separator("----Tags----"),
-        ...tags.map((tag) => ({ value: tag.name })),
-        Select.separator("----Branches----"),
-        ...branches.map((branch) => ({ value: branch.name })),
-      ],
+      options,
     });
-
-    pollapoYml?.deps?.push(`${user}/${repo}@${selectedRevName}`);
+    return pushDep(pollapoYml, `${user}/${repo}@${selectedRevName}`);
   }
+}
+
+function pushDep(pollapoYml: PollapoYml, dep: string): PollapoYml {
+  const deps = pollapoYml?.deps ?? [];
+  deps.push(dep);
+  return { ...pollapoYml, deps };
 }
 
 class PollapoRevNotFoundError extends Error {

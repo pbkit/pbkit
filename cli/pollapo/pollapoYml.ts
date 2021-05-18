@@ -19,11 +19,9 @@ export interface PollapoDep {
   rev: string;
 }
 
-export interface PollapoOptionalDep {
-  user: string;
-  repo: string;
-  rev?: string;
-}
+export type PollapoDepFrag =
+  & Omit<PollapoDep, "rev">
+  & Partial<Pick<PollapoDep, "rev">>;
 
 export interface PollapoRoot {
   "replace-file-option"?: PollapoRootReplaceFileOption;
@@ -74,10 +72,10 @@ export function parseDep(dep: string): PollapoDep {
   return match.groups as unknown as PollapoDep;
 }
 
-export function parseOptionalDep(dep: string): PollapoOptionalDep {
+export function parseDepFrag(dep: string): PollapoDepFrag {
   const match = /(?<user>.+?)\/(?<repo>.+?)(@(?<rev>.+))?$/.exec(dep);
   if (!match) throw new Error("invalid dep string: " + dep);
-  return match.groups as unknown as PollapoDep;
+  return match.groups as unknown as PollapoDepFrag;
 }
 
 export function depToString(dep: PollapoDep): string {
@@ -187,6 +185,17 @@ export async function analyzeDeps(
       if (depToString(dep) === depToString(innerDep)) continue;
       queue.push({ ...innerDep, from: depToString(dep) });
     }
+  }
+  return result;
+}
+
+export function sanitizeDeps(pollapoYml: PollapoYml): PollapoYml {
+  const deps = pollapoYml?.deps ?? [];
+  const result: PollapoYml = { ...pollapoYml };
+  if (deps.length === 0) {
+    delete result.deps;
+  } else {
+    result.deps = [...new Set(result.deps)].sort();
   }
   return result;
 }

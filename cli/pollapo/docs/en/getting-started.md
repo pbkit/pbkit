@@ -38,14 +38,14 @@ pollapo login
 ```
 
 ### Install dependencies
-Create the `pollapo.yml` file as below in the repository where you want to install the dependencies.
-```yml
-deps:
-  - riiid/interface-common-model@main
-  - riiid/interface-inside-model@main
-```
-
-Running the command below will create a `.pollapo` directory and install its dependencies.
+Run the command as below in where you want to install the dependencies:
 ```sh
-pollapo install
+# Create pollapo config file
+touch pollapo.yml
+
+# Add dependencies
+pollapo add riiid/interface-common-model riiid/interface-inside-model
+
+# Install dependencies
+pollapo install # Check the created `.pollapo` directory
 ```
