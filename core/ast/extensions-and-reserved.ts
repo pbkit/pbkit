@@ -2,6 +2,14 @@ import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { StatementBase } from "./index.ts";
 import { Comma, IntLit, Keyword, Semi, StrLit } from "./lexical-elements.ts";
 
+export type Node =
+  | Extensions
+  | Ranges
+  | Range
+  | Max
+  | Reserved
+  | FieldNames;
+
 export interface Extensions extends StatementBase {
   type: "extensions";
   keyword: Keyword;

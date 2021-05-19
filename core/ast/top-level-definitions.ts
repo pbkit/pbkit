@@ -10,6 +10,19 @@ import {
   Type,
 } from "./lexical-elements.ts";
 
+export type Node =
+  | Enum
+  | EnumBody
+  | EnumField
+  | Message
+  | MessageBody
+  | Extend
+  | ExtendBody
+  | Service
+  | ServiceBody
+  | Rpc
+  | RpcBody;
+
 export interface Enum extends StatementBase {
   type: "enum";
   keyword: Keyword;

@@ -1,6 +1,25 @@
 import { StatementBase } from "./index.ts";
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 
+export type Node =
+  | SinglelineComment
+  | MultilineComment
+  | Keyword
+  | Type
+  | FullIdent
+  | Ident
+  | Dot
+  | Comma
+  | Semi
+  | IntLit
+  | SignedIntLit
+  | FloatLit
+  | SignedFloatLit
+  | BoolLit
+  | StrLit
+  | Aggregate
+  | Empty;
+
 export type Comment = SinglelineComment | MultilineComment;
 
 export interface SinglelineComment extends Token {

@@ -10,6 +10,16 @@ import {
 } from "./lexical-elements.ts";
 import { MessageBody } from "./top-level-definitions.ts";
 
+export type Node =
+  | Field
+  | FieldOptions
+  | FieldOption
+  | Group
+  | Oneof
+  | OneofBody
+  | OneofField
+  | MapField;
+
 export interface Field extends StatementBase {
   type: "field";
   fieldLabel?: Keyword;

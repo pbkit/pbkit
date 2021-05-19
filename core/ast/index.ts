@@ -9,7 +9,22 @@ import {
   Semi,
   StrLit,
 } from "./lexical-elements.ts";
-import { Enum, Extend, Message, Service } from "./top-level-definitions.ts";
+import {
+  Enum,
+  EnumBodyStatement,
+  Extend,
+  ExtendBodyStatement,
+  Message,
+  MessageBodyStatement,
+  RpcBodyStatement,
+  Service,
+  ServiceBodyStatement,
+} from "./top-level-definitions.ts";
+
+import * as extensionsAndReserved from "./extensions-and-reserved.ts";
+import * as fields from "./fields.ts";
+import * as lexicalElements from "./lexical-elements.ts";
+import * as topLevelDefinitions from "./top-level-definitions.ts";
 
 export * from "./extensions-and-reserved.ts";
 export * from "./fields.ts";
@@ -19,6 +34,30 @@ export * from "./top-level-definitions.ts";
 export interface Proto {
   statements: TopLevelStatement[];
 }
+
+export type Node =
+  | index_Node
+  | extensionsAndReserved.Node
+  | fields.Node
+  | lexicalElements.Node
+  | topLevelDefinitions.Node;
+
+type index_Node =
+  | Syntax
+  | Import
+  | Package
+  | Option
+  | OptionName
+  | OptionNameSegment;
+
+export type Statement =
+  | TopLevelStatement
+  | MessageBodyStatement
+  | EnumBodyStatement
+  | ExtendBodyStatement
+  | ServiceBodyStatement
+  | RpcBodyStatement;
+
 export type TopLevelStatement =
   | Syntax
   | Import
