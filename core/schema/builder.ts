@@ -217,6 +217,7 @@ function* iterMessageFields(
       const fieldBase = {
         description: getDescription(statement.leadingComments),
         name: statement.fieldName.text,
+        options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
         type: stringifyType(statement.fieldType),
       };
       if (!statement.fieldLabel) {
@@ -232,10 +233,31 @@ function* iterMessageFields(
         }
       }
     } else if (statement.type === "oneof") {
-      // TODO
+      yield* iterOneofFields(
+        statement.oneofBody.statements,
+        statement.oneofName.text,
+      );
     } else if (statement.type === "map-field") {
       // TODO
     }
+  }
+}
+
+function* iterOneofFields(
+  statements: ast.OneofBodyStatement[],
+  oneof: string,
+): Generator<[number, MessageField]> {
+  const oneofStatements = filterNodesByType(statements, "oneof-field");
+  for (const statement of oneofStatements) {
+    const fieldNumber = evalIntLit(statement.fieldNumber);
+    yield [fieldNumber, {
+      kind: "oneof",
+      description: getDescription(statement.leadingComments),
+      name: statement.fieldName.text,
+      options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
+      type: stringifyType(statement.fieldType),
+      oneof,
+    }];
   }
 }
 

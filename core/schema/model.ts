@@ -89,6 +89,7 @@ export type MessageField =
 interface MessageFieldBase<TKind extends string> extends FieldBase {
   kind: TKind;
   name: string;
+  options: Options;
 }
 export interface NormalField extends MessageFieldBase<"normal"> {
   type: string; // relative
@@ -103,6 +104,7 @@ export interface RepeatedField extends MessageFieldBase<"repeated"> {
   type: string; // relative
 }
 export interface OneofField extends MessageFieldBase<"oneof"> {
+  type: string; // relative
   oneof: string;
 }
 export interface MapField extends MessageFieldBase<"map"> {
