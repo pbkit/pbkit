@@ -1,8 +1,18 @@
 import * as ast from "../ast/index.ts";
 import { Loader } from "../loader/index.ts";
 import { parse, ParseResult } from "../parser/proto.ts";
-import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
+import {
+  filterNodesByType,
+  filterNodesByTypes,
+  findNodeByType,
+} from "./ast-util.ts";
 import { isDocComment, parseDocComment } from "./doc-comment.ts";
+import {
+  evalConstant,
+  evalIntLit,
+  evalSignedIntLit,
+  evalStrLit,
+} from "./eval-ast-constant.ts";
 import {
   Enum,
   File,
@@ -16,6 +26,11 @@ import {
   Service,
   Type,
 } from "./model.ts";
+import {
+  stringifyFullIdent,
+  stringifyOptionName,
+  stringifyType,
+} from "./stringify-ast-frag.ts";
 
 export interface BuildConfig {
   loader: Loader;
@@ -321,107 +336,4 @@ function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
 function getDescription(comments: ast.Comment[]): string {
   const docComment = comments.find((comment) => isDocComment(comment.text));
   return parseDocComment(docComment?.text ?? "");
-}
-
-function evalConstant(constant: ast.Constant): boolean | number | string {
-  switch (constant.type) {
-    case "aggregate":
-      return "";
-    case "bool-lit":
-      return evalBoolLit(constant.text);
-    case "full-ident":
-      return stringifyFullIdent(constant);
-    case "signed-float-lit":
-      return evalSignedFloatLit(constant);
-    case "signed-int-lit":
-      return evalSignedIntLit(constant);
-    case "str-lit":
-      return evalStrLit(constant);
-  }
-}
-
-function evalBoolLit(text: string): boolean {
-  if (text === "true") return true;
-  return false;
-}
-
-function evalIntLit(intLit: ast.IntLit): number {
-  const text = intLit.text;
-  if (text.startsWith("0x")) return parseInt(text, 16);
-  if (text.startsWith("0")) return parseInt(text, 8);
-  return parseInt(text, 10);
-}
-
-function evalSignedIntLit(signedIntLit: ast.SignedIntLit): number {
-  const intLit = signedIntLit.value;
-  if (signedIntLit.sign?.text === "-") return -evalIntLit(intLit);
-  return evalIntLit(intLit);
-}
-
-function evalFloatLit(floatLit: ast.FloatLit): number {
-  const text = floatLit.text;
-  if (text === "inf") return Infinity;
-  if (text === "nan") return NaN;
-  return parseFloat(text);
-}
-
-function evalSignedFloatLit(signedFloatLit: ast.SignedFloatLit): number {
-  const floatLit = signedFloatLit.value;
-  if (signedFloatLit.sign?.text === "-") return -evalFloatLit(floatLit);
-  return evalFloatLit(floatLit);
-}
-
-function evalStrLit(strLit: ast.StrLit): string {
-  return JSON.parse(strLit.text); // TODO
-}
-
-function findNodeByType<TType extends ast.Node["type"]>(
-  nodes: ast.Node[],
-  type: TType,
-): Extract<ast.Node, { type: TType }> | undefined {
-  return nodes.find((node) => node.type === type) as any;
-}
-
-function filterNodesByType<TType extends ast.Node["type"]>(
-  nodes: ast.Node[],
-  type: TType,
-): Extract<ast.Node, { type: TType }>[] {
-  return nodes.filter((node) => node.type === type) as any;
-}
-
-function filterNodesByTypes<TType extends ast.Node["type"]>(
-  nodes: ast.Node[],
-  types: TType[],
-): Extract<ast.Node, { type: TType }>[] {
-  return nodes.filter((node) => types.includes(node.type as TType)) as any;
-}
-
-function createNaiveAstStringifier() {
-  const result: string[] = [];
-  const visitor: Visitor = {
-    ...defaultVisitor,
-    visitComment() {},
-    visitToken(_, node) {
-      result.push(node.text);
-    },
-  };
-  return { visitor, finish: () => result.join("") };
-}
-
-function stringifyType(type: ast.Type): string {
-  const stringifier = createNaiveAstStringifier();
-  stringifier.visitor.visitType(stringifier.visitor, type);
-  return stringifier.finish();
-}
-
-function stringifyFullIdent(fullIdent: ast.FullIdent): string {
-  const stringifier = createNaiveAstStringifier();
-  stringifier.visitor.visitFullIdent(stringifier.visitor, fullIdent);
-  return stringifier.finish();
-}
-
-function stringifyOptionName(optionName: ast.OptionName): string {
-  const stringifier = createNaiveAstStringifier();
-  stringifier.visitor.visitOptionName(stringifier.visitor, optionName);
-  return stringifier.finish();
 }
