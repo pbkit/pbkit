@@ -26,7 +26,8 @@ export interface Import {
 }
 
 export type Type = Message | Enum;
-interface TypeBase {
+interface TypeBase<TKind extends string> {
+  kind: TKind;
   filePath: string;
   options: Options;
   description: string;
@@ -35,8 +36,21 @@ interface FieldBase {
   description: string;
 }
 
-export interface Message extends TypeBase {
+export interface Message extends TypeBase<"message"> {
   fields: { [fieldNumber: number]: MessageField };
+  groups: { [groupName: string]: Group };
+  reservedFieldNumberRanges: Range[];
+  reservedFieldNames: string[];
+  extensions: Range[];
+}
+
+export interface Group {
+  kind: "required" | "optional" | "repeated";
+  options: Options;
+  description: string;
+  fieldNumber: number;
+  fields: { [fieldNumber: number]: MessageField };
+  groups: { [groupName: string]: Group };
   reservedFieldNumberRanges: Range[];
   reservedFieldNames: string[];
   extensions: Range[];
@@ -47,9 +61,10 @@ export interface Extend {
   message: string;
   description: string;
   fields: { [fieldNumber: number]: ExtendField };
+  groups: { [groupName: string]: Group };
 }
 
-export interface Enum extends TypeBase {
+export interface Enum extends TypeBase<"enum"> {
   fields: { [fieldNumber: number]: EnumField };
 }
 
@@ -62,24 +77,18 @@ export type ExtendField =
   | NormalField
   | RequiredField
   | OptionalField
-  | RepeatedField
-  | RequiredGroupField
-  | OptionalGroupField
-  | RepeatedGroupField;
+  | RepeatedField;
+
 export type MessageField =
   | NormalField
   | RequiredField
   | OptionalField
   | RepeatedField
   | OneofField
-  | MapField
-  | RequiredGroupField
-  | OptionalGroupField
-  | RepeatedGroupField;
+  | MapField;
 interface MessageFieldBase<TKind extends string> extends FieldBase {
   kind: TKind;
   name: string;
-  group?: string;
 }
 export interface NormalField extends MessageFieldBase<"normal"> {
   type: string; // relative
@@ -100,12 +109,6 @@ export interface MapField extends MessageFieldBase<"map"> {
   keyType: string; // relative
   valueType: string; // relative
 }
-export interface RequiredGroupField
-  extends MessageFieldBase<"required-group"> {}
-export interface OptionalGroupField
-  extends MessageFieldBase<"optional-group"> {}
-export interface RepeatedGroupField
-  extends MessageFieldBase<"repeated-group"> {}
 
 export interface Range {
   from: number;

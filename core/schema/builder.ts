@@ -6,8 +6,10 @@ import { isDocComment, parseDocComment } from "./doc-comment.ts";
 import {
   Enum,
   File,
+  Group,
   Import,
   Message,
+  MessageField,
   Options,
   RpcType,
   Schema,
@@ -158,13 +160,11 @@ function* iterTypes(
   for (const statement of statements) {
     if (statement.type === "enum") {
       yield getEnum(statement, typePath, filePath);
-      continue;
-    }
-    if (statement.type === "message") {
+    } else if (statement.type === "message") {
       const message = getMessage(statement, typePath, filePath);
       yield message;
-      yield* iterTypes(statement.messageBody.statements, message[0], filePath);
-      continue;
+      const messageBodyStatement = statement.messageBody.statements;
+      yield* iterTypes(messageBodyStatement, message[0], filePath);
     }
   }
 }
@@ -175,22 +175,82 @@ function getMessage(
   filePath: string,
 ): [string, Message] {
   const messageTypePath = typePath + "." + statement.messageName.text;
+  const statements = statement.messageBody.statements;
   const message: Message = {
+    kind: "message",
     filePath,
-    options: getOptions(statement.messageBody.statements),
     description: getDescription(statement.leadingComments),
-    fields: getMessageFields(statement.messageBody.statements),
-    reservedFieldNumberRanges: [], // TODO
-    reservedFieldNames: [], // TODO
-    extensions: [], // TODO
+    ...getMessageBody(statements),
   };
   return [messageTypePath, message];
 }
 
-function getMessageFields(statements: ast.Statement[]): Message["fields"] {
+type MessageBody = Omit<Message, "kind" | "filePath" | "description">;
+function getMessageBody(
+  statements: ast.Statement[],
+): MessageBody {
   const fields: Message["fields"] = {};
-  // TODO
-  return fields;
+  for (const [fieldNumber, field] of iterMessageFields(statements)) {
+    fields[fieldNumber] = field;
+  }
+  const groups: Message["groups"] = {};
+  for (const groupStatement of filterNodesByType(statements, "group")) {
+    const groupName = groupStatement.groupName.text;
+    groups[groupName] = getGroup(groupStatement);
+  }
+  return {
+    options: getOptions(statements),
+    fields,
+    groups,
+    reservedFieldNumberRanges: [], // TODO
+    reservedFieldNames: [], // TODO
+    extensions: [], // TODO
+  };
+}
+
+function* iterMessageFields(
+  statements: ast.Statement[],
+): Generator<[number, MessageField]> {
+  for (const statement of statements) {
+    if (statement.type === "field") {
+      const fieldNumber = evalIntLit(statement.fieldNumber);
+      const fieldBase = {
+        description: getDescription(statement.leadingComments),
+        name: statement.fieldName.text,
+        type: stringifyType(statement.fieldType),
+      };
+      if (!statement.fieldLabel) {
+        yield [fieldNumber, { ...fieldBase, kind: "normal" }];
+      } else {
+        const kind = statement.fieldLabel.text;
+        if (
+          kind === "required" ||
+          kind === "optional" ||
+          kind === "repeated"
+        ) {
+          yield [fieldNumber, { ...fieldBase, kind }];
+        }
+      }
+    } else if (statement.type === "oneof") {
+      // TODO
+    } else if (statement.type === "map-field") {
+      // TODO
+    }
+  }
+}
+
+function getGroup(statement: ast.Group): Group {
+  const statements = statement.messageBody.statements;
+  const fields: Message["fields"] = {};
+  for (const [fieldNumber, field] of iterMessageFields(statements)) {
+    fields[fieldNumber] = field;
+  }
+  return {
+    kind: statement.groupLabel.text as Group["kind"],
+    description: getDescription(statement.leadingComments),
+    fieldNumber: evalIntLit(statement.fieldNumber),
+    ...getMessageBody(statements),
+  };
 }
 
 function getEnum(
@@ -200,6 +260,7 @@ function getEnum(
 ): [string, Enum] {
   const enumTypePath = typePath + "." + statement.enumName.text;
   const _enum: Enum = {
+    kind: "enum",
     filePath,
     options: getOptions(statement.enumBody.statements),
     description: getDescription(statement.leadingComments),
