@@ -29,12 +29,13 @@ export async function build(config: BuildConfig): Promise<Schema> {
   const iterFileResults = iterFiles(config.files, config.loader);
   for await (const { filePath, parseResult, file } of iterFileResults) {
     result.files[filePath] = file;
+    const typePath = file.package ? "." + file.package : "";
     const statements = parseResult.ast.statements;
-    const services = iterServices(statements, file.package, filePath);
+    const services = iterServices(statements, typePath, filePath);
     for (const [typePath, service] of services) {
       result.services[typePath] = service;
     }
-    const types = iterTypes(statements, file.package, filePath);
+    const types = iterTypes(statements, typePath, filePath);
     for (const [typePath, type] of types) {
       result.types[typePath] = type;
     }
@@ -154,29 +155,36 @@ function* iterTypes(
   typePath: string,
   filePath: string,
 ): Generator<[string, Type]> {
-  yield* iterMessages(statements, typePath, filePath);
-  yield* iterEnums(statements, typePath, filePath);
+  for (const statement of statements) {
+    if (statement.type === "enum") {
+      yield getEnum(statement, typePath, filePath);
+      continue;
+    }
+    if (statement.type === "message") {
+      const message = getMessage(statement, typePath, filePath);
+      yield message;
+      yield* iterTypes(statement.messageBody.statements, message[0], filePath);
+      continue;
+    }
+  }
 }
 
-function* iterMessages(
-  statements: ast.Statement[],
+function getMessage(
+  statement: ast.Message,
   typePath: string,
   filePath: string,
-): Generator<[string, Message]> {
-  const messageStatements = filterNodesByType(statements, "message");
-  for (const statement of messageStatements) {
-    const messageTypePath = typePath + "." + statement.messageName.text;
-    const message: Message = {
-      filePath,
-      options: getOptions(statement.messageBody.statements),
-      description: getDescription(statement.leadingComments),
-      fields: getMessageFields(statement.messageBody.statements),
-      reservedFieldNumberRanges: [], // TODO
-      reservedFieldNames: [], // TODO
-      extensions: [], // TODO
-    };
-    yield [messageTypePath, message];
-  }
+): [string, Message] {
+  const messageTypePath = typePath + "." + statement.messageName.text;
+  const message: Message = {
+    filePath,
+    options: getOptions(statement.messageBody.statements),
+    description: getDescription(statement.leadingComments),
+    fields: getMessageFields(statement.messageBody.statements),
+    reservedFieldNumberRanges: [], // TODO
+    reservedFieldNames: [], // TODO
+    extensions: [], // TODO
+  };
+  return [messageTypePath, message];
 }
 
 function getMessageFields(statements: ast.Statement[]): Message["fields"] {
@@ -185,22 +193,19 @@ function getMessageFields(statements: ast.Statement[]): Message["fields"] {
   return fields;
 }
 
-function* iterEnums(
-  statements: ast.Statement[],
+function getEnum(
+  statement: ast.Enum,
   typePath: string,
   filePath: string,
-): Generator<[string, Enum]> {
-  const enumStatements = filterNodesByType(statements, "enum");
-  for (const statement of enumStatements) {
-    const enumTypePath = typePath + "." + statement.enumName.text;
-    const _enum: Enum = {
-      filePath,
-      options: getOptions(statement.enumBody.statements),
-      description: getDescription(statement.leadingComments),
-      fields: getEnumFields(statement.enumBody.statements),
-    };
-    yield [enumTypePath, _enum];
-  }
+): [string, Enum] {
+  const enumTypePath = typePath + "." + statement.enumName.text;
+  const _enum: Enum = {
+    filePath,
+    options: getOptions(statement.enumBody.statements),
+    description: getDescription(statement.leadingComments),
+    fields: getEnumFields(statement.enumBody.statements),
+  };
+  return [enumTypePath, _enum];
 }
 
 function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
