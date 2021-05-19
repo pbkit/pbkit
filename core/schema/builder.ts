@@ -55,7 +55,12 @@ async function* iterFiles(
   files: string[],
   loader: Loader,
 ): AsyncGenerator<IterFileResult> {
-  for (const filePath of files) {
+  const queue = [...files];
+  const done: { [filePath: string]: true } = {};
+  while (queue.length) {
+    const filePath = queue.pop()!;
+    if (done[filePath]) continue;
+    done[filePath] = true;
     const loadResult = await loader.load(filePath);
     if (!loadResult) continue;
     const parseResult = parse(loadResult.data);
@@ -68,6 +73,7 @@ async function* iterFiles(
       options: getOptions(statements),
     };
     yield { filePath, parseResult, file };
+    queue.push(...file.imports.map(({ filePath }) => filePath));
   }
 }
 
