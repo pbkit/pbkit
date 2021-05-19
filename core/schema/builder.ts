@@ -101,10 +101,22 @@ function getImports(statements: Statement[]): Import[] {
 
 function getOptions(statements: Statement[]): Options {
   const optionStatements = filterStatementsByType(statements, "option");
-  const result: File["options"] = {};
+  const result: Options = {};
   for (const statement of optionStatements) {
     const optionName = stringifyOptionName(statement.optionName);
     const optionValue = evalConstant(statement.constant);
+    result[optionName] = optionValue;
+  }
+  return result;
+}
+
+function getFieldOptions(fieldOptions?: ast.FieldOptions): Options {
+  if (!fieldOptions) return {};
+  const result: Options = {};
+  for (const fieldOption of fieldOptions.fieldOptionOrCommas) {
+    if (fieldOption.type !== "field-option") continue;
+    const optionName = stringifyOptionName(fieldOption.optionName);
+    const optionValue = evalConstant(fieldOption.constant);
     result[optionName] = optionValue;
   }
   return result;
@@ -208,7 +220,15 @@ function* iterEnums(
 
 function getEnumFields(statements: Statement[]): Enum["fields"] {
   const fields: Enum["fields"] = {};
-  // TODO
+  const enumFieldStatements = filterStatementsByType(statements, "enum-field");
+  for (const statement of enumFieldStatements) {
+    const fieldNumber = evalSignedIntLit(statement.fieldNumber);
+    fields[fieldNumber] = {
+      description: getDescription(statement.leadingComments),
+      name: statement.fieldName.text,
+      options: getFieldOptions(statement.fieldOptions),
+    };
+  }
   return fields;
 }
 
