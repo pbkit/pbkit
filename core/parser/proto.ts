@@ -235,6 +235,12 @@ function acceptIntLit(parser: RecursiveDescentParser): ast.IntLit | undefined {
   return { type: "int-lit", ...intLit };
 }
 
+function expectIntLit(parser: RecursiveDescentParser): ast.IntLit {
+  const intLit = acceptIntLit(parser);
+  if (intLit) return intLit;
+  throw new SyntaxError(parser, [intLitPattern]);
+}
+
 function acceptSignedIntLit(
   parser: RecursiveDescentParser,
 ): ast.SignedIntLit | undefined {
@@ -650,7 +656,7 @@ function acceptField(
   skipWsAndComments(parser);
   const eq = parser.expect("=");
   skipWsAndComments(parser);
-  const fieldNumber = parser.expect(intLitPattern);
+  const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
@@ -683,7 +689,7 @@ function acceptOneofField(
   skipWsAndComments(parser);
   const eq = parser.expect("=");
   skipWsAndComments(parser);
-  const fieldNumber = parser.expect(intLitPattern);
+  const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
@@ -725,7 +731,7 @@ function acceptMapField(
   skipWsAndComments(parser);
   const eq = parser.expect("=");
   skipWsAndComments(parser);
-  const fieldNumber = parser.expect(intLitPattern);
+  const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
@@ -968,7 +974,7 @@ function acceptGroup(
   skipWsAndComments(parser);
   const eq = parser.expect("=");
   skipWsAndComments(parser);
-  const fieldNumber = parser.expect(intLitPattern);
+  const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
   skipWsAndComments(parser);

@@ -325,7 +325,7 @@ export const visitor: Visitor = {
       visitor.visitType(visitor, node.fieldType);
       visitor.visitToken(visitor, node.fieldName);
       visitor.visitToken(visitor, node.eq);
-      visitor.visitToken(visitor, node.fieldNumber);
+      visitor.visitIntLit(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
       visitor.visitSemi(visitor, node.semi);
@@ -356,7 +356,7 @@ export const visitor: Visitor = {
       visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.groupName);
       visitor.visitToken(visitor, node.eq);
-      visitor.visitToken(visitor, node.fieldNumber);
+      visitor.visitIntLit(visitor, node.fieldNumber);
       visitor.visitMessageBody(visitor, node.messageBody);
     });
   },
@@ -389,7 +389,7 @@ export const visitor: Visitor = {
       visitor.visitType(visitor, node.fieldType);
       visitor.visitToken(visitor, node.fieldName);
       visitor.visitToken(visitor, node.eq);
-      visitor.visitToken(visitor, node.fieldNumber);
+      visitor.visitIntLit(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
       visitor.visitSemi(visitor, node.semi);
@@ -405,7 +405,7 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.typeBracketClose);
       visitor.visitToken(visitor, node.mapName);
       visitor.visitToken(visitor, node.eq);
-      visitor.visitToken(visitor, node.fieldNumber);
+      visitor.visitIntLit(visitor, node.fieldNumber);
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
       visitor.visitSemi(visitor, node.semi);

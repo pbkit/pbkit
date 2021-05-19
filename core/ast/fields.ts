@@ -4,6 +4,7 @@ import {
   Comma,
   Constant,
   Empty,
+  IntLit,
   Keyword,
   Semi,
   Type,
@@ -26,7 +27,7 @@ export interface Field extends StatementBase {
   fieldType: Type;
   fieldName: Token;
   eq: Token;
-  fieldNumber: Token;
+  fieldNumber: IntLit;
   fieldOptions?: FieldOptions;
   semi: Semi;
 }
@@ -51,7 +52,7 @@ export interface Group extends StatementBase {
   keyword: Keyword;
   groupName: Token;
   eq: Token;
-  fieldNumber: Token;
+  fieldNumber: IntLit;
   messageBody: MessageBody;
 }
 
@@ -79,7 +80,7 @@ export interface OneofField extends StatementBase {
   fieldType: Type;
   fieldName: Token;
   eq: Token;
-  fieldNumber: Token;
+  fieldNumber: IntLit;
   fieldOptions?: FieldOptions;
   semi: Semi;
 }
@@ -94,7 +95,7 @@ export interface MapField extends StatementBase {
   typeBracketClose: Token;
   mapName: Token;
   eq: Token;
-  fieldNumber: Token;
+  fieldNumber: IntLit;
   fieldOptions?: FieldOptions;
   semi: Semi;
 }
