@@ -221,7 +221,7 @@ function* iterMessageFields(
         type: stringifyType(statement.fieldType),
       };
       if (!statement.fieldLabel) {
-        yield [fieldNumber, { ...fieldBase, kind: "normal" }];
+        yield [fieldNumber, { kind: "normal", ...fieldBase }];
       } else {
         const kind = statement.fieldLabel.text;
         if (
@@ -229,7 +229,7 @@ function* iterMessageFields(
           kind === "optional" ||
           kind === "repeated"
         ) {
-          yield [fieldNumber, { ...fieldBase, kind }];
+          yield [fieldNumber, { kind, ...fieldBase }];
         }
       }
     } else if (statement.type === "oneof") {
@@ -238,7 +238,14 @@ function* iterMessageFields(
         statement.oneofName.text,
       );
     } else if (statement.type === "map-field") {
-      // TODO
+      yield [evalIntLit(statement.fieldNumber), {
+        kind: "map",
+        description: getDescription(statement.leadingComments),
+        name: statement.mapName.text,
+        options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
+        keyType: stringifyType(statement.keyType),
+        valueType: stringifyType(statement.valueType),
+      }];
     }
   }
 }
