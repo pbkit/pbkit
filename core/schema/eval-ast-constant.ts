@@ -52,5 +52,29 @@ export function evalSignedFloatLit(signedFloatLit: ast.SignedFloatLit): number {
 }
 
 export function evalStrLit(strLit: ast.StrLit): string {
-  return JSON.parse(strLit.text); // TODO
+  return strLit.text
+    .slice(1, -1)
+    .replace(
+      /(?:\\x([0-9a-f]{2})|\\([0-7]{3})|\\([0abfnrtv\\'"]))/i,
+      (input, hex, octal, char: string) => {
+        if (hex) return String.fromCodePoint(parseInt(hex, 16));
+        if (octal) return String.fromCharCode(parseInt(octal, 8) % 0x100);
+        if (char) return charMap[char.toLowerCase() as keyof typeof charMap];
+        return input;
+      },
+    );
 }
+
+const charMap = {
+  "0": "\x00",
+  "a": "\x07",
+  "b": "\x08",
+  "f": "\x0C",
+  "n": "\x0A",
+  "r": "\x0D",
+  "t": "\x09",
+  "v": "\x0B",
+  "\\": "\x5C",
+  "'": "\x27",
+  '"': "\x22",
+};
