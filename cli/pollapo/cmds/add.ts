@@ -10,11 +10,11 @@ import {
   getRepoRevGroup,
   getToken,
   PollapoNotLoggedInError,
-} from "../misc/github.ts";
+} from "../../../misc/github/index.ts";
 import {
   PollapoUnauthorizedError,
   validateToken,
-} from "../misc/github-auth.ts";
+} from "../../../misc/github/auth.ts";
 import backoff from "../misc/exponential-backoff.ts";
 import {
   loadPollapoYml,

@@ -9,8 +9,12 @@ import {
   fetchArchive,
   getToken,
   PollapoNotLoggedInError,
-} from "../misc/github.ts";
-import { iterFiles, stripComponents, unzip } from "../misc/archive/zip.ts";
+} from "../../../misc/github/index.ts";
+import {
+  iterFiles,
+  stripComponents,
+  unzip,
+} from "../../../misc/archive/zip.ts";
 import { print, println } from "../misc/stdio.ts";
 import { getCacheDir } from "../config.ts";
 import {
@@ -29,7 +33,7 @@ import { compareRev } from "../rev.ts";
 import {
   PollapoUnauthorizedError,
   validateToken,
-} from "../misc/github-auth.ts";
+} from "../../../misc/github/auth.ts";
 
 interface Options {
   clean?: true;

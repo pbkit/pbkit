@@ -5,7 +5,7 @@ import {
   exists,
 } from "https://deno.land/std@0.93.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
-import { stripComponents, unzip } from "./misc/archive/zip.ts";
+import { stripComponents, unzip } from "../../misc/archive/zip.ts";
 import { isSemver } from "./rev.ts";
 
 export type PollapoYml = {

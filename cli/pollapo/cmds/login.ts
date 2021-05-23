@@ -1,10 +1,17 @@
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
 import { Confirm } from "https://deno.land/x/cliffy@v0.18.0/prompt/confirm.ts";
-import { pollToken, requestCode, writeGhHosts } from "../misc/github-auth.ts";
+import {
+  pollToken,
+  requestCode,
+  writeGhHosts,
+} from "../../../misc/github/auth.ts";
 import { print, println } from "../misc/stdio.ts";
 import { open } from "../misc/browser.ts";
 import { bold, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
-import { getToken, PollapoNotLoggedInError } from "../misc/github.ts";
+import {
+  getToken,
+  PollapoNotLoggedInError,
+} from "../../../misc/github/index.ts";
 
 export default new Command()
   .description("Sign in with GitHub account")
