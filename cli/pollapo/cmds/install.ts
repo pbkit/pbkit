@@ -1,3 +1,5 @@
+import { stringify } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
+import { green, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
 import { emptyDir, ensureDir } from "https://deno.land/std@0.93.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
@@ -6,9 +8,8 @@ import minify from "../../../core/stringifier/minify.ts";
 import replaceFileOption from "../postprocess/replaceFileOption.ts";
 import backoff from "../misc/exponential-backoff.ts";
 import {
-  fetchArchive,
   getToken,
-  PollapoNotLoggedInError,
+  GithubNotLoggedInError,
 } from "../../../misc/github/index.ts";
 import {
   iterFiles,
@@ -22,12 +23,16 @@ import {
   AnalyzeDepsResultRevs,
   cacheDeps,
   depToString,
+  getFetchCommitHash,
+  getFetchZip,
   getZipPath,
   loadPollapoYml,
+  lock,
   parseDep,
-  PollapoDep,
+  PollapoRootLockTable,
   PollapoYml,
   PollapoYmlNotFoundError,
+  sanitizeDeps,
 } from "../pollapoYml.ts";
 import { compareRev } from "../rev.ts";
 import {
@@ -65,22 +70,46 @@ export default new Command()
         cacheDir,
         clean: !!options.clean,
         pollapoYml,
+        fetchCommitHash: getFetchCommitHash(token),
         fetchZip: getFetchZip(token),
       });
-      for await (const { dep, downloading } of caching) {
-        await print(`Downloading ${depToString(dep)}...`);
-        await downloading;
-        await println("ok");
+      const lockTable: PollapoRootLockTable = {};
+      for await (const task of caching) {
+        const depString = depToString(task.dep);
+        if (task.type === "use-cache") {
+          await println(`Use cache of ${yellow(depString)}.`);
+          await task.promise;
+        } else if (task.type === "use-locked-commit-hash") {
+          await println(`Use locked commit hash of ${yellow(depString)}.`);
+          const commitHash = await task.promise;
+          lockTable[depString] = commitHash;
+        } else if (task.type === "check-commit-hash") {
+          await print(`Checking commit hash of ${yellow(depString)}...`);
+          const commitHash = await task.promise;
+          lockTable[depString] = commitHash;
+          await println(green("ok"));
+        } else if (task.type === "download") {
+          await print(`Downloading ${yellow(depString)}...`);
+          await task.promise;
+          await println(green("ok"));
+        }
       }
       const analyzeDepsResult = await analyzeDeps({ cacheDir, pollapoYml });
       await emptyDir(options.outDir);
       for (const [repo, revs] of Object.entries(analyzeDepsResult)) {
         await installDep(options, cacheDir, pollapoYml, repo, revs);
       }
+      const pollapoYmlText = stringify(
+        sanitizeDeps({
+          ...pollapoYml,
+          root: { ...pollapoYml?.root, lock: lockTable },
+        }) as Record<string, unknown>,
+      );
+      await Deno.writeTextFile(options.config, pollapoYmlText);
       await println("Done.");
     } catch (err) {
       if (
-        err instanceof PollapoNotLoggedInError ||
+        err instanceof GithubNotLoggedInError ||
         err instanceof PollapoYmlNotFoundError ||
         err instanceof PollapoUnauthorizedError
       ) {
@@ -99,8 +128,9 @@ async function installDep(
   repo: string,
   revs: AnalyzeDepsResultRevs,
 ): Promise<void> {
+  const lockTable = pollapoYml?.root?.lock ?? {};
   const latest = Object.keys(revs).sort(compareRev).pop()!;
-  const dep = parseDep(`${repo}@${latest}`);
+  const dep = lock(lockTable, parseDep(`${repo}@${latest}`));
   const zipPath = getZipPath(cacheDir, dep);
   const zipData = await Deno.readFile(zipPath);
   const files = stripComponents(await unzip(zipData), 1);
@@ -121,13 +151,4 @@ async function installDep(
     await ensureDir(path.dirname(filePath));
     await Deno.writeFile(filePath, data);
   }
-}
-
-function getFetchZip(token: string) {
-  return async function fetchZip(dep: PollapoDep): Promise<Uint8Array> {
-    const res = await backoff(() =>
-      fetchArchive({ type: "zip", token, ...dep })
-    );
-    return new Uint8Array(await res.arrayBuffer());
-  };
 }

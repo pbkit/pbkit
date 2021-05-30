@@ -15,3 +15,13 @@ export function compareRev(a: string, b: string): -1 | 0 | 1 {
   }
   return a == b ? 0 : a < b ? -1 : 1;
 }
+
+export type RevType = "commit" | "release" | "branch";
+export function getRevType(rev: string): RevType {
+  return isSha1(rev) ? "commit" : isSemver(rev) ? "release" : "branch";
+}
+
+export function isSha1(text: string): boolean {
+  if (text.length !== 40) return false;
+  return !/[^0-9a-f]/.test(text);
+}

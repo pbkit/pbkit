@@ -6,7 +6,9 @@ import {
 } from "https://deno.land/std@0.93.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
 import { stripComponents, unzip } from "../../misc/archive/zip.ts";
-import { isSemver } from "./rev.ts";
+import { fetchArchive, fetchCommitStatus } from "../../misc/github/index.ts";
+import backoff from "./misc/exponential-backoff.ts";
+import { getRevType } from "./rev.ts";
 
 export type PollapoYml = {
   deps?: string[];
@@ -24,7 +26,12 @@ export type PollapoDepFrag =
   & Partial<Pick<PollapoDep, "rev">>;
 
 export interface PollapoRoot {
+  lock?: PollapoRootLockTable;
   "replace-file-option"?: PollapoRootReplaceFileOption;
+}
+
+export interface PollapoRootLockTable {
+  [dep: string]: string; // value: commit hash
 }
 
 export interface PollapoRootReplaceFileOption {
@@ -110,43 +117,135 @@ export interface CacheDepsConfig {
   pollapoYml: PollapoYml;
   clean: boolean;
   cacheDir: string;
+  fetchCommitHash: (dep: PollapoDep) => Promise<string>;
   fetchZip: (dep: PollapoDep) => Promise<Uint8Array>;
 }
-export interface CacheDepsCurrentItem {
+export type CacheDepsTask =
+  | CacheDepsTaskUseCache
+  | CacheDepsTaskUseLockedCommitHash
+  | CacheDepsTaskCheckCommitHash
+  | CacheDepsTaskDownload;
+interface CacheDepsTaskBase<TTaskType extends string, TResult> {
+  type: TTaskType;
   dep: PollapoDep;
-  downloading: Promise<void>;
+  promise: Promise<TResult>;
+}
+export type CacheDepsTaskUseCache = CacheDepsTaskBase<"use-cache", void>;
+export type CacheDepsTaskUseLockedCommitHash = CacheDepsTaskBase<
+  "use-locked-commit-hash",
+  string
+>;
+export type CacheDepsTaskCheckCommitHash = CacheDepsTaskBase<
+  "check-commit-hash",
+  string
+>;
+export type CacheDepsTaskDownload = CacheDepsTaskBase<
+  "download",
+  CacheDepsTaskDownloadResult
+>;
+export interface CacheDepsTaskDownloadResult {
+  zip: Uint8Array;
+  pollapoYmlText: string;
+  pollapoYml: PollapoYml;
 }
 export async function* cacheDeps(
   config: CacheDepsConfig,
-): AsyncGenerator<CacheDepsCurrentItem> {
-  const { pollapoYml, clean, cacheDir, fetchZip } = config;
+): AsyncGenerator<CacheDepsTask> {
+  const { pollapoYml, clean, cacheDir, fetchZip, fetchCommitHash } = config;
   if (clean) await emptyDir(cacheDir);
+  const lockTable = pollapoYml?.root?.lock ?? {};
   const queue = [...deps(pollapoYml)];
   let dep: PollapoDep;
-  const cachedDeps: { [cachedDep: string]: true } = {};
+  const visitedDeps: { [visitedDep: string]: true } = {};
   while (dep = queue.shift()!) {
+    const ymlPath = getYmlPath(cacheDir, dep);
+    const revType = getRevType(dep.rev);
+    const depString = depToString(dep);
+    if (visitedDeps[depString]) continue;
+    visitedDeps[depString] = true;
+    if ((revType !== "branch") && await exists(ymlPath)) {
+      yield { type: "use-cache", dep, promise: Promise.resolve() };
+      const pollapoYmlText = await Deno.readTextFile(ymlPath);
+      const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
+      queue.push(...deps(pollapoYml));
+      continue;
+    }
+    await ensureDir(path.resolve(cacheDir, dep.user));
+    if (revType === "branch") {
+      const fetchingCommitHash = depString in lockTable
+        ? Promise.resolve(lockTable[depString])
+        : fetchCommitHash(dep);
+      const taskType = depString in lockTable
+        ? "use-locked-commit-hash"
+        : "check-commit-hash";
+      yield { type: taskType, dep, promise: fetchingCommitHash };
+      const commitHash = await fetchingCommitHash;
+      queue.push({ ...dep, rev: commitHash });
+      await unlink(dep);
+      await link(dep, commitHash);
+    } else {
+      const downloading = download(dep);
+      yield { type: "download", dep, promise: downloading };
+      const { zip, pollapoYmlText, pollapoYml } = await downloading;
+      queue.push(...deps(pollapoYml));
+      await cache(dep, zip, pollapoYmlText);
+    }
+  }
+  async function download(
+    dep: PollapoDep,
+  ): Promise<CacheDepsTaskDownloadResult> {
+    const zip = await fetchZip(dep);
+    const pollapoYmlText = await extractPollapoYml(zip);
+    const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
+    return { zip, pollapoYmlText, pollapoYml };
+  }
+  async function unlink(dep: PollapoDep) {
+    try {
+      await Promise.all([
+        Deno.remove(getZipPath(cacheDir, dep)),
+        Deno.remove(getYmlPath(cacheDir, dep)),
+      ]);
+    } catch {
+      // Ignore if file does not exist
+    }
+  }
+  async function link(dep: PollapoDep, rev: string) {
+    const targetDep: PollapoDep = { ...dep, rev };
+    await Promise.all([
+      Deno.symlink(
+        getZipPath(cacheDir, targetDep),
+        getZipPath(cacheDir, dep),
+        { type: "file" },
+      ),
+      Deno.symlink(
+        getYmlPath(cacheDir, targetDep),
+        getYmlPath(cacheDir, dep),
+        { type: "file" },
+      ),
+    ]);
+  }
+  async function cache(
+    dep: PollapoDep,
+    zip: Uint8Array,
+    pollapoYmlText: string,
+  ) {
     const zipPath = getZipPath(cacheDir, dep);
     const ymlPath = getYmlPath(cacheDir, dep);
-    if (cachedDeps[depToString(dep)]) continue;
-    if (isSemver(dep.rev) && await exists(ymlPath)) continue;
-    const downloading = new Promise<void>(async (resolve, reject) => {
-      try {
-        const zip = await fetchZip(dep);
-        const pollapoYmlText = await extractPollapoYml(zip);
-        const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
-        queue.push(...deps(pollapoYml));
-        cachedDeps[depToString(dep)] = true;
-        await ensureDir(path.resolve(cacheDir, dep.user));
-        await Deno.writeFile(zipPath, zip);
-        await Deno.writeTextFile(ymlPath, pollapoYmlText);
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
-    });
-    yield { dep, downloading };
-    await downloading;
+    await Promise.all([
+      Deno.writeFile(zipPath, zip),
+      Deno.writeTextFile(ymlPath, pollapoYmlText),
+    ]);
   }
+}
+
+export function lock<T extends (PollapoDep | undefined) = PollapoDep>(
+  lockTable: PollapoRootLockTable,
+  dep: T,
+): T {
+  if (!dep) return dep;
+  const depString = depToString(dep!);
+  if (depString in lockTable) return { ...dep!, rev: lockTable[depString] };
+  return dep;
 }
 
 export interface AnalyzeDepsConfig {
@@ -168,6 +267,7 @@ export async function analyzeDeps(
   type Dep = PollapoDep & { from: string };
   const result: AnalyzeDepsResult = {};
   const { pollapoYml, cacheDir } = config;
+  const lockTable = pollapoYml?.root?.lock ?? {};
   const queue: Dep[] = [...deps(pollapoYml)].map((dep) => ({
     ...dep,
     from: "<root>",
@@ -180,7 +280,10 @@ export async function analyzeDeps(
     froms.push(dep.from);
     revs[dep.rev] = { froms };
     result[repo] = revs;
-    const pollapoYml = await getPollapoYml({ dep, cacheDir });
+    const pollapoYml = await getPollapoYml({
+      dep: lock(lockTable, dep),
+      cacheDir,
+    });
     for (const innerDep of deps(pollapoYml)) {
       if (depToString(dep) === depToString(innerDep)) continue;
       queue.push({ ...innerDep, from: depToString(dep) });
@@ -197,7 +300,34 @@ export function sanitizeDeps(pollapoYml: PollapoYml): PollapoYml {
   } else {
     result.deps = [...new Set(result.deps)].sort();
   }
+  if (result.root?.lock) {
+    result.root.lock = sortObjectKeys(result.root.lock);
+    if (!Object.keys(result.root.lock).length) delete result.root.lock;
+  }
+  if (result.root && !Object.keys(result.root).length) delete result.root;
   return result;
+}
+
+function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const key of Object.keys(obj).sort()) result[key] = obj[key];
+  return result;
+}
+
+export function getFetchCommitHash(token: string) {
+  return async function fetchCommitHash(dep: PollapoDep): Promise<string> {
+    const res = await backoff(() => fetchCommitStatus({ token, ...dep }));
+    return res.sha;
+  };
+}
+
+export function getFetchZip(token: string) {
+  return async function fetchZip(dep: PollapoDep): Promise<Uint8Array> {
+    const res = await backoff(() =>
+      fetchArchive({ type: "zip", token, ...dep })
+    );
+    return new Uint8Array(await res.arrayBuffer());
+  };
 }
 
 async function extractPollapoYml(zip: Uint8Array): Promise<string> {

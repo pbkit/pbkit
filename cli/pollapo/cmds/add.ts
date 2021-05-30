@@ -6,10 +6,11 @@ import {
 import { stringify } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
 import { cyan, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
 import {
-  getIsRepoExists,
-  getRepoRevGroup,
+  fetchBranches,
+  fetchTags,
   getToken,
-  PollapoNotLoggedInError,
+  GithubNotLoggedInError,
+  GithubRepoNotFoundError,
 } from "../../../misc/github/index.ts";
 import {
   PollapoUnauthorizedError,
@@ -52,11 +53,11 @@ export default new Command()
       await Deno.writeTextFile(options.config, pollapoYmlText);
     } catch (err) {
       if (
-        err instanceof PollapoNotLoggedInError ||
+        err instanceof GithubNotLoggedInError ||
+        err instanceof GithubRepoNotFoundError ||
         err instanceof PollapoYmlNotFoundError ||
         err instanceof PollapoUnauthorizedError ||
-        err instanceof PollapoRevNotFoundError ||
-        err instanceof PollapoRepoNotFoundError
+        err instanceof PollapoRevNotFoundError
       ) {
         console.error(err.message);
         return Deno.exit(1);
@@ -70,13 +71,11 @@ async function add(
   token: string,
 ): Promise<PollapoYml> {
   const { user, repo, rev } = parseDepFrag(dep);
-  const isRepoExists = await backoff(() =>
-    getIsRepoExists({ token, user, repo })
-  );
-  if (!isRepoExists) throw new PollapoRepoNotFoundError(repo);
-  const { tags, branches } = await backoff(() =>
-    getRepoRevGroup({ token, user, repo })
-  );
+  const fetchRepoConfig = { token, user, repo };
+  const [tags, branches] = await Promise.all([
+    backoff(() => fetchTags(fetchRepoConfig)),
+    backoff(() => fetchBranches(fetchRepoConfig)),
+  ]);
   if (rev) {
     if (![...tags, ...branches].find(({ name }) => name === rev)) {
       throw new PollapoRevNotFoundError(rev);
@@ -120,11 +119,5 @@ function pushDep(pollapoYml: PollapoYml, dep: string): PollapoYml {
 class PollapoRevNotFoundError extends Error {
   constructor(rev: string) {
     super(`Revision \`${rev}\` is not found.`);
-  }
-}
-
-class PollapoRepoNotFoundError extends Error {
-  constructor(repo: string) {
-    super(`Repository \`${repo}\` is not found.`);
   }
 }

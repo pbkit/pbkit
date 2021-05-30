@@ -10,7 +10,7 @@ import { open } from "../misc/browser.ts";
 import { bold, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
 import {
   getToken,
-  PollapoNotLoggedInError,
+  GithubNotLoggedInError,
 } from "../../../misc/github/index.ts";
 
 export default new Command()
@@ -30,7 +30,7 @@ export default new Command()
       );
       if (!confirmed) return;
     } catch (err) {
-      if (!(err instanceof PollapoNotLoggedInError)) {
+      if (!(err instanceof GithubNotLoggedInError)) {
         throw err;
       }
     }

@@ -30,15 +30,16 @@ export async function getToken(): Promise<string> {
     const token = ghHosts["github.com"].oauth_token;
     if (token) return token;
   } catch {}
-  throw new PollapoNotLoggedInError();
+  throw new GithubNotLoggedInError();
 }
 
+export interface GhCommit {
+  sha: string;
+  url: string;
+}
 export interface GhRev {
   name: string;
-  commit: {
-    sha: string;
-    url: string;
-  };
+  commit: GhCommit;
 }
 export interface GhTag extends GhRev {
   zipball_url: string;
@@ -55,86 +56,97 @@ export interface GhBranch extends GhRev {
   };
   protected_url: string;
 }
+export interface GhRepo {
+  name: string;
+}
 
-export interface GhRepoParams {
-  token: string;
+export interface FetchRepoConfig {
+  token?: string;
   user: string;
   repo: string;
 }
-
-export async function getIsRepoExists(
-  { token, user, repo }: GhRepoParams,
-): Promise<boolean> {
-  const res = await fetch(`https://api.github.com/repos/${user}/${repo}`, {
-    headers: {
-      Authorization: `token ${token}`,
-      Accept: "application/vnd.github.v3+json",
-    },
-  });
-
-  if (!res.ok) {
-    if ([404, 403].includes(res.status)) {
-      return false;
-    } else {
-      throw res;
-    }
-  }
-
-  return true;
+export async function fetchRepo(config: FetchRepoConfig): Promise<GhRepo> {
+  const res = await fetchRepoBase(config, "");
+  return await res.json() as GhRepo;
 }
 
-export interface GetRepoRevGroupResponse {
-  tags: GhTag[];
-  branches: GhBranch[];
+export interface FetchCommitStatusConfig extends FetchRepoConfig {
+  rev: string;
 }
-export async function getRepoRevGroup(
-  { token, user, repo }: GhRepoParams,
-): Promise<GetRepoRevGroupResponse> {
-  const headers = {
-    Authorization: `token ${token}`,
-    Accept: "application/vnd.github.v3+json",
-  };
-  const [tagsRes, branchesRes] = await Promise.all([
-    fetch(`https://api.github.com/repos/${user}/${repo}/tags`, { headers }),
-    fetch(`https://api.github.com/repos/${user}/${repo}/branches`, { headers }),
-  ]);
-
-  if (!tagsRes.ok) throw tagsRes;
-  if (!branchesRes.ok) throw branchesRes;
-
-  return {
-    tags: await tagsRes.json(),
-    branches: await branchesRes.json(),
-  };
+export async function fetchCommitStatus(
+  config: FetchCommitStatusConfig,
+): Promise<GhCommit> {
+  const { rev } = config;
+  const res = await fetchRepoBase(config, `/commits/${rev}/status`);
+  return await res.json() as GhCommit;
 }
 
-export interface FetchArchiveConfig {
+export interface FetchTagsConfig extends FetchRepoConfig {}
+export async function fetchTags(config: FetchTagsConfig): Promise<GhTag[]> {
+  const res = await fetchRepoBase(config, "/tags");
+  return await res.json() as GhTag[];
+}
+
+export interface FetchBranchesConfig extends FetchRepoConfig {}
+export async function fetchBranches(
+  config: FetchBranchesConfig,
+): Promise<GhBranch[]> {
+  const res = await fetchRepoBase(config, "/branches");
+  return await res.json() as GhBranch[];
+}
+
+export interface FetchArchiveConfig extends FetchRepoConfig {
   type: "tgz" | "zip";
-  token: string;
-  user: string;
-  repo: string;
   rev: string;
 }
 export async function fetchArchive(
   config: FetchArchiveConfig,
 ): Promise<Response> {
-  const { type, token, user, repo, rev } = config;
+  const { type, rev } = config;
   const archiveType = type === "tgz" ? "tarball" : "zipball";
+  return await fetchRepoBase(config, `/${archiveType}/${rev}`);
+}
+
+export class GithubNotLoggedInError extends Error {
+  constructor() {
+    super("Login required.");
+  }
+}
+
+export class GithubRepoNotFoundError extends Error {
+  constructor(user: string, repo: string) {
+    super(`Repository ${user}/${repo} is not found.`);
+  }
+}
+
+async function fetchRepoBase(
+  config: FetchRepoConfig,
+  apiPath: string,
+): Promise<Response> {
+  const { token, user, repo } = config;
+  const headers = getFetchHeaders(token);
   const res = await fetch(
-    `https://api.github.com/repos/${user}/${repo}/${archiveType}/${rev}`,
-    {
-      headers: {
-        Authorization: "token " + token,
-        Accept: "application/vnd.github.v3.raw",
-      },
-    },
+    `https://api.github.com/repos/${user}/${repo}${apiPath}`,
+    { headers },
   );
-  if (!res.ok) throw res;
+  if (!res.ok) {
+    switch (res.status) {
+      case 401:
+        throw new GithubNotLoggedInError();
+      case 403:
+      case 404:
+        throw new GithubRepoNotFoundError(user, repo);
+      default:
+        throw res;
+    }
+  }
   return res;
 }
 
-export class PollapoNotLoggedInError extends Error {
-  constructor() {
-    super("Login required. Run `pollapo login` first.");
-  }
+function getFetchHeaders(token?: string) {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github.v3.raw",
+  };
+  if (token) headers.Authorization = "token " + token;
+  return headers;
 }

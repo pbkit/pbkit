@@ -4,7 +4,6 @@ const command = new Command();
 command
   .name("pollapo")
   .arguments("<command> [options]")
-  .action(() => command.showHelp())
   .command("add", (await import("./cmds/add.ts")).default)
   .command("install", (await import("./cmds/install.ts")).default)
   .command("login", (await import("./cmds/login.ts")).default)
