@@ -1003,11 +1003,11 @@ function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
     acceptMessage,
     acceptExtend,
     acceptExtensions,
-    acceptOption,
     acceptOneof,
     acceptMapField,
     acceptReserved,
     acceptField,
+    acceptOption,
     acceptEmpty,
   ]);
   const bracketClose = parser.expect("}");
