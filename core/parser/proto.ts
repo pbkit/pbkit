@@ -101,7 +101,7 @@ const floatLitPattern =
 const boolLitPattern = /^true|^false/;
 const strLitPattern =
   /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
-const identPattern = /^[a-z][a-z0-9_]*/i;
+const identPattern = /^[a-z_][a-z0-9_]*/i;
 
 const acceptDot = acceptPatternAndThen<ast.Dot>(
   ".",
