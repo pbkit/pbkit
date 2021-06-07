@@ -47,3 +47,11 @@ Deno.test("#46", () => {
     }
   `);
 });
+
+Deno.test("#47", () => {
+  parse(`
+    message MessageOptions {
+      reserved 4, 5, 6;
+    }
+  `);
+});
