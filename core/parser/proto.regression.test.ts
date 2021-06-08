@@ -55,3 +55,11 @@ Deno.test("#47", () => {
     }
   `);
 });
+
+Deno.test("#49", () => {
+  parse(`
+    message Proto3OptionalExtensions {
+      option (protobuf_unittest.Proto3OptionalExtensions.ext_no_optional) = 8;
+    }
+  `);
+});
