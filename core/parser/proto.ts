@@ -964,6 +964,7 @@ function acceptGroup(
     parser.loc = loc;
     return;
   }
+  skipWsAndComments(parser);
   const keyword = acceptKeyword(parser, "group");
   if (!keyword) {
     parser.loc = loc;
@@ -977,11 +978,9 @@ function acceptGroup(
   const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
-  skipWsAndComments(parser);
-  const semi = expectSemi(parser);
   return {
     start: groupLabel.start,
-    end: semi.end,
+    end: messageBody.end,
     leadingComments,
     trailingComments: [], // TODO
     leadingDetachedComments: [], // TODO
