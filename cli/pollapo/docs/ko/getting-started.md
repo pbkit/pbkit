@@ -40,9 +40,6 @@ pollapo login
 ### 의존성 설치
 의존성을 설치하고 싶은 디렉토리에서 다음과 같이 명령을 실행합니다.
 ```sh
-# pollapo 설정파일 생성
-touch pollapo.yml
-
 # 원하는 의존성 추가
 pollapo add riiid/interface-common-model riiid/interface-inside-model
 

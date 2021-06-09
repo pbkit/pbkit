@@ -40,6 +40,7 @@ import {
   PollapoUnauthorizedError,
   validateToken,
 } from "../../../misc/github/auth.ts";
+import { Confirm } from "https://deno.land/x/cliffy@v0.18.0/prompt/confirm.ts";
 
 interface Options {
   clean?: true;
@@ -111,14 +112,23 @@ export default new Command()
     } catch (err) {
       if (
         err instanceof GithubNotLoggedInError ||
-        err instanceof PollapoYmlNotFoundError ||
         err instanceof PollapoUnauthorizedError ||
-        err instanceof PollapoYmlMalformedError
+        err instanceof PollapoYmlMalformedError ||
+        err instanceof PollapoYmlNotFoundError
       ) {
         console.error(err.message);
+
+        if (err instanceof PollapoYmlNotFoundError) {
+          const confirmed = await Confirm.prompt(
+            `Create ${path.resolve("pollapo.yml")}?`,
+          );
+          if (confirmed) await Deno.create(path.resolve("pollapo.yml"));
+        }
+
         return Deno.exit(1);
       }
-      // TODO: handle not found error
+
+      // TODO: handle github not found error
       throw err;
     }
   });
