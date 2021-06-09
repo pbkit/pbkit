@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.93.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.98.0/testing/asserts.ts";
 import { compareRev } from "./rev.ts";
 
 Deno.test("rev.compareRev", () => {

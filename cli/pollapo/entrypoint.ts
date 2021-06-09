@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
 
 const command = new Command();
 command

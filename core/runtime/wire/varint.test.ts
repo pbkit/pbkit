@@ -1,5 +1,5 @@
-import { assertEquals } from "https://deno.land/std@0.93.0/testing/asserts.ts";
-import Long, { compare } from "../Long.ts";
+import { assertEquals } from "https://deno.land/std@0.98.0/testing/asserts.ts";
+import Long from "../Long.ts";
 import { decode, encode } from "./varint.ts";
 
 Deno.test("varint", () => {

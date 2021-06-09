@@ -1,5 +1,5 @@
-import { Untar } from "https://deno.land/std@0.93.0/archive/tar.ts";
-import { gunzip } from "https://deno.land/x/denoflate@1.1/mod.ts";
+import { Untar } from "https://deno.land/std@0.98.0/archive/tar.ts";
+import { gunzip } from "https://deno.land/x/denoflate@1.2.1/mod.ts";
 import { stripComponent } from "./index.ts";
 
 type ExtractTarEntry<T> = T extends Promise<infer U | null> ? U : never;

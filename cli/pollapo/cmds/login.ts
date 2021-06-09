@@ -1,5 +1,5 @@
-import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
-import { Confirm } from "https://deno.land/x/cliffy@v0.18.0/prompt/confirm.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
+import { Confirm } from "https://deno.land/x/cliffy@v0.19.1/prompt/confirm.ts";
 import {
   pollToken,
   requestCode,
@@ -7,7 +7,7 @@ import {
 } from "../../../misc/github/auth.ts";
 import { print, println } from "../misc/stdio.ts";
 import { open } from "../misc/browser.ts";
-import { bold, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
+import { bold, yellow } from "https://deno.land/std@0.98.0/fmt/colors.ts";
 import {
   getToken,
   GithubNotLoggedInError,

@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { getHomeDir } from "../../misc/env.ts";
 
 export function getConfigDir() {

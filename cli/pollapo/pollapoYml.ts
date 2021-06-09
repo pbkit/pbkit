@@ -1,15 +1,15 @@
-import { parse as parseYaml } from "https://deno.land/std@0.93.0/encoding/yaml.ts";
+import { parse as parseYaml } from "https://deno.land/std@0.98.0/encoding/yaml.ts";
 import {
   emptyDir,
   ensureDir,
   exists,
-} from "https://deno.land/std@0.93.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
+} from "https://deno.land/std@0.98.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { stripComponents, unzip } from "../../misc/archive/zip.ts";
 import { fetchArchive, fetchCommitStatus } from "../../misc/github/index.ts";
 import backoff from "./misc/exponential-backoff.ts";
 import { getRevType } from "./rev.ts";
-import { YAMLError } from "https://deno.land/std@0.93.0/encoding/_yaml/error.ts";
+import { YAMLError } from "https://deno.land/std@0.98.0/encoding/_yaml/error.ts";
 
 export type PollapoYml = {
   deps?: string[];

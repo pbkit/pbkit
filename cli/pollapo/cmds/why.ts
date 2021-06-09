@@ -1,5 +1,5 @@
-import { bold, red, yellow } from "https://deno.land/std@0.93.0/fmt/colors.ts";
-import { Command } from "https://deno.land/x/cliffy@v0.18.0/command/mod.ts";
+import { bold, red, yellow } from "https://deno.land/std@0.98.0/fmt/colors.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
 import { jsonTree } from "https://deno.land/x/json_tree@latest/mod.ts";
 import { println } from "../misc/stdio.ts";
 import { getCacheDir } from "../config.ts";
