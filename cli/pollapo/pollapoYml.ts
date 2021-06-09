@@ -60,12 +60,9 @@ export async function loadPollapoYml(ymlPath: string): Promise<PollapoYml> {
   try {
     const pollapoYmlText = await Deno.readTextFile(ymlPath);
     return parseYaml(pollapoYmlText) as PollapoYml;
-  } catch (e) {
-    if (e instanceof YAMLError) {
-      throw new PollapoYmlMalformedError(ymlPath);
-    } else {
-      throw new PollapoYmlNotFoundError(ymlPath);
-    }
+  } catch (err) {
+    if (err instanceof YAMLError) throw new PollapoYmlMalformedError(ymlPath);
+    else throw new PollapoYmlNotFoundError(ymlPath);
   }
 }
 export class PollapoYmlNotFoundError extends Error {
