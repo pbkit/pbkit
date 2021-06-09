@@ -24,10 +24,28 @@ import {
   PollapoYmlNotFoundError,
   sanitizeDeps,
 } from "../pollapoYml.ts";
+import { Confirm } from "https://deno.land/x/cliffy@v0.18.0/prompt/confirm.ts";
+import * as path from "https://deno.land/std@0.93.0/path/mod.ts";
 
 interface Options {
   token?: string;
   config: string;
+}
+
+async function addDeps(options: Options, targets: string[]) {
+  const token = options.token ?? await getToken();
+  await backoff(
+    () => validateToken(token),
+    (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
+  );
+  let pollapoYml = await loadPollapoYml(options.config);
+  for (const target of targets) {
+    pollapoYml = await add(pollapoYml, target, token);
+  }
+  const pollapoYmlText = stringify(
+    sanitizeDeps(pollapoYml) as Record<string, unknown>,
+  );
+  await Deno.writeTextFile(options.config, pollapoYmlText);
 }
 
 export default new Command()
@@ -38,19 +56,7 @@ export default new Command()
   })
   .action(async (options: Options, targets: string[]) => {
     try {
-      const token = options.token ?? await getToken();
-      await backoff(
-        () => validateToken(token),
-        (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
-      );
-      let pollapoYml = await loadPollapoYml(options.config);
-      for (const target of targets) {
-        pollapoYml = await add(pollapoYml, target, token);
-      }
-      const pollapoYmlText = stringify(
-        sanitizeDeps(pollapoYml) as Record<string, unknown>,
-      );
-      await Deno.writeTextFile(options.config, pollapoYmlText);
+      await addDeps(options, targets);
     } catch (err) {
       if (
         err instanceof GithubNotLoggedInError ||
@@ -60,6 +66,17 @@ export default new Command()
         err instanceof PollapoRevNotFoundError
       ) {
         console.error(err.message);
+
+        if (err instanceof PollapoYmlNotFoundError) {
+          const confirmed = await Confirm.prompt(
+            `Create ${path.resolve("pollapo.yml")}?`,
+          );
+          if (confirmed) {
+            Deno.create(path.resolve("pollapo.yml"));
+            await addDeps(options, targets);
+            return Deno.exit(0);
+          }
+        }
         return Deno.exit(1);
       }
     }
