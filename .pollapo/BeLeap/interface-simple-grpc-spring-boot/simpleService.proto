@@ -1,0 +1,20 @@
+syntax = "proto3";
+package co.riiid.simpleboot;
+option java_outer_classname = "SimpleProto";
+option java_multiple_files = true;
+
+import public "google/protobuf/timestamp.proto";
+
+service SimpleService {
+  rpc SimpleGet (SimpleGetRequest) returns (SimpleGetResponse) {}
+}
+
+message SimpleGetRequest {
+  int64 payload_1 = 1;
+  string payload_2 = 2;
+}
+
+message SimpleGetResponse {
+  int64 payload_1 = 1;
+  google.protobuf.Timestamp payload_2 = 2;
+}

@@ -31,6 +31,7 @@ import {
   parseDep,
   PollapoRootLockTable,
   PollapoYml,
+  PollapoYmlMalformedError,
   PollapoYmlNotFoundError,
   sanitizeDeps,
 } from "../pollapoYml.ts";
@@ -111,7 +112,8 @@ export default new Command()
       if (
         err instanceof GithubNotLoggedInError ||
         err instanceof PollapoYmlNotFoundError ||
-        err instanceof PollapoUnauthorizedError
+        err instanceof PollapoUnauthorizedError ||
+        err instanceof PollapoYmlMalformedError
       ) {
         console.error(err.message);
         return Deno.exit(1);

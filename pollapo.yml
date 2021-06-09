@@ -1,0 +1,10 @@
+layout_bg_color:
+    ...
+    options: {
+      bg-info: 'Info',
+      bg-primary: 'Primary',
+      bg-secondary: 'Secondary',
+      bg-success: 'Success',
+      bg-white: White,
+      bg-transparent: Transparent
+    }
