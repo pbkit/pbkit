@@ -484,7 +484,7 @@ function acceptOption(
   parser: RecursiveDescentParser,
   leadingComments: ast.Comment[],
 ): ast.Option | undefined {
-  const keyword = acceptKeyword(parser, "option");
+  const keyword = acceptKeyword(parser, /^option\b/);
   if (!keyword) return;
   skipWsAndComments(parser);
   const optionName = expectOptionName(parser);
@@ -1002,11 +1002,11 @@ function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
     acceptMessage,
     acceptExtend,
     acceptExtensions,
+    acceptOption,
     acceptOneof,
     acceptMapField,
     acceptReserved,
     acceptField,
-    acceptOption,
     acceptEmpty,
   ]);
   const bracketClose = parser.expect("}");
