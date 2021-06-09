@@ -32,22 +32,6 @@ interface Options {
   config: string;
 }
 
-async function addDeps(options: Options, targets: string[]) {
-  const token = options.token ?? await getToken();
-  await backoff(
-    () => validateToken(token),
-    (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
-  );
-  let pollapoYml = await loadPollapoYml(options.config);
-  for (const target of targets) {
-    pollapoYml = await add(pollapoYml, target, token);
-  }
-  const pollapoYmlText = stringify(
-    sanitizeDeps(pollapoYml) as Record<string, unknown>,
-  );
-  await Deno.writeTextFile(options.config, pollapoYmlText);
-}
-
 export default new Command()
   .arguments("<targets...:string>")
   .description("Add dependencies.")
@@ -81,6 +65,22 @@ export default new Command()
       }
     }
   });
+
+async function addDeps(options: Options, targets: string[]) {
+  const token = options.token ?? await getToken();
+  await backoff(
+    () => validateToken(token),
+    (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
+  );
+  let pollapoYml = await loadPollapoYml(options.config);
+  for (const target of targets) {
+    pollapoYml = await add(pollapoYml, target, token);
+  }
+  const pollapoYmlText = stringify(
+    sanitizeDeps(pollapoYml) as Record<string, unknown>,
+  );
+  await Deno.writeTextFile(options.config, pollapoYmlText);
+}
 
 async function add(
   pollapoYml: PollapoYml,
