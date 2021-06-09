@@ -127,6 +127,8 @@ export default new Command()
 
         return Deno.exit(1);
       }
+
+      // TODO: handle github not found error
       throw err;
     }
   });
