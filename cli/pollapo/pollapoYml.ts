@@ -9,6 +9,7 @@ import { stripComponents, unzip } from "../../misc/archive/zip.ts";
 import { fetchArchive, fetchCommitStatus } from "../../misc/github/index.ts";
 import backoff from "./misc/exponential-backoff.ts";
 import { getRevType } from "./rev.ts";
+import { YAMLError } from "https://deno.land/std@0.93.0/encoding/_yaml/error.ts";
 
 export type PollapoYml = {
   deps?: string[];
@@ -59,13 +60,20 @@ export async function loadPollapoYml(ymlPath: string): Promise<PollapoYml> {
   try {
     const pollapoYmlText = await Deno.readTextFile(ymlPath);
     return parseYaml(pollapoYmlText) as PollapoYml;
-  } catch {
-    throw new PollapoYmlNotFoundError(ymlPath);
+  } catch (err) {
+    if (err instanceof YAMLError) throw new PollapoYmlMalformedError(ymlPath);
+    else throw new PollapoYmlNotFoundError(ymlPath);
   }
 }
 export class PollapoYmlNotFoundError extends Error {
   constructor(public ymlPath: string) {
     super(`"${path.resolve(ymlPath)}" not found.`);
+  }
+}
+
+export class PollapoYmlMalformedError extends Error {
+  constructor(public ymlPath: string) {
+    super(`"${path.resolve(ymlPath)}" is malformed`);
   }
 }
 

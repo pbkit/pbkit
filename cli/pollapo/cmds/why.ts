@@ -6,6 +6,7 @@ import { getCacheDir } from "../config.ts";
 import {
   analyzeDeps,
   getPollapoYml,
+  PollapoYmlMalformedError,
   PollapoYmlNotFoundError,
 } from "../pollapoYml.ts";
 
@@ -85,7 +86,8 @@ export default new Command()
       if (
         err instanceof PollapoNotLoggedInError ||
         err instanceof PollapoYmlNotFoundError ||
-        err instanceof PollapoDependencyNotFoundError
+        err instanceof PollapoDependencyNotFoundError ||
+        err instanceof PollapoYmlMalformedError
       ) {
         console.error(red(err.message));
         return Deno.exit(1);
