@@ -1,4 +1,4 @@
-import * as semver from "https://deno.land/x/semver@v1.0.0/mod.ts";
+import * as semver from "https://deno.land/x/semver@v1.4.0/mod.ts";
 
 export function isSemver(rev: string): boolean {
   return semver.clean(rev) != null;
