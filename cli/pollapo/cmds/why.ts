@@ -84,7 +84,6 @@ export default new Command()
       }
     } catch (err) {
       if (
-        err instanceof PollapoNotLoggedInError ||
         err instanceof PollapoYmlNotFoundError ||
         err instanceof PollapoDependencyNotFoundError ||
         err instanceof PollapoYmlMalformedError
@@ -92,16 +91,9 @@ export default new Command()
         console.error(red(err.message));
         return Deno.exit(1);
       }
-      // TODO: handle not found error
       throw err;
     }
   });
-
-class PollapoNotLoggedInError extends Error {
-  constructor() {
-    super("Login required.");
-  }
-}
 
 class PollapoDependencyNotFoundError extends Error {
   constructor(missingDep: string) {
