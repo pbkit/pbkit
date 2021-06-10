@@ -118,19 +118,14 @@ export default new Command()
         err instanceof PollapoYmlMalformedError ||
         err instanceof PollapoYmlNotFoundError
       ) {
-        if (err instanceof GithubRepoNotFoundError) {
-          console.error(red("Not Found"));
-        } else {
-          console.error(`${err.message}`);
-
-          if (err instanceof PollapoYmlNotFoundError) {
-            const confirmed = await Confirm.prompt(
-              `Create ${path.resolve("pollapo.yml")}?`,
-            );
-            if (confirmed) await Deno.create(path.resolve("pollapo.yml"));
-          }
+        await println(red("error"));
+        await println(err.message);
+        if (err instanceof PollapoYmlNotFoundError) {
+          const confirmed = await Confirm.prompt(
+            `Create ${path.resolve("pollapo.yml")}?`,
+          );
+          if (confirmed) await Deno.create(path.resolve("pollapo.yml"));
         }
-
         return Deno.exit(1);
       }
       throw err;

@@ -4,6 +4,7 @@ import {
   ensureDir,
   exists,
 } from "https://deno.land/std@0.98.0/fs/mod.ts";
+import { red, yellow } from "https://deno.land/std@0.98.0/fmt/colors.ts";
 import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { stripComponents, unzip } from "../../misc/archive/zip.ts";
 import { fetchArchive, fetchCommitStatus } from "../../misc/github/index.ts";
@@ -67,13 +68,13 @@ export async function loadPollapoYml(ymlPath: string): Promise<PollapoYml> {
 }
 export class PollapoYmlNotFoundError extends Error {
   constructor(public ymlPath: string) {
-    super(`"${path.resolve(ymlPath)}" not found.`);
+    super(`"${red(path.resolve(ymlPath))}" not found.`);
   }
 }
 
 export class PollapoYmlMalformedError extends Error {
   constructor(public ymlPath: string) {
-    super(`"${path.resolve(ymlPath)}" is malformed`);
+    super(`"${yellow(path.resolve(ymlPath))}" is malformed`);
   }
 }
 
