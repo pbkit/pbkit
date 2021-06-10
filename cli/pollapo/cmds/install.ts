@@ -1,5 +1,5 @@
 import { stringify } from "https://deno.land/std@0.98.0/encoding/yaml.ts";
-import { green, yellow } from "https://deno.land/std@0.98.0/fmt/colors.ts";
+import { green, red, yellow } from "https://deno.land/std@0.98.0/fmt/colors.ts";
 import { emptyDir, ensureDir } from "https://deno.land/std@0.98.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
@@ -113,18 +113,22 @@ export default new Command()
     } catch (err) {
       if (
         err instanceof GithubNotLoggedInError ||
+        err instanceof GithubRepoNotFoundError ||
         err instanceof PollapoUnauthorizedError ||
         err instanceof PollapoYmlMalformedError ||
-        err instanceof PollapoYmlNotFoundError ||
-        err instanceof GithubRepoNotFoundError
+        err instanceof PollapoYmlNotFoundError
       ) {
-        console.error(`\n${err.message}`);
+        if (err instanceof GithubRepoNotFoundError) {
+          console.error(red("Not Found"));
+        } else {
+          console.error(`${err.message}`);
 
-        if (err instanceof PollapoYmlNotFoundError) {
-          const confirmed = await Confirm.prompt(
-            `Create ${path.resolve("pollapo.yml")}?`,
-          );
-          if (confirmed) await Deno.create(path.resolve("pollapo.yml"));
+          if (err instanceof PollapoYmlNotFoundError) {
+            const confirmed = await Confirm.prompt(
+              `Create ${path.resolve("pollapo.yml")}?`,
+            );
+            if (confirmed) await Deno.create(path.resolve("pollapo.yml"));
+          }
         }
 
         return Deno.exit(1);
