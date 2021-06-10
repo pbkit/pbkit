@@ -833,6 +833,7 @@ function expectRanges(parser: RecursiveDescentParser): ast.Ranges {
   const rangeOrCommas = many(
     parser,
     choice<ast.Range | ast.Comma>([
+      skipWsAndComments,
       acceptComma,
       acceptRange,
     ]),
