@@ -10,6 +10,7 @@ import backoff from "../misc/exponential-backoff.ts";
 import {
   getToken,
   GithubNotLoggedInError,
+  GithubRepoNotFoundError,
 } from "../../../misc/github/index.ts";
 import {
   iterFiles,
@@ -114,9 +115,10 @@ export default new Command()
         err instanceof GithubNotLoggedInError ||
         err instanceof PollapoUnauthorizedError ||
         err instanceof PollapoYmlMalformedError ||
-        err instanceof PollapoYmlNotFoundError
+        err instanceof PollapoYmlNotFoundError ||
+        err instanceof GithubRepoNotFoundError
       ) {
-        console.error(err.message);
+        console.error(`\n${err.message}`);
 
         if (err instanceof PollapoYmlNotFoundError) {
           const confirmed = await Confirm.prompt(
@@ -127,8 +129,6 @@ export default new Command()
 
         return Deno.exit(1);
       }
-
-      // TODO: handle github not found error
       throw err;
     }
   });

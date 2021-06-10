@@ -1,6 +1,7 @@
 import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { parse as parseYaml } from "https://deno.land/std@0.98.0/encoding/yaml.ts";
 import { getHomeDir } from "../env.ts";
+import { red } from "https://deno.land/std@0.98.0/fmt/colors.ts";
 
 export interface GhHosts {
   [hostname: string]: GhHost;
@@ -115,7 +116,7 @@ export class GithubNotLoggedInError extends Error {
 
 export class GithubRepoNotFoundError extends Error {
   constructor(user: string, repo: string) {
-    super(`Repository ${user}/${repo} is not found.`);
+    super(`Repository ${red(`${user}/${repo}`)} is not found.`);
   }
 }
 
