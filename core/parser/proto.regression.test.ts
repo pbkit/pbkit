@@ -63,3 +63,11 @@ Deno.test("#49", () => {
     }
   `);
 });
+
+Deno.test("#55", () => {
+  parse(`
+    enum Foo {
+      reserved 1;
+    }
+  `);
+});
