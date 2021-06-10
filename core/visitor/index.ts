@@ -215,6 +215,8 @@ export const visitor: Visitor = {
     switch (node.type) {
       case "option":
         return visitor.visitOption(visitor, node);
+      case "reserved":
+        return visitor.visitReserved(visitor, node);
       case "enum-field":
         return visitor.visitEnumField(visitor, node);
       case "empty":

@@ -39,6 +39,7 @@ export interface EnumBody extends Span {
 
 export type EnumBodyStatement =
   | Option
+  | Reserved
   | EnumField
   | Empty;
 

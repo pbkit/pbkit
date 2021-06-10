@@ -602,6 +602,7 @@ function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.EnumBodyStatement>(parser, [
     acceptOption,
+    acceptReserved,
     acceptEnumField,
     acceptEmpty,
   ]);
