@@ -1,13 +1,13 @@
 import { exists } from "https://deno.land/std@0.98.0/fs/exists.ts";
-import { resolve } from "https://deno.land/std@0.98.0/path/mod.ts";
+import { dirname, resolve } from "https://deno.land/std@0.98.0/path/mod.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {
   roots: string[];
 }
-export async function createLoader(
+export function createLoader(
   config: CreateLoaderConfig,
-): Promise<Loader> {
+): Loader {
   return {
     async load(path) {
       for (const root of config.roots) {
@@ -22,3 +22,9 @@ export async function createLoader(
     },
   };
 }
+
+const importMetaUrl = new URL(import.meta.url);
+export const vendorPath: string = resolve(
+  dirname(importMetaUrl.pathname),
+  "../../vendor",
+);
