@@ -22,7 +22,8 @@ export interface File {
 
 export interface Import {
   kind: "" | "public" | "weak";
-  filePath: string;
+  importPath: string;
+  filePath?: string;
 }
 
 export type Type = Message | Enum;

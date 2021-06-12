@@ -43,7 +43,12 @@ export async function build(config: BuildConfig): Promise<Schema> {
     extends: {},
     services: {},
   };
-  const iterFileResults = iterFiles(config.files, config.loader);
+  const absoluteFilePathMapping: AbsoluteFilePathMapping = {};
+  const iterFileResults = iterFiles(
+    config.files,
+    config.loader,
+    absoluteFilePathMapping,
+  );
   for await (const { filePath, parseResult, file } of iterFileResults) {
     result.files[filePath] = file;
     const typePath = file.package ? "." + file.package : "";
@@ -58,7 +63,18 @@ export async function build(config: BuildConfig): Promise<Schema> {
     }
     // TODO: extends
   }
+  for (const [, file] of Object.entries(result.files)) {
+    for (const entry of file.imports) {
+      if (entry.importPath in absoluteFilePathMapping) {
+        entry.filePath = absoluteFilePathMapping[entry.importPath];
+      }
+    }
+  }
   return result;
+}
+
+interface AbsoluteFilePathMapping {
+  [filePath: string]: string;
 }
 
 interface IterFileResult {
@@ -69,6 +85,7 @@ interface IterFileResult {
 async function* iterFiles(
   files: string[],
   loader: Loader,
+  absoluteFilePathMapping: AbsoluteFilePathMapping,
 ): AsyncGenerator<IterFileResult> {
   const queue = [...files];
   const done: { [filePath: string]: true } = {};
@@ -78,6 +95,9 @@ async function* iterFiles(
     done[filePath] = true;
     const loadResult = await loader.load(filePath);
     if (!loadResult) continue;
+    absoluteFilePathMapping[filePath] = loadResult.absolutePath;
+    if (done[loadResult.absolutePath]) continue;
+    done[loadResult.absolutePath] = true;
     const parseResult = parse(loadResult.data);
     const statements = parseResult.ast.statements;
     const file: File = {
@@ -87,8 +107,8 @@ async function* iterFiles(
       imports: getImports(statements),
       options: getOptions(statements),
     };
-    yield { filePath, parseResult, file };
-    queue.push(...file.imports.map(({ filePath }) => filePath));
+    yield { filePath: loadResult.absolutePath, parseResult, file };
+    queue.push(...file.imports.map(({ importPath }) => importPath));
   }
 }
 
@@ -108,10 +128,10 @@ function getImports(statements: ast.Statement[]): Import[] {
   const importStatements = filterNodesByType(statements, "import");
   return importStatements.map((statement) => {
     const kind = (statement.weakOrPublic?.text || "") as Import["kind"];
-    const filePath = evalStrLit(statement.strLit);
+    const importPath = evalStrLit(statement.strLit);
     return {
       kind,
-      filePath,
+      importPath,
     };
   });
 }
