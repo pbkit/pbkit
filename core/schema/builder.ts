@@ -1,7 +1,7 @@
 import * as ast from "../ast/index.ts";
 import { Loader } from "../loader/index.ts";
 import { parse, ParseResult } from "../parser/proto.ts";
-import { toPojoSet } from "../../misc/array.ts";
+import { toPojoSet } from "../misc/array.ts";
 import {
   filterNodesByType,
   filterNodesByTypes,
