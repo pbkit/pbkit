@@ -27,6 +27,7 @@ import {
   Service,
   Type,
 } from "./model.ts";
+import { scalarValueTypes } from "./scalar.ts";
 import {
   stringifyFullIdent,
   stringifyOptionName,
@@ -417,9 +418,9 @@ function getResolveTypePathFn(
 ): ResolveTypePathFn {
   const visibleTypePaths = toPojoSet(getVisibleTypePaths(schema, filePath));
   return function resolveTypePath(type, scope) {
+    if (type in scalarValueTypeSet) return "." + type;
     if (type.startsWith(".")) return visibleTypePaths[type];
     let currentScope = scope;
-    let i = 0;
     while (true) {
       const typePath = currentScope + "." + type;
       if (typePath in visibleTypePaths) return typePath;
@@ -429,6 +430,7 @@ function getResolveTypePathFn(
     }
   };
 }
+const scalarValueTypeSet = toPojoSet(scalarValueTypes);
 
 function getVisibleTypePaths(schema: Schema, filePath: string): string[] {
   const file = schema.files[filePath];
