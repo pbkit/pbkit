@@ -18,6 +18,8 @@ export interface File {
   package: string;
   imports: Import[];
   options: Options;
+  typePaths: string[];
+  servicePaths: string[];
 }
 
 export interface Import {
@@ -93,24 +95,31 @@ interface MessageFieldBase<TKind extends string> extends FieldBase {
   options: Options;
 }
 export interface NormalField extends MessageFieldBase<"normal"> {
-  type: string; // relative
+  type: string;
+  typePath?: string;
 }
 export interface RequiredField extends MessageFieldBase<"required"> {
-  type: string; // relative
+  type: string;
+  typePath?: string;
 }
 export interface OptionalField extends MessageFieldBase<"optional"> {
-  type: string; // relative
+  type: string;
+  typePath?: string;
 }
 export interface RepeatedField extends MessageFieldBase<"repeated"> {
-  type: string; // relative
+  type: string;
+  typePath?: string;
 }
 export interface OneofField extends MessageFieldBase<"oneof"> {
-  type: string; // relative
+  type: string;
+  typePath?: string;
   oneof: string;
 }
 export interface MapField extends MessageFieldBase<"map"> {
-  keyType: string; // relative
-  valueType: string; // relative
+  keyType: string;
+  keyTypePath?: string;
+  valueType: string;
+  valueTypePath?: string;
 }
 
 export interface Range {
@@ -134,5 +143,6 @@ export interface Rpc {
 
 export interface RpcType {
   stream: boolean;
-  type: string; // relative
+  type: string;
+  typePath?: string;
 }

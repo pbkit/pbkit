@@ -1,6 +1,7 @@
 import * as ast from "../ast/index.ts";
 import { Loader } from "../loader/index.ts";
 import { parse, ParseResult } from "../parser/proto.ts";
+import { toPojoSet } from "../../misc/array.ts";
 import {
   filterNodesByType,
   filterNodesByTypes,
@@ -55,18 +56,64 @@ export async function build(config: BuildConfig): Promise<Schema> {
     const statements = parseResult.ast.statements;
     const services = iterServices(statements, typePath, filePath);
     for (const [typePath, service] of services) {
+      file.servicePaths.push(typePath);
       result.services[typePath] = service;
     }
     const types = iterTypes(statements, typePath, filePath);
     for (const [typePath, type] of types) {
+      file.typePaths.push(typePath);
       result.types[typePath] = type;
     }
     // TODO: extends
   }
-  for (const [, file] of Object.entries(result.files)) {
+  // resolve imports
+  for (const file of Object.values(result.files)) {
     for (const entry of file.imports) {
       if (entry.importPath in absoluteFilePathMapping) {
         entry.filePath = absoluteFilePathMapping[entry.importPath];
+      }
+    }
+  }
+  // resolve types
+  for (const [filePath, file] of Object.entries(result.files)) {
+    const resolveTypePath = getResolveTypePathFn(result, filePath);
+    for (const typePath of file.typePaths) {
+      const type = result.types[typePath];
+      if (type.kind === "enum") continue;
+      for (const field of Object.values(type.fields)) {
+        if (field.kind === "map") {
+          const fieldKeyTypePath = resolveTypePath(
+            field.keyType,
+            typePath as `.${string}`,
+          );
+          const fieldValueTypePath = resolveTypePath(
+            field.valueType,
+            typePath as `.${string}`,
+          );
+          if (fieldKeyTypePath) field.keyTypePath = fieldKeyTypePath;
+          if (fieldValueTypePath) field.valueTypePath = fieldValueTypePath;
+        } else {
+          const fieldTypePath = resolveTypePath(
+            field.type,
+            typePath as `.${string}`,
+          );
+          if (fieldTypePath) field.typePath = fieldTypePath;
+        }
+      }
+    }
+    for (const servicePath of file.servicePaths) {
+      const service = result.services[servicePath];
+      for (const rpc of Object.values(service.rpcs)) {
+        const reqTypePath = resolveTypePath(
+          rpc.reqType.type,
+          servicePath as `.${string}`,
+        );
+        const resTypePath = resolveTypePath(
+          rpc.resType.type,
+          servicePath as `.${string}`,
+        );
+        if (reqTypePath) rpc.reqType.typePath = reqTypePath;
+        if (resTypePath) rpc.resType.typePath = resTypePath;
       }
     }
   }
@@ -106,6 +153,8 @@ async function* iterFiles(
       package: getPackage(statements),
       imports: getImports(statements),
       options: getOptions(statements),
+      typePaths: [],
+      servicePaths: [],
     };
     yield { filePath: loadResult.absolutePath, parseResult, file };
     queue.push(...file.imports.map(({ importPath }) => importPath));
@@ -356,4 +405,58 @@ function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
 function getDescription(comments: ast.Comment[]): string {
   const docComment = comments.find((comment) => isDocComment(comment.text));
   return parseDocComment(docComment?.text ?? "");
+}
+
+type ResolveTypePathFn = (
+  type: string,
+  scope: `.${string}`,
+) => string | undefined;
+function getResolveTypePathFn(
+  schema: Schema,
+  filePath: string,
+): ResolveTypePathFn {
+  const visibleTypePaths = toPojoSet(getVisibleTypePaths(schema, filePath));
+  return function resolveTypePath(type, scope) {
+    if (type.startsWith(".")) return visibleTypePaths[type];
+    let currentScope = scope;
+    let i = 0;
+    while (true) {
+      const typePath = currentScope + "." + type;
+      if (typePath in visibleTypePaths) return typePath;
+      const cut = currentScope.lastIndexOf(".");
+      if (cut < 0) return undefined;
+      currentScope = currentScope.slice(0, cut) as `.${string}`;
+    }
+  };
+}
+
+function getVisibleTypePaths(schema: Schema, filePath: string): string[] {
+  const file = schema.files[filePath];
+  if (!file) return [];
+  return [
+    ...file.typePaths,
+    ...file.imports.map((entry) =>
+      entry.filePath ? getExportedTypePaths(schema, entry.filePath) : []
+    ).flat(1),
+  ];
+}
+
+function getExportedTypePaths(schema: Schema, filePath: string): string[] {
+  const result: string[] = [];
+  const done: { [filePath: string]: true } = {};
+  const queue = [filePath];
+  while (queue.length) {
+    const filePath = queue.pop()!;
+    if (done[filePath]) continue;
+    done[filePath] = true;
+    const file = schema.files[filePath];
+    if (!file) continue;
+    result.push(...file.typePaths);
+    for (const entry of file.imports) {
+      if (entry.kind !== "public") continue;
+      if (!entry.filePath) continue;
+      queue.push(entry.filePath);
+    }
+  }
+  return result;
 }
