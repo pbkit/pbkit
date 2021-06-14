@@ -4,7 +4,7 @@ import {
   vendorPath,
 } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
-import gen from "../../../../../core/generator/json/index.ts";
+import gen from "../../../../../codegen/json/index.ts";
 
 interface Options {
   protoPath?: string[];

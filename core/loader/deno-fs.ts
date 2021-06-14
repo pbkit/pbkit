@@ -1,5 +1,5 @@
 import { exists } from "https://deno.land/std@0.98.0/fs/exists.ts";
-import { dirname, resolve } from "https://deno.land/std@0.98.0/path/mod.ts";
+import { resolve } from "https://deno.land/std@0.98.0/path/mod.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {
@@ -23,8 +23,5 @@ export function createLoader(
   };
 }
 
-const importMetaUrl = new URL(import.meta.url);
-export const vendorPath: string = resolve(
-  dirname(importMetaUrl.pathname),
-  "../../vendor",
-);
+const __dirname = new URL(".", import.meta.url).pathname;
+export const vendorPath: string = resolve(__dirname, "../../vendor");

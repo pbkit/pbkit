@@ -1,4 +1,4 @@
-import { Schema } from "../../schema/model.ts";
+import { Schema } from "../../core/schema/model.ts";
 
 export interface GenConfig {
   includeParseResult?: boolean;
