@@ -2,7 +2,6 @@ import { emptyDir, ensureDir } from "https://deno.land/std@0.98.0/fs/mod.ts";
 import { walk } from "https://deno.land/std@0.98.0/fs/walk.ts";
 import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { removeTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
-import { getAutoClosingFileReader } from "../misc/file.ts";
 
 await emptyDir("tmp/npm");
 
@@ -37,14 +36,11 @@ for await (const { path: fromPath } of entries) {
   if (/\bdeno\b/.test(fromPath)) continue;
   const toPath = path.join("tmp/npm/ts", fromPath);
   await ensureDir(path.dirname(toPath));
-  const file = await Deno.open(toPath, { create: true, write: true });
-  await Deno.copy(
-    await removeTsFileExtensionInImportStatement(
-      await getAutoClosingFileReader(fromPath),
-    ),
-    file,
+  const code = await Deno.readTextFile(fromPath);
+  await Deno.writeTextFile(
+    toPath,
+    removeTsFileExtensionInImportStatement(code),
   );
-  file.close();
 }
 
 { // tsc

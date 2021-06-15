@@ -1,10 +1,23 @@
-import { readAll, StringReader } from "https://deno.land/std@0.98.0/io/mod.ts";
+import {
+  readAll,
+  readAllSync,
+  StringReader,
+} from "https://deno.land/std@0.98.0/io/mod.ts";
 
-export async function removeTsFileExtensionInImportStatement(
-  reader: Deno.Reader,
+export function removeTsFileExtensionInImportStatement(code: string): string {
+  return code.replaceAll(
+    /(^\s*(?:import|export|}\s*from)\b.+?)\.ts("|')/gm,
+    "$1$2",
+  );
+}
+
+export async function removeTsFileExtensionInImportStatementFromReader(
+  reader: Deno.Reader | Deno.ReaderSync,
 ): Promise<Deno.Reader> {
-  const code = new TextDecoder().decode(await readAll(reader));
+  const data = "readSync" in reader
+    ? readAllSync(reader)
+    : await readAll(reader);
   return new StringReader(
-    code.replaceAll(/(^\s*(?:import|export|}\s*from)\b.+?)\.ts("|')/gm, "$1$2"),
+    removeTsFileExtensionInImportStatement(new TextDecoder().decode(data)),
   );
 }
