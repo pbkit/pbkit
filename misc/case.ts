@@ -6,3 +6,7 @@ export function snakeToCamel(snake: string): string {
     ).join("")
   );
 }
+
+export function pascalToCamel(pascal: string): string {
+  return pascal[0].toLowerCase() + pascal.substr(1);
+}

@@ -9,6 +9,7 @@ import { removeTsFileExtensionInImportStatementFromReader } from "../../misc/com
 import { getAutoClosingFileReader } from "../../misc/file.ts";
 import { CodeEntry } from "../index.ts";
 import genMessages from "./messages.ts";
+import genServices from "./services.ts";
 
 export interface GenConfig {
   removeTsFileExtensionInImportStatement?: boolean;
@@ -32,7 +33,10 @@ export default async function* gen(
   for (const [filePath, data] of genMessages(schema, config)) {
     yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
   }
-  // TODO: services
+  // gen services
+  for (const [filePath, data] of genServices(schema, config)) {
+    yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
+  }
 }
 
 const __dirname = new URL(".", import.meta.url).pathname;

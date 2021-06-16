@@ -3,11 +3,7 @@ import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { groupBy } from "../../misc/array.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import { Enum, Message, OneofField, Schema } from "../../core/schema/model.ts";
-import {
-  createTypePathTree,
-  iterTypePathTree,
-  TypePathTree,
-} from "../../core/schema/type-path-tree.ts";
+import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { ScalarValueType } from "../../core/schema/scalar.ts";
 import { CodeEntry } from "../index.ts";
 import { GenConfig } from "./index.ts";
@@ -16,12 +12,19 @@ import {
   createImportBuffer,
   ImportBuffer,
 } from "./import-buffer.ts";
+import genIndex from "./genIndex.ts";
 
 export default function* gen(
   schema: Schema,
   _config: GenConfig,
 ): Generator<CodeEntry> {
-  yield* genIndex(schema);
+  yield* genIndex({
+    typePathTree: createTypePathTree(Object.keys(schema.types)),
+    exists: (typePath) => typePath in schema.types,
+    getIndexFilePath,
+    getFilePath,
+    itemIsExportedAs: "Type",
+  });
   for (const [typePath, type] of Object.entries(schema.types)) {
     switch (type.kind) {
       case "enum":
@@ -40,59 +43,6 @@ export function getIndexFilePath(typePath: string): string {
 
 export function getFilePath(typePath: string): string {
   return path.join("messages", typePath.replaceAll(".", "/") + ".ts");
-}
-
-function* genIndex(schema: Schema): Generator<CodeEntry> {
-  const typePathTree = createTypePathTree(Object.keys(schema.types));
-  const codeEntry = getIndexCodeEntry(schema, "", typePathTree);
-  if (codeEntry) yield codeEntry;
-  for (const [typePath, subTree] of iterTypePathTree(typePathTree)) {
-    const codeEntry = getIndexCodeEntry(schema, typePath, subTree);
-    if (codeEntry) yield codeEntry;
-  }
-}
-
-function getIndexCodeEntry(
-  schema: Schema,
-  typePath: string,
-  subTree: TypePathTree,
-): CodeEntry | undefined {
-  const subTypePaths = Object.keys(subTree);
-  if (!subTypePaths.length) return;
-  const modulePaths = subTypePaths.filter((typePath) =>
-    Object.keys(subTree[typePath]).length > 0
-  );
-  const typePaths = subTypePaths.filter((typePath) =>
-    Object.keys(subTree[typePath]).length < 1
-  );
-  const codes: string[] = [
-    modulePaths.map((typePath) => {
-      const name = typePath.substr(1);
-      return `import * as ${name} from "./${name}/index.ts";\n`;
-    }).join(""),
-    modulePaths.length
-      ? `export type {\n${
-        modulePaths.map(
-          (typePath) => `  ${typePath.substr(1)},\n`,
-        ).join("")
-      }};\n`
-      : "",
-    typePaths.map((typePath) => {
-      const name = typePath.substr(1);
-      return `export type { Type as ${name} } from "./${name}.ts";\n`;
-    }).join(""),
-  ];
-  const indexFilePath = getIndexFilePath(typePath);
-  if (typePath in schema.types) {
-    const filePath = getFilePath(typePath);
-    const from = path.relative(path.dirname(indexFilePath), filePath);
-    codes.push([
-      "\n",
-      `import { Type as _ } from "${from}";\n`,
-      "export default _;\n",
-    ].join(""));
-  }
-  return [indexFilePath, new StringReader(codes.join(""))];
 }
 
 function* genEnum(typePath: string, type: Enum): Generator<CodeEntry> {
@@ -189,7 +139,7 @@ function getMessageTypeDefCode(
   }
 }
 
-function pbTypeToTsType(
+export function pbTypeToTsType(
   addInternalImport: AddInternalImport,
   here: string,
   typePath?: string,
