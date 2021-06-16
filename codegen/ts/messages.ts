@@ -1,7 +1,8 @@
 import { StringReader } from "https://deno.land/std@0.98.0/io/mod.ts";
 import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
+import { groupBy } from "../../misc/array.ts";
 import { snakeToCamel } from "../../misc/case.ts";
-import { Enum, Message, Schema } from "../../core/schema/model.ts";
+import { Enum, Message, OneofField, Schema } from "../../core/schema/model.ts";
 import {
   createTypePathTree,
   iterTypePathTree,
@@ -9,7 +10,11 @@ import {
 import { ScalarValueType } from "../../core/schema/scalar.ts";
 import { CodeEntry } from "../index.ts";
 import { GenConfig } from "./index.ts";
-import { AddInternalImport, createImportBuffer } from "./import-buffer.ts";
+import {
+  AddInternalImport,
+  createImportBuffer,
+  ImportBuffer,
+} from "./import-buffer.ts";
 
 export default function* gen(
   schema: Schema,
@@ -100,44 +105,78 @@ const reservedNames = ["Type", "Uint8Array"];
 function* genMessage(typePath: string, type: Message): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   const importBuffer = createImportBuffer(reservedNames);
-  const typeBodyCode = Object.values(type.fields).map((field) => {
-    if (field.kind === "map") {
-      // TODO
-      return `  ${snakeToCamel(field.name)}?: unknown;\n`;
-    } else if (field.kind === "oneof") {
-      // TODO
-      return `  // TODO: ${field.oneof}.${field.name}`;
-    } else {
-      const { kind } = field;
-      const typeName = (
-        field.typePath
-          ? pbTypeToTsType(
-            field.typePath,
-            filePath,
-            importBuffer.addInternalImport,
-          )
-          : "unknown"
-      );
-      const opt = (kind === "normal" || kind === "optional") ? "?" : "";
-      const arr = (kind === "repeated") ? "[]" : "";
-      return `  ${snakeToCamel(field.name)}${opt}: ${typeName}${arr};\n`;
-    }
-  }).join("");
+  const typeDefCode = getMessageTypeDefCode(
+    filePath,
+    importBuffer,
+    type,
+  );
+  const importCode = importBuffer.getCode();
   yield [
     filePath,
     new StringReader([
-      importBuffer.getCode(),
-      "\n",
-      `export interface Type {\n${typeBodyCode}}\n`,
+      importCode ? importCode + "\n" : "",
+      typeDefCode,
     ].join("")),
   ];
 }
 
+function getMessageTypeDefCode(
+  filePath: string,
+  importBuffer: ImportBuffer,
+  type: Message,
+) {
+  function getTsType(typePath?: string) {
+    return pbTypeToTsType(importBuffer.addInternalImport, filePath, typePath);
+  }
+  const oneofFields: OneofField[] = [];
+  const typeBodyCodes: string[] = [];
+  const fields = Object.values(type.fields);
+  if (fields.length) typeBodyCodes.push(getFieldsCode());
+  const oneofs = [...groupBy(oneofFields, "oneof")];
+  if (oneofFields.length) typeBodyCodes.push(getOneofsCode());
+  if (!typeBodyCodes.length) return `export interface Type {}\n`;
+  return `export interface Type {\n${typeBodyCodes.join("")}}\n`;
+  function getFieldsCode() {
+    return fields.map((field) => {
+      if (field.kind === "map") {
+        const fieldName = snakeToCamel(field.name);
+        const keyTypeName = getTsType(field.keyTypePath);
+        const valueTypeName = getTsType(field.valueTypePath);
+        return `  ${fieldName}?: Map<${keyTypeName}, ${valueTypeName}>;\n`;
+      } else if (field.kind === "oneof") {
+        oneofFields.push(field);
+        return "";
+      } else {
+        const fieldName = snakeToCamel(field.name);
+        const typeName = getTsType(field.typePath);
+        const { kind } = field;
+        const opt = (kind === "normal" || kind === "optional") ? "?" : "";
+        const arr = (kind === "repeated") ? "[]" : "";
+        return `  ${fieldName}${opt}: ${typeName}${arr};\n`;
+      }
+    }).join("");
+  }
+  function getOneofsCode() {
+    return oneofs.map(
+      ([oneof, fields]) => {
+        const fieldName = snakeToCamel(oneof);
+        const fieldsCode = fields.map((field) => {
+          const fieldName = snakeToCamel(field.name);
+          const typeName = getTsType(field.typePath);
+          return `    | { field: "${fieldName}", value: ${typeName} }\n`;
+        }).join("");
+        return `  ${fieldName}?: (\n${fieldsCode}  );\n`;
+      },
+    ).join("");
+  }
+}
+
 function pbTypeToTsType(
-  typePath: string,
-  here: string,
   addInternalImport: AddInternalImport,
+  here: string,
+  typePath?: string,
 ): string {
+  if (!typePath) return "unknown";
   if (typePath in scalarTypeMapping) {
     return scalarTypeMapping[typePath as keyof typeof scalarTypeMapping];
   }
