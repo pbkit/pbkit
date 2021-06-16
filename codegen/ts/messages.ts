@@ -31,7 +31,7 @@ export default function* gen(
         yield* genEnum(typePath, type);
         continue;
       case "message":
-        yield* genMessage(typePath, type);
+        yield* genMessage(schema, typePath, type);
         continue;
     }
   }
@@ -70,10 +70,15 @@ function* genEnum(typePath: string, type: Enum): Generator<CodeEntry> {
 }
 
 const reservedNames = ["Type", "Uint8Array"];
-function* genMessage(typePath: string, type: Message): Generator<CodeEntry> {
+function* genMessage(
+  schema: Schema,
+  typePath: string,
+  type: Message,
+): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   const importBuffer = createImportBuffer(reservedNames);
   const typeDefCode = getMessageTypeDefCode(
+    schema,
     filePath,
     importBuffer,
     type,
@@ -89,6 +94,7 @@ function* genMessage(typePath: string, type: Message): Generator<CodeEntry> {
 }
 
 function getMessageTypeDefCode(
+  schema: Schema,
   filePath: string,
   importBuffer: ImportBuffer,
   type: Message,
@@ -118,7 +124,14 @@ function getMessageTypeDefCode(
         const fieldName = snakeToCamel(field.name);
         const typeName = getTsType(field.typePath);
         const { kind } = field;
-        const opt = (kind === "normal" || kind === "optional") ? "?" : "";
+        const isScalar = field.typePath! in scalarTypeMapping;
+        const isEnum = schema.types[field.typePath!]?.kind === "enum";
+        const hasDefaultValue = isScalar || isEnum;
+        const nullable = (
+          (!hasDefaultValue && kind === "normal") ||
+          (kind === "optional")
+        );
+        const opt = nullable ? "?" : "";
         const arr = (kind === "repeated") ? "[]" : "";
         return `  ${fieldName}${opt}: ${typeName}${arr};\n`;
       }
