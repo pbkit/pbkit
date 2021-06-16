@@ -161,6 +161,7 @@ export function pbTypeToTsType(
   if (typePath in scalarTypeMapping) {
     return scalarTypeMapping[typePath as keyof typeof scalarTypeMapping];
   }
+  if (typePath in wellKnownTypeMapping) return wellKnownTypeMapping[typePath];
   const from = getFilePath(typePath);
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return addInternalImport(here, from, "Type", as);
@@ -181,4 +182,16 @@ const scalarTypeMapping: { [typePath in `.${ScalarValueType}`]: string } = {
   ".bool": "boolean",
   ".string": "string",
   ".bytes": "Uint8Array",
+};
+const wellKnownTypeMapping: { [typePath: string]: string } = {
+  ".google.protobuf.BoolValue": "boolean",
+  ".google.protobuf.BytesValue": "Uint8Array",
+  ".google.protobuf.DoubleValue": "number",
+  ".google.protobuf.FloatValue": "number",
+  ".google.protobuf.Int32Value": "number",
+  ".google.protobuf.Int64Value": "string",
+  ".google.protobuf.NullValue": "null",
+  ".google.protobuf.StringValue": "string",
+  ".google.protobuf.UInt32Value": "number",
+  ".google.protobuf.UInt64Value": "string",
 };
