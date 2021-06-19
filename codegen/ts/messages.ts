@@ -1,8 +1,7 @@
 import { StringReader } from "https://deno.land/std@0.98.0/io/mod.ts";
 import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
-import { groupBy } from "../../misc/array.ts";
 import { snakeToCamel } from "../../misc/case.ts";
-import { Enum, Message, OneofField, Schema } from "../../core/schema/model.ts";
+import * as schema from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { ScalarValueType } from "../../core/schema/scalar.ts";
 import { CodeEntry } from "../index.ts";
@@ -15,7 +14,7 @@ import {
 import genIndex from "./genIndex.ts";
 
 export default function* gen(
-  schema: Schema,
+  schema: schema.Schema,
   _config: GenConfig,
 ): Generator<CodeEntry> {
   yield* genIndex({
@@ -45,7 +44,7 @@ export function getFilePath(typePath: string): string {
   return path.join("messages", typePath.replaceAll(".", "/") + ".ts");
 }
 
-function* genEnum(typePath: string, type: Enum): Generator<CodeEntry> {
+function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   yield [
     filePath,
@@ -69,88 +68,177 @@ function* genEnum(typePath: string, type: Enum): Generator<CodeEntry> {
   ];
 }
 
+interface Message {
+  schema: schema.Message;
+  collectionFieldNumbers: Set<number>;
+  fields: Field[];
+  oneofFields: OneofField[];
+}
+interface Field {
+  schema: schema.MessageField;
+  fieldNumber: number;
+  name: string;
+  type: string;
+  default: string | undefined;
+}
+interface OneofField {
+  name: string;
+  fields: Field[];
+}
+
 const reservedNames = ["Type", "Uint8Array"];
 function* genMessage(
-  schema: Schema,
+  schema: schema.Schema,
   typePath: string,
-  type: Message,
+  type: schema.Message,
 ): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   const importBuffer = createImportBuffer(reservedNames);
-  const typeDefCode = getMessageTypeDefCode(
-    schema,
-    filePath,
-    importBuffer,
-    type,
+  type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
+  const schemaFields = Object.entries(type.fields);
+  const schemaOneofFields = schemaFields.filter(
+    ([, field]) => field.kind === "oneof",
+  ) as [string, schema.OneofField][];
+  const schemaNonOneofFields = schemaFields.filter(
+    ([, field]) => field.kind !== "oneof",
+  ) as [string, NonOneofMessageField][];
+  const collections = schemaNonOneofFields.filter(
+    ([, field]) => field.kind === "map" || field.kind === "repeated",
   );
+  const collectionFieldNumbers = new Set(
+    collections.map(([fieldNumber]) => +fieldNumber),
+  );
+  const oneofFieldTable: { [oneof: string]: OneofField } = {};
+  for (const schemaOneofField of schemaOneofFields) {
+    const [, schemaField] = schemaOneofField;
+    if (schemaField.kind !== "oneof") continue;
+    const name = snakeToCamel(schemaField.oneof);
+    const oneofField = oneofFieldTable[name] ?? { name, fields: [] };
+    oneofField.fields.push(toField(schemaOneofField));
+    oneofFieldTable[name] = oneofField;
+  }
+  const message: Message = {
+    schema: type,
+    collectionFieldNumbers,
+    fields: schemaNonOneofFields.map(toField),
+    oneofFields: Object.values(oneofFieldTable),
+  };
+  const getCodeConfig: GetCodeConfig = { filePath, importBuffer, message };
+  const typeDefCode = getMessageTypeDefCode(getCodeConfig);
+  const getDefaultValueCode = getGetDefaultValueCode(getCodeConfig);
+  const decodeBinaryCode = getDecodeBinaryCode(getCodeConfig);
   const importCode = importBuffer.getCode();
   yield [
     filePath,
     new StringReader([
       importCode ? importCode + "\n" : "",
       typeDefCode,
+      "\n" + getDefaultValueCode,
+      "\n" + decodeBinaryCode,
     ].join("")),
   ];
-}
-
-function getMessageTypeDefCode(
-  schema: Schema,
-  filePath: string,
-  importBuffer: ImportBuffer,
-  type: Message,
-) {
-  function getTsType(typePath?: string) {
+  function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
+    return {
+      schema: field,
+      fieldNumber: +fieldNumber,
+      name: snakeToCamel(field.name),
+      type: getFieldTypeCode(field),
+      default: getFieldDefaultCode(field),
+    };
+  }
+  function getFieldTypeCode(field: schema.MessageField): string {
+    if (field.kind !== "map") return toTsType(field.typePath);
+    const keyTypeName = toTsType(field.keyTypePath);
+    const valueTypeName = toTsType(field.valueTypePath);
+    return `Map<${keyTypeName}, ${valueTypeName}>`;
+  }
+  function getFieldDefaultCode(field: schema.MessageField): string | undefined {
+    if (field.kind === "repeated") return "[]";
+    if (field.kind === "map") return "new Map()";
+    if (field.typePath! in scalarTypeDefaultValueCodes) {
+      return scalarTypeDefaultValueCodes[field.typePath as ScalarValueTypePath];
+    }
+    const fieldType = schema.types[field.typePath!];
+    if (fieldType?.kind === "enum") {
+      return `"${fieldType.fields[0]?.name ?? "UNSPECIFIED"}"`;
+    }
+  }
+  function toTsType(typePath?: string) {
     return pbTypeToTsType(importBuffer.addInternalImport, filePath, typePath);
   }
-  const oneofFields: OneofField[] = [];
+}
+
+interface GetCodeConfig {
+  filePath: string;
+  importBuffer: ImportBuffer;
+  message: Message;
+}
+type GetCodeFn = (config: GetCodeConfig) => string;
+
+const getMessageTypeDefCode: GetCodeFn = ({ message }) => {
   const typeBodyCodes: string[] = [];
-  const fields = Object.values(type.fields);
-  if (fields.length) typeBodyCodes.push(getFieldsCode());
-  const oneofs = [...groupBy(oneofFields, "oneof")];
-  if (oneofFields.length) typeBodyCodes.push(getOneofsCode());
+  if (message.fields.length) typeBodyCodes.push(getFieldsCode());
+  if (message.oneofFields.length) typeBodyCodes.push(getOneofsCode());
   if (!typeBodyCodes.length) return `export interface Type {}\n`;
   return `export interface Type {\n${typeBodyCodes.join("")}}\n`;
   function getFieldsCode() {
-    return fields.map((field) => {
-      if (field.kind === "map") {
-        const fieldName = snakeToCamel(field.name);
-        const keyTypeName = getTsType(field.keyTypePath);
-        const valueTypeName = getTsType(field.valueTypePath);
-        return `  ${fieldName}?: Map<${keyTypeName}, ${valueTypeName}>;\n`;
-      } else if (field.kind === "oneof") {
-        oneofFields.push(field);
-        return "";
-      } else {
-        const fieldName = snakeToCamel(field.name);
-        const typeName = getTsType(field.typePath);
-        const { kind } = field;
-        const isScalar = field.typePath! in scalarTypeMapping;
-        const isEnum = schema.types[field.typePath!]?.kind === "enum";
-        const hasDefaultValue = isScalar || isEnum;
-        const nullable = (
-          (!hasDefaultValue && kind === "normal") ||
-          (kind === "optional")
-        );
-        const opt = nullable ? "?" : "";
-        const arr = (kind === "repeated") ? "[]" : "";
-        return `  ${fieldName}${opt}: ${typeName}${arr};\n`;
-      }
+    return message.fields.map((field) => {
+      const nullable = (
+        (field.default == null) ||
+        (field.schema.kind === "optional")
+      );
+      const opt = nullable ? "?" : "";
+      const arr = (field.schema.kind === "repeated") ? "[]" : "";
+      return `  ${field.name}${opt}: ${field.type}${arr};\n`;
     }).join("");
   }
   function getOneofsCode() {
-    return oneofs.map(
-      ([oneof, fields]) => {
-        const fieldName = snakeToCamel(oneof);
-        const fieldsCode = fields.map((field) => {
-          const fieldName = snakeToCamel(field.name);
-          const typeName = getTsType(field.typePath);
-          return `    | { field: "${fieldName}", value: ${typeName} }\n`;
-        }).join("");
-        return `  ${fieldName}?: (\n${fieldsCode}  );\n`;
-      },
-    ).join("");
+    return message.oneofFields.map((oneofField) => {
+      return `  ${oneofField.name}?: (\n${
+        oneofField.fields.map(
+          (field) => `    | { field: "${field.name}", value: ${field.type} }\n`,
+        ).join("")
+      }  );\n`;
+    }).join("");
   }
-}
+};
+
+const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
+  return [
+    "export function getDefaultValue(): Type {\n",
+    "  return {\n",
+    message.fields.map((field) => {
+      if (!field.default) return `    ${field.name}: undefined,\n`;
+      return `    ${field.name}: ${field.default},\n`;
+    }).join(""),
+    message.oneofFields.map(
+      (field) => `    ${field.name}: undefined,\n`,
+    ).join(""),
+    "  };\n",
+    "}\n",
+  ].join("");
+};
+
+const getDecodeBinaryCode: GetCodeFn = (
+  { filePath, importBuffer, message },
+) => {
+  const deserialize = importBuffer.addInternalImport(
+    filePath,
+    "runtime/wire/deserialize",
+    "default",
+    "deserialize",
+  );
+  return [
+    "const collections: Set<number> = new Set([",
+    [...message.collectionFieldNumbers.values()].join(", "),
+    "]);\n",
+    "export function decodeBinary(binary: Uint8Array): Type {\n",
+    "  const result = getDefaultValue();\n",
+    `  const wireMessage = ${deserialize}(binary);\n`,
+    "  return result;\n",
+    "}\n",
+  ].join("");
+};
 
 export function pbTypeToTsType(
   addInternalImport: AddInternalImport,
@@ -166,7 +254,9 @@ export function pbTypeToTsType(
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return addInternalImport(here, from, "Type", as);
 }
-const scalarTypeMapping: { [typePath in `.${ScalarValueType}`]: string } = {
+type ScalarValueTypePath = `.${ScalarValueType}`;
+type ScalarToCodeTable = { [typePath in ScalarValueTypePath]: string };
+const scalarTypeMapping: ScalarToCodeTable = {
   ".double": "number",
   ".float": "number",
   ".int32": "number",
@@ -182,6 +272,23 @@ const scalarTypeMapping: { [typePath in `.${ScalarValueType}`]: string } = {
   ".bool": "boolean",
   ".string": "string",
   ".bytes": "Uint8Array",
+};
+const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
+  ".double": "0",
+  ".float": "0",
+  ".int32": "0",
+  ".int64": '"0"',
+  ".uint32": "0",
+  ".uint64": '"0"',
+  ".sint32": "0",
+  ".sint64": '"0"',
+  ".fixed32": "0",
+  ".fixed64": '"0"',
+  ".sfixed32": "0",
+  ".sfixed64": '"0"',
+  ".bool": "false",
+  ".string": '""',
+  ".bytes": "new Uint8Array()",
 };
 const wellKnownTypeMapping: { [typePath: string]: string } = {
   ".google.protobuf.BoolValue": "boolean",
