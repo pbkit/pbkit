@@ -46,21 +46,23 @@ export function getFilePath(typePath: string): string {
 
 function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
+  const fields = Object.entries<schema.EnumField>({
+    "0": { description: "", name: "UNSPECIFIED", options: {} },
+    ...type.fields,
+  });
   yield [
     filePath,
     new StringReader([
       `export type Type =\n${
-        Object.values(type.fields).map(
-          (field) => `  | "${field.name}"`,
-        ).join("\n")
+        fields.map(([, { name }]) => `  | "${name}"`).join("\n")
       };\n\n`,
       `export const num2name = {\n${
-        Object.entries(type.fields).map(
+        fields.map(
           ([fieldNumber, { name }]) => `  ${fieldNumber}: "${name}",`,
         ).join("\n")
       }\n};\n\n`,
       `export const name2num = {\n${
-        Object.entries(type.fields).map(
+        fields.map(
           ([fieldNumber, { name }]) => `  ${name}: ${fieldNumber},`,
         ).join("\n")
       }\n};\n`,
