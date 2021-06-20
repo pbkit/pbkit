@@ -6,7 +6,7 @@ import serialize, { concat } from "./serialize.ts";
 Deno.test("serialize", () => {
   const varint: WireMessage = [[1, {
     type: WireType.Varint,
-    value: 150,
+    value: new Long(150),
   }]];
   assertEquals(serialize(varint), new Uint8Array([0x08, 0x96, 0x01]));
 
@@ -51,7 +51,7 @@ Deno.test("serialize", () => {
     value: new Uint8Array(1),
   }], [2, {
     type: WireType.Varint,
-    value: 150,
+    value: new Long(150),
   }], [3, {
     type: WireType.LengthDelimited,
     value: new TextEncoder().encode("testing"),

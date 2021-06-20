@@ -27,7 +27,7 @@ import {
   Service,
   Type,
 } from "./model.ts";
-import { scalarValueTypes } from "./scalar.ts";
+import { scalarValueTypes } from "../runtime/scalar.ts";
 import {
   stringifyFullIdent,
   stringifyOptionName,

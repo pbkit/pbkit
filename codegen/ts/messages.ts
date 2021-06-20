@@ -3,7 +3,7 @@ import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
-import { ScalarValueTypePath } from "../../core/schema/scalar.ts";
+import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping, GetWireValueToJsValueCodeFn } from "./index.ts";
 import {
@@ -372,8 +372,12 @@ export function getDefaultWireValueToJsValueCode(
   const { typePath } = schema;
   if (!typePath) return;
   if (typePath in scalarTypeMapping) {
-    // TODO
-    return "";
+    const wireValueToJsValue = importBuffer.addInternalImport(
+      filePath,
+      "runtime/wire/scalar.ts",
+      "wireValueToJsValue",
+    );
+    return `${wireValueToJsValue}.${typePath.substr(1)}(wireValue)`;
   }
   const WireType = importBuffer.addInternalImport(
     filePath,
@@ -386,14 +390,14 @@ export function getDefaultWireValueToJsValueCode(
       getFilePath(typePath),
       "num2name",
     );
-    return `wireValue[0] === ${WireType}.Varint ? ${num2name}[wireValue[1][0]] : undefined`;
+    return `wireValue.type === ${WireType}.Varint ? ${num2name}[wireValue.value[0]] : undefined`;
   }
   const decodeBinary = importBuffer.addInternalImport(
     filePath,
     getFilePath(typePath),
     "decodeBinary",
   );
-  return `wireValue[0] === ${WireType}.LengthDelimited ? ${decodeBinary}(wireValue[1]) : undefined`;
+  return `wireValue.type === ${WireType}.LengthDelimited ? ${decodeBinary}(wireValue.value) : undefined`;
 }
 
 export function pbTypeToTsType(
@@ -488,7 +492,9 @@ export const wellKnownTypeMapping: CustomTypeMapping = {
   ".google.protobuf.NullValue": {
     tsType: "null",
     getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+      return `(${
+        getDefaultWireValueToJsValueCode(...args)
+      }) === 0 ? null : undefined`;
     },
   },
   ".google.protobuf.StringValue": {
