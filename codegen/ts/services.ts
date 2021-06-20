@@ -4,14 +4,14 @@ import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { CodeEntry } from "../index.ts";
-import { GenConfig } from "./index.ts";
+import { CustomTypeMapping } from "./index.ts";
 import { createImportBuffer, ImportBuffer } from "./import-buffer.ts";
 import genIndex from "./genIndex.ts";
 import { pbTypeToTsType } from "./messages.ts";
 
 export default function* gen(
   schema: Schema,
-  _config: GenConfig,
+  customTypeMapping: CustomTypeMapping,
 ): Generator<CodeEntry> {
   yield* genIndex({
     typePathTree: createTypePathTree(Object.keys(schema.services)),
@@ -21,7 +21,7 @@ export default function* gen(
     itemIsExportedAs: "Service",
   });
   for (const [typePath, type] of Object.entries(schema.services)) {
-    yield* genService(typePath, type);
+    yield* genService(customTypeMapping, typePath, type);
   }
 }
 
@@ -34,10 +34,15 @@ export function getFilePath(typePath: string): string {
 }
 
 const reservedNames = ["Service", "Uint8Array"];
-function* genService(typePath: string, type: Service): Generator<CodeEntry> {
+function* genService(
+  customTypeMapping: CustomTypeMapping,
+  typePath: string,
+  type: Service,
+): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   const importBuffer = createImportBuffer(reservedNames);
   const serviceTypeDefCode = getServiceTypeDefCode(
+    customTypeMapping,
     filePath,
     importBuffer,
     type,
@@ -53,12 +58,18 @@ function* genService(typePath: string, type: Service): Generator<CodeEntry> {
 }
 
 function getServiceTypeDefCode(
+  customTypeMapping: CustomTypeMapping,
   filePath: string,
   importBuffer: ImportBuffer,
   service: Service,
 ) {
   function getTsType(typePath?: string) {
-    return pbTypeToTsType(importBuffer.addInternalImport, filePath, typePath);
+    return pbTypeToTsType(
+      customTypeMapping,
+      importBuffer.addInternalImport,
+      filePath,
+      typePath,
+    );
   }
   function getTsRpcType(rpcType: RpcType, isRes?: boolean): string {
     const typeName = getTsType(rpcType.typePath);

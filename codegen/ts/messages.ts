@@ -3,9 +3,9 @@ import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
-import { ScalarValueType } from "../../core/schema/scalar.ts";
+import { ScalarValueTypePath } from "../../core/schema/scalar.ts";
 import { CodeEntry } from "../index.ts";
-import { GenConfig } from "./index.ts";
+import { CustomTypeMapping, GetWireValueToJsValueCodeFn } from "./index.ts";
 import {
   AddInternalImport,
   createImportBuffer,
@@ -15,7 +15,7 @@ import genIndex from "./genIndex.ts";
 
 export default function* gen(
   schema: schema.Schema,
-  _config: GenConfig,
+  customTypeMapping: CustomTypeMapping,
 ): Generator<CodeEntry> {
   yield* genIndex({
     typePathTree: createTypePathTree(Object.keys(schema.types)),
@@ -30,7 +30,7 @@ export default function* gen(
         yield* genEnum(typePath, type);
         continue;
       case "message":
-        yield* genMessage(schema, typePath, type);
+        yield* genMessage(schema, typePath, type, customTypeMapping);
         continue;
     }
   }
@@ -60,12 +60,12 @@ function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
         fields.map(
           ([fieldNumber, { name }]) => `  ${fieldNumber}: "${name}",`,
         ).join("\n")
-      }\n};\n\n`,
+      }\n} as const;\n\n`,
       `export const name2num = {\n${
         fields.map(
           ([fieldNumber, { name }]) => `  ${name}: ${fieldNumber},`,
         ).join("\n")
-      }\n};\n`,
+      }\n} as const;\n`,
     ].join("")),
   ];
 }
@@ -77,11 +77,12 @@ interface Message {
   fields: Field[];
   oneofFields: OneofField[];
 }
-interface Field {
+export interface Field {
   schema: schema.MessageField;
   fieldNumber: number;
   name: string;
   type: string;
+  isEnum: boolean;
   default: string | undefined;
 }
 interface OneofField {
@@ -89,11 +90,12 @@ interface OneofField {
   fields: Field[];
 }
 
-const reservedNames = ["Type", "Uint8Array"];
+const reservedNames = ["Type", "Uint8Array", "decodeBinary"];
 function* genMessage(
   schema: schema.Schema,
   typePath: string,
   type: schema.Message,
+  customTypeMapping: CustomTypeMapping,
 ): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   const importBuffer = createImportBuffer(reservedNames);
@@ -132,7 +134,12 @@ function* genMessage(
     fields: schemaNonOneofFields.map(toField),
     oneofFields: Object.values(oneofFieldTable),
   };
-  const getCodeConfig: GetCodeConfig = { filePath, importBuffer, message };
+  const getCodeConfig: GetCodeConfig = {
+    filePath,
+    importBuffer,
+    message,
+    customTypeMapping,
+  };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   const getDefaultValueCode = getGetDefaultValueCode(getCodeConfig);
   const decodeBinaryCode = getDecodeBinaryCode(getCodeConfig);
@@ -152,6 +159,7 @@ function* genMessage(
       fieldNumber: +fieldNumber,
       name: snakeToCamel(field.name),
       type: getFieldTypeCode(field),
+      isEnum: getFieldIsEnum(field),
       default: getFieldDefaultCode(field),
     };
   }
@@ -160,6 +168,11 @@ function* genMessage(
     const keyTypeName = toTsType(field.keyTypePath);
     const valueTypeName = toTsType(field.valueTypePath);
     return `Map<${keyTypeName}, ${valueTypeName}>`;
+  }
+  function getFieldIsEnum(field: schema.MessageField): boolean {
+    if (field.kind === "map") return false;
+    if (!field.typePath) return false;
+    return schema.types[field.typePath]?.kind === "enum";
   }
   function getFieldDefaultCode(field: schema.MessageField): string | undefined {
     if (field.kind === "repeated") return "[]";
@@ -173,7 +186,12 @@ function* genMessage(
     }
   }
   function toTsType(typePath?: string) {
-    return pbTypeToTsType(importBuffer.addInternalImport, filePath, typePath);
+    return pbTypeToTsType(
+      customTypeMapping,
+      importBuffer.addInternalImport,
+      filePath,
+      typePath,
+    );
   }
 }
 
@@ -181,6 +199,7 @@ interface GetCodeConfig {
   filePath: string;
   importBuffer: ImportBuffer;
   message: Message;
+  customTypeMapping: CustomTypeMapping;
 }
 type GetCodeFn = (config: GetCodeConfig) => string;
 
@@ -229,7 +248,7 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
 };
 
 const getDecodeBinaryCode: GetCodeFn = (
-  { filePath, importBuffer, message },
+  { filePath, importBuffer, message, customTypeMapping },
 ) => {
   const deserialize = importBuffer.addInternalImport(
     filePath,
@@ -267,7 +286,8 @@ const getDecodeBinaryCode: GetCodeFn = (
     message.oneofFields.length
       ? "  const wireFieldNumbers = Array.from(wireFields.keys()).reverse();\n"
       : "",
-    message.fields.map(({ fieldNumber, name }) => {
+    message.fields.map((field) => {
+      const { fieldNumber, name, schema } = field;
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
         return [
@@ -279,24 +299,50 @@ const getDecodeBinaryCode: GetCodeFn = (
           "  }\n",
         ].join("");
       } else {
+        const wireValueToJsValueCode = getGetWireValueToJsValueCode(
+          customTypeMapping,
+          schema,
+        )(
+          filePath,
+          importBuffer,
+          field,
+        );
+        if (!wireValueToJsValueCode) return "";
         return [
           "  field: {\n",
           `    const wireValue = wireFields.get(${fieldNumber});\n`,
-          "    const value = todo(wireValue);\n",
+          `    const value = ${wireValueToJsValueCode};\n`,
           "    if (value === undefined) break field;\n",
           `    result.${name} = value;\n`,
           "  }\n",
         ].join("");
       }
     }).join(""),
-    message.oneofFields.map(({ name }) => {
+    message.oneofFields.map((field) => {
+      const { name, fields } = field;
+      const wireValueToJsValueCode = [
+        "{\n",
+        fields.map((field) => {
+          const { fieldNumber, schema } = field;
+          const wireValueToJsValueCode = getGetWireValueToJsValueCode(
+            customTypeMapping,
+            schema,
+          )(
+            filePath,
+            importBuffer,
+            field,
+          ) || "undefined";
+          return `      ${fieldNumber}(wireValue) { return ${wireValueToJsValueCode}; },\n`;
+        }).join(""),
+        "    }[fieldNumber]?.(wireValue)",
+      ].join("");
       return [
         "  oneof: {\n",
         `    const oneofFieldNumbers = oneofFieldNumbersMap.${name};\n`,
         "    const fieldNumber = wireFieldNumbers.find(v => oneofFieldNumbers.has(v));\n",
         "    if (fieldNumber == null) break oneof;\n",
         "    const wireValue = wireFields.get(fieldNumber);\n",
-        "    const value = todo(wireValue);\n",
+        `    const value = ${wireValueToJsValueCode};\n`,
         "    if (value === undefined) break oneof;\n",
         `    result.${name} = { field: fieldNames[fieldNumber], value };\n`,
         "  }\n",
@@ -307,7 +353,51 @@ const getDecodeBinaryCode: GetCodeFn = (
   ].join("");
 };
 
+type NonMapMessageField = Exclude<schema.MessageField, schema.MapField>;
+function getGetWireValueToJsValueCode(
+  customTypeMapping: CustomTypeMapping,
+  schema: schema.MessageField,
+): GetWireValueToJsValueCodeFn {
+  return (
+    customTypeMapping[(schema as NonMapMessageField).typePath!]
+      ?.getWireValueToJsValueCode ?? getDefaultWireValueToJsValueCode
+  );
+}
+export function getDefaultWireValueToJsValueCode(
+  filePath: string,
+  importBuffer: ImportBuffer,
+  field: Field,
+): string | undefined {
+  const schema = field.schema as NonMapMessageField;
+  const { typePath } = schema;
+  if (!typePath) return;
+  if (typePath in scalarTypeMapping) {
+    // TODO
+    return "";
+  }
+  const WireType = importBuffer.addInternalImport(
+    filePath,
+    "runtime/wire/index.ts",
+    "WireType",
+  );
+  if (field.isEnum) {
+    const num2name = importBuffer.addInternalImport(
+      filePath,
+      getFilePath(typePath),
+      "num2name",
+    );
+    return `wireValue[0] === ${WireType}.Varint ? ${num2name}[wireValue[1][0]] : undefined`;
+  }
+  const decodeBinary = importBuffer.addInternalImport(
+    filePath,
+    getFilePath(typePath),
+    "decodeBinary",
+  );
+  return `wireValue[0] === ${WireType}.LengthDelimited ? ${decodeBinary}(wireValue[1]) : undefined`;
+}
+
 export function pbTypeToTsType(
+  customTypeMapping: CustomTypeMapping,
   addInternalImport: AddInternalImport,
   here: string,
   typePath?: string,
@@ -316,12 +406,13 @@ export function pbTypeToTsType(
   if (typePath in scalarTypeMapping) {
     return scalarTypeMapping[typePath as keyof typeof scalarTypeMapping];
   }
-  if (typePath in wellKnownTypeMapping) return wellKnownTypeMapping[typePath];
+  if (typePath in wellKnownTypeMapping) {
+    return customTypeMapping[typePath].tsType;
+  }
   const from = getFilePath(typePath);
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return addInternalImport(here, from, "Type", as);
 }
-type ScalarValueTypePath = `.${ScalarValueType}`;
 type ScalarToCodeTable = { [typePath in ScalarValueTypePath]: string };
 const scalarTypeMapping: ScalarToCodeTable = {
   ".double": "number",
@@ -357,15 +448,65 @@ const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
   ".string": '""',
   ".bytes": "new Uint8Array()",
 };
-const wellKnownTypeMapping: { [typePath: string]: string } = {
-  ".google.protobuf.BoolValue": "boolean",
-  ".google.protobuf.BytesValue": "Uint8Array",
-  ".google.protobuf.DoubleValue": "number",
-  ".google.protobuf.FloatValue": "number",
-  ".google.protobuf.Int32Value": "number",
-  ".google.protobuf.Int64Value": "string",
-  ".google.protobuf.NullValue": "null",
-  ".google.protobuf.StringValue": "string",
-  ".google.protobuf.UInt32Value": "number",
-  ".google.protobuf.UInt64Value": "string",
+export const wellKnownTypeMapping: CustomTypeMapping = {
+  ".google.protobuf.BoolValue": {
+    tsType: "boolean",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.BytesValue": {
+    tsType: "Uint8Array",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.DoubleValue": {
+    tsType: "number",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.FloatValue": {
+    tsType: "number",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.Int32Value": {
+    tsType: "number",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.Int64Value": {
+    tsType: "string",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.NullValue": {
+    tsType: "null",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.StringValue": {
+    tsType: "string",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.UInt32Value": {
+    tsType: "number",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
+  ".google.protobuf.UInt64Value": {
+    tsType: "string",
+    getWireValueToJsValueCode(...args) {
+      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    },
+  },
 };

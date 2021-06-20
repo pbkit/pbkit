@@ -23,7 +23,7 @@ interface FieldBase<T extends WireType> {
   type: T;
 }
 export interface Varint extends FieldBase<WireType.Varint> {
-  value: number | Long;
+  value: Long;
 }
 export interface Fixed64 extends FieldBase<WireType.Fixed64> {
   value: Long;

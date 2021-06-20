@@ -1,3 +1,4 @@
+export type ScalarValueTypePath = `.${ScalarValueType}`;
 export type ScalarValueType = (typeof scalarValueTypes)[number];
 export const scalarValueTypes = [
   "double",

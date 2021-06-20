@@ -19,7 +19,7 @@ export function encode(value: number | Long): Uint8Array {
 
 export type DecodeResult = [
   number, // byte count
-  number | Long, // value
+  Long, // value
 ];
 export function decode(dataview: DataView): DecodeResult {
   let result = new Long(0);
@@ -32,7 +32,7 @@ export function decode(dataview: DataView): DecodeResult {
     );
     ++i;
     if (curr >>> 7) continue;
-    return [i, result[1] ? result : result[0]];
+    return [i, result];
   }
 }
 
