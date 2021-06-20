@@ -73,6 +73,7 @@ function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
 interface Message {
   schema: schema.Message;
   collectionFieldNumbers: Set<number>;
+  everyFieldNames: Map<number, string>;
   fields: Field[];
   oneofFields: OneofField[];
 }
@@ -110,6 +111,11 @@ function* genMessage(
   const collectionFieldNumbers = new Set(
     collections.map(([fieldNumber]) => +fieldNumber),
   );
+  const everyFieldNames = new Map(
+    schemaFields.map(
+      ([fieldNumber, { name }]) => [+fieldNumber, snakeToCamel(name)],
+    ),
+  );
   const oneofFieldTable: { [oneof: string]: OneofField } = {};
   for (const schemaOneofField of schemaOneofFields) {
     const [, schemaField] = schemaOneofField;
@@ -122,6 +128,7 @@ function* genMessage(
   const message: Message = {
     schema: type,
     collectionFieldNumbers,
+    everyFieldNames,
     fields: schemaNonOneofFields.map(toField),
     oneofFields: Object.values(oneofFieldTable),
   };
@@ -231,12 +238,70 @@ const getDecodeBinaryCode: GetCodeFn = (
     "deserialize",
   );
   return [
-    "const collections: Set<number> = new Set([",
-    [...message.collectionFieldNumbers.values()].join(", "),
-    "]);\n",
+    message.oneofFields.length
+      ? [
+        "const fieldNames: Map<number, string> = new Map([\n",
+        [...message.everyFieldNames].map(
+          ([fieldNumber, name]) => `  [${fieldNumber}, "${name}"],\n`,
+        ).join(""),
+        "]);\n",
+      ].join("")
+      : "",
+    message.oneofFields.length
+      ? [
+        "const oneofFieldNumbersMap: { [oneof: string]: Set<number> } = {\n",
+        message.oneofFields.map(({ name, fields }) => {
+          return [
+            `  ${name}: new Set([`,
+            fields.map(({ fieldNumber }) => fieldNumber).join(", "),
+            "]),\n",
+          ].join("");
+        }).join(""),
+        "};\n",
+      ].join("")
+      : "",
     "export function decodeBinary(binary: Uint8Array): Type {\n",
     "  const result = getDefaultValue();\n",
     `  const wireMessage = ${deserialize}(binary);\n`,
+    "  const wireFields = new Map(wireMessage);\n",
+    message.oneofFields.length
+      ? "  const wireFieldNumbers = Array.from(wireFields.keys()).reverse();\n"
+      : "",
+    message.fields.map(({ fieldNumber, name }) => {
+      const isCollection = message.collectionFieldNumbers.has(fieldNumber);
+      if (isCollection) {
+        return [
+          "  collection: {\n",
+          `    const wireValue = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber});\n`,
+          "    const value = todo(wireValue);\n",
+          "    if (value === undefined) break collection;\n",
+          `    result.${name} = value;\n`,
+          "  }\n",
+        ].join("");
+      } else {
+        return [
+          "  field: {\n",
+          `    const wireValue = wireFields.get(${fieldNumber});\n`,
+          "    const value = todo(wireValue);\n",
+          "    if (value === undefined) break field;\n",
+          `    result.${name} = value;\n`,
+          "  }\n",
+        ].join("");
+      }
+    }).join(""),
+    message.oneofFields.map(({ name }) => {
+      return [
+        "  oneof: {\n",
+        `    const oneofFieldNumbers = oneofFieldNumbersMap.${name};\n`,
+        "    const fieldNumber = wireFieldNumbers.find(v => oneofFieldNumbers.has(v));\n",
+        "    if (fieldNumber == null) break oneof;\n",
+        "    const wireValue = wireFields.get(fieldNumber);\n",
+        "    const value = todo(wireValue);\n",
+        "    if (value === undefined) break oneof;\n",
+        `    result.${name} = { field: fieldNames[fieldNumber], value };\n`,
+        "  }\n",
+      ].join("");
+    }).join(""),
     "  return result;\n",
     "}\n",
   ].join("");
