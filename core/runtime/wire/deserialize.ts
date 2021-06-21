@@ -9,7 +9,7 @@ export default function deserialize(uint8array: Uint8Array): WireMessage {
   const dataview = new DataView(uint8array.buffer, offset);
   while (idx < uint8array.length) {
     const decodeResult = decode(new DataView(uint8array.buffer, offset + idx));
-    const key = get32(decodeResult[1]);
+    const key = decodeResult[1][0];
     idx += decodeResult[0];
     const type = (key & 0b111) as WireType;
     const fieldNumber = key >>> 3;
@@ -37,7 +37,7 @@ export default function deserialize(uint8array: Uint8Array): WireMessage {
         );
         result.push([fieldNumber, {
           type,
-          value: uint8array.subarray(idx += len, idx += get32(value)),
+          value: uint8array.subarray(idx += len, idx += value[0]),
         }]);
         break;
       }
@@ -55,9 +55,4 @@ export default function deserialize(uint8array: Uint8Array): WireMessage {
     }
   }
   return result;
-}
-
-function get32(value: number | Long): number {
-  if (typeof value === "number") return value;
-  return value[0];
 }

@@ -1,4 +1,6 @@
+import Long from "../Long.ts";
 import { ScalarValueType } from "../scalar.ts";
+import { decode } from "./varint.ts";
 import { Field, WireType } from "./index.ts";
 
 type WireValueToJsValue<T> = (wireValue: Field) => T | undefined;
@@ -91,3 +93,55 @@ export const wireValueToJsValue: WireValueToJsValueTable = {
     return wireValue.value;
   },
 };
+
+function* unpackVarint(value: Uint8Array): Generator<Long> {
+  let idx = 0;
+  const offset = value.byteOffset;
+  while (idx < value.length) {
+    const decodeResult = decode(new DataView(value.buffer, offset + idx));
+    idx += decodeResult[0];
+    yield decodeResult[1];
+  }
+}
+
+function* unpackFloat(value: Uint8Array): Generator<number> {
+  let idx = 0;
+  const dataview = new DataView(value.buffer, value.byteOffset);
+  while (idx < value.length) {
+    const float = dataview.getFloat32(idx, true);
+    idx += 4;
+    yield float;
+  }
+}
+
+function* unpackDouble(value: Uint8Array): Generator<number> {
+  let idx = 0;
+  const dataview = new DataView(value.buffer, value.byteOffset);
+  while (idx < value.length) {
+    const double = dataview.getFloat64(idx, true);
+    idx += 4;
+    yield double;
+  }
+}
+
+function* unpackFixed32(value: Uint8Array): Generator<number> {
+  let idx = 0;
+  const dataview = new DataView(value.buffer, value.byteOffset);
+  while (idx < value.length) {
+    const fixed32 = dataview.getUint32(idx, true);
+    idx += 4;
+    yield fixed32;
+  }
+}
+
+function* unpackFixed64(value: Uint8Array): Generator<Long> {
+  let idx = 0;
+  const dataview = new DataView(value.buffer, value.byteOffset);
+  while (idx < value.length) {
+    const lo = dataview.getUint32(idx, true);
+    idx += 4;
+    const hi = dataview.getUint32(idx, true);
+    idx += 4;
+    yield new Long(lo, hi);
+  }
+}
