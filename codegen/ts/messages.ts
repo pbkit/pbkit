@@ -369,6 +369,7 @@ export function getDefaultWireValueToJsValueCode(
   field: Field,
 ): string | undefined {
   const schema = field.schema as NonMapMessageField;
+  if (schema.kind === "optional") return;
   const { typePath } = schema;
   if (!typePath) return;
   if (typePath in scalarTypeMapping) {
