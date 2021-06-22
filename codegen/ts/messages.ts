@@ -282,6 +282,7 @@ const getDecodeBinaryCode: GetCodeFn = (
     "export function decodeBinary(binary: Uint8Array): Type {\n",
     "  const result = getDefaultValue();\n",
     `  const wireMessage = ${deserialize}(binary);\n`,
+    // TODO: "For embedded message fields, the parser merges multiple instances of the same field"
     "  const wireFields = new Map(wireMessage);\n",
     message.oneofFields.length
       ? "  const wireFieldNumbers = Array.from(wireFields.keys()).reverse();\n"
