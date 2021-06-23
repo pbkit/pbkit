@@ -1,5 +1,6 @@
 import Long from "../Long.ts";
-import { decode } from "./varint.ts";
+import { decode as decodeVarint } from "./varint.ts";
+import { decode as decodeZigzag } from "./zigzag.ts";
 import { Field, WireType } from "./index.ts";
 
 type WireValueToJsValue<T> = (wireValue: Field) => T | undefined;
@@ -13,6 +14,10 @@ interface WireValueToJsValueFns extends NumericWireValueToJsValueFns {
 interface NumericWireValueToJsValueFns extends VarintFieldToJsValueFns {
   double: WireValueToJsValue<number>;
   float: WireValueToJsValue<number>;
+  fixed32: WireValueToJsValue<number>;
+  fixed64: WireValueToJsValue<string>;
+  sfixed32: WireValueToJsValue<number>;
+  sfixed64: WireValueToJsValue<string>;
 }
 
 type PostprocessVarintFns = typeof postprocessVarintFns;
@@ -21,12 +26,8 @@ export const postprocessVarintFns = {
   int64: (long: Long) => long.toString(true),
   uint32: (long: Long) => long[0] >>> 0,
   uint64: (long: Long) => long.toString(false),
-  sint32: (long: Long) => undefined, // TODO
-  sint64: (long: Long) => undefined, // TODO
-  fixed32: (long: Long) => undefined, // TODO
-  fixed64: (long: Long) => undefined, // TODO
-  sfixed32: (long: Long) => undefined, // TODO
-  sfixed64: (long: Long) => undefined, // TODO
+  sint32: (long: Long) => decodeZigzag(long[0]),
+  sint64: (long: Long) => decodeZigzag(long),
   bool: (long: Long) => long[0] !== 0,
 };
 
@@ -56,6 +57,22 @@ export const wireValueToJsValueFns: WireValueToJsValueFns = {
     if (wireValue.type !== WireType.Fixed32) return;
     const dataview = new DataView(new Uint32Array([wireValue.value]).buffer);
     return dataview.getFloat32(0, true);
+  },
+  fixed32: (wireValue) => {
+    if (wireValue.type !== WireType.Fixed32) return;
+    return wireValue.value | 0;
+  },
+  fixed64: (wireValue) => {
+    if (wireValue.type !== WireType.Fixed64) return;
+    return wireValue.value.toString(true);
+  },
+  sfixed32: (wireValue) => {
+    if (wireValue.type !== WireType.Fixed32) return;
+    return decodeZigzag(wireValue.value | 0);
+  },
+  sfixed64: (wireValue) => {
+    if (wireValue.type !== WireType.Fixed64) return;
+    return decodeZigzag(wireValue.value).toString(true);
   },
   string: (wireValue) => {
     if (wireValue.type !== WireType.LengthDelimited) return;
@@ -99,6 +116,17 @@ export const unpackFns: UnpackFns = {
       }
     }
   },
+  *int64(wireValues) {
+    for (const wireValue of wireValues) {
+      const value = wireValueToJsValueFns.int64(wireValue);
+      if (value != null) yield value;
+      else {
+        for (const long of unpackVarint(wireValue)) {
+          yield postprocessVarintFns.int64(long);
+        }
+      }
+    }
+  },
 };
 
 function* unpackDouble(wireValue: Field): Generator<number> {
@@ -131,7 +159,7 @@ function* unpackVarint(wireValue: Field): Generator<Long> {
   let idx = 0;
   const offset = value.byteOffset;
   while (idx < value.length) {
-    const decodeResult = decode(new DataView(value.buffer, offset + idx));
+    const decodeResult = decodeVarint(new DataView(value.buffer, offset + idx));
     idx += decodeResult[0];
     yield decodeResult[1];
   }
