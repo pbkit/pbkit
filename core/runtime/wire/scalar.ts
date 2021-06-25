@@ -60,19 +60,19 @@ export const wireValueToJsValueFns: WireValueToJsValueFns = {
   },
   fixed32: (wireValue) => {
     if (wireValue.type !== WireType.Fixed32) return;
-    return wireValue.value | 0;
+    return wireValue.value >>> 0;
   },
   fixed64: (wireValue) => {
     if (wireValue.type !== WireType.Fixed64) return;
-    return wireValue.value.toString(true);
+    return wireValue.value.toString(false);
   },
   sfixed32: (wireValue) => {
     if (wireValue.type !== WireType.Fixed32) return;
-    return decodeZigzag(wireValue.value | 0);
+    return wireValue.value | 0;
   },
   sfixed64: (wireValue) => {
     if (wireValue.type !== WireType.Fixed64) return;
-    return decodeZigzag(wireValue.value).toString(true);
+    return wireValue.value.toString(true);
   },
   string: (wireValue) => {
     if (wireValue.type !== WireType.LengthDelimited) return;
@@ -90,7 +90,29 @@ type UnpackFns = {
     NonNullable<ReturnType<NumericWireValueToJsValueFns[type]>>
   >;
 };
+const unpackVarintFns = Object.fromEntries(
+  Object.entries(postprocessVarintFns).map(([type, fn]) => [
+    type,
+    function* (wireValues: Iterable<Field>) {
+      type Key = keyof typeof postprocessVarintFns;
+      for (const wireValue of wireValues) {
+        const value = wireValueToJsValueFns[type as Key](wireValue);
+        if (value != null) yield value;
+        else {
+          for (const long of unpackVarint(wireValue)) {
+            yield postprocessVarintFns[type as Key](long);
+          }
+        }
+      }
+    },
+  ]),
+) as {
+  [type in keyof PostprocessVarintFns]: Unpack<
+    NonNullable<ReturnType<PostprocessVarintFns[type]>>
+  >;
+};
 export const unpackFns: UnpackFns = {
+  ...unpackVarintFns,
   *double(wireValues) {
     for (const wireValue of wireValues) {
       const value = wireValueToJsValueFns.double(wireValue);
@@ -105,24 +127,38 @@ export const unpackFns: UnpackFns = {
       else yield* unpackFloat(wireValue);
     }
   },
-  *int32(wireValues) {
+  *fixed32(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.int32(wireValue);
+      const value = wireValueToJsValueFns.fixed32(wireValue);
+      if (value != null) yield value;
+      else for (const value of unpackFixed32(wireValue)) yield value >>> 0;
+    }
+  },
+  *fixed64(wireValues) {
+    for (const wireValue of wireValues) {
+      const value = wireValueToJsValueFns.fixed64(wireValue);
       if (value != null) yield value;
       else {
-        for (const long of unpackVarint(wireValue)) {
-          yield postprocessVarintFns.int32(long);
+        for (const value of unpackFixed64(wireValue)) {
+          yield value.toString(false);
         }
       }
     }
   },
-  *int64(wireValues) {
+  *sfixed32(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.int64(wireValue);
+      const value = wireValueToJsValueFns.sfixed32(wireValue);
+      if (value != null) yield value;
+      else for (const value of unpackFixed32(wireValue)) yield value | 0;
+    }
+  },
+  *sfixed64(wireValues) {
+    for (const wireValue of wireValues) {
+      const value = wireValueToJsValueFns.sfixed64(wireValue);
       if (value != null) yield value;
       else {
-        for (const long of unpackVarint(wireValue)) {
-          yield postprocessVarintFns.int64(long);
+        for (const value of unpackFixed64(wireValue)) {
+          yield value.toString(true);
         }
       }
     }
