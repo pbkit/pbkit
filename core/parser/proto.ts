@@ -334,7 +334,7 @@ function acceptAggregate(
 function acceptConstant(
   parser: RecursiveDescentParser,
 ): ast.Constant | undefined {
-  return acceptSignedIntLit(parser) ?? acceptSignedFloatLit(parser) ??
+  return acceptSignedFloatLit(parser) ?? acceptSignedIntLit(parser) ??
     acceptStrLit(parser) ?? acceptBoolLit(parser) ?? acceptFullIdent(parser) ??
     acceptAggregate(parser);
 }
