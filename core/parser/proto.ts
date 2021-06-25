@@ -95,7 +95,7 @@ function acceptStatements<T extends ast.StatementBase>(
 const whitespacePattern = /^\s+/;
 const multilineCommentPattern = /^\/\*(?:.|\r?\n)*?\*\//;
 const singlelineCommentPattern = /^\/\/.*(?:\r?\n|$)/;
-const intLitPattern = /^0(?:[0-7]*|x[0-9a-f]+)|^[1-9]\d*/i;
+const intLitPattern = /^0(?:x[0-9a-f]+|[0-7]*)|^[1-9]\d*/i;
 const floatLitPattern =
   /^\d+\.\d*(?:e[-+]?\d+)?|^\de[-+]?\d+|^\.\d+(?:e[-+]?\d+)?|^inf|^nan/i;
 const boolLitPattern = /^true|^false/;
