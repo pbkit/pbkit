@@ -374,12 +374,12 @@ export function getDefaultWireValueToJsValueCode(
   const { typePath } = schema;
   if (!typePath) return;
   if (typePath in scalarTypeMapping) {
-    const wireValueToJsValue = importBuffer.addInternalImport(
+    const wireValueToJsValueFns = importBuffer.addInternalImport(
       filePath,
       "runtime/wire/scalar.ts",
-      "wireValueToJsValue",
+      "wireValueToJsValueFns",
     );
-    return `${wireValueToJsValue}.${typePath.substr(1)}(wireValue)`;
+    return `${wireValueToJsValueFns}.${typePath.substr(1)}(wireValue)`;
   }
   const WireType = importBuffer.addInternalImport(
     filePath,
