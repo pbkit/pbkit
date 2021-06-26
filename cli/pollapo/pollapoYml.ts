@@ -14,6 +14,7 @@ import { YAMLError } from "https://deno.land/std@0.98.0/encoding/_yaml/error.ts"
 
 export type PollapoYml = {
   deps?: string[];
+  outDir?: string;
   root?: PollapoRoot;
 } | undefined;
 

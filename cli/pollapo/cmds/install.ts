@@ -105,6 +105,7 @@ export default new Command()
       const pollapoYmlText = stringify(
         sanitizeDeps({
           ...pollapoYml,
+          outDir: options.outDir,
           root: { ...pollapoYml?.root, lock: lockTable },
         }) as Record<string, unknown>,
       );
