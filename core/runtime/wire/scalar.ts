@@ -91,7 +91,7 @@ type UnpackFns = {
   >;
 };
 const unpackVarintFns = Object.fromEntries(
-  Object.entries(postprocessVarintFns).map(([type, fn]) => [
+  Object.keys(postprocessVarintFns).map((type) => [
     type,
     function* (wireValues: Iterable<Field>) {
       type Key = keyof typeof postprocessVarintFns;

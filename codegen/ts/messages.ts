@@ -3,6 +3,7 @@ import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
+import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping, GetWireValueToJsValueCodeFn } from "./index.ts";
@@ -289,26 +290,42 @@ const getDecodeBinaryCode: GetCodeFn = (
       : "",
     message.fields.map((field) => {
       const { fieldNumber, name, schema } = field;
+      const wireValueToJsValueCode = getGetWireValueToJsValueCode(
+        customTypeMapping,
+        schema,
+      )(
+        filePath,
+        importBuffer,
+        field,
+      );
+      if (!wireValueToJsValueCode) return "";
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
+        const type = (schema as schema.RepeatedField).typePath?.substr(1);
+        let wireValuesToJsValuesCode: string;
+        if (type as keyof typeof unpackFns in unpackFns) {
+          const unpackFns = importBuffer.addInternalImport(
+            filePath,
+            "runtime/wire/scalar.ts",
+            "unpackFns",
+          );
+          wireValuesToJsValuesCode = (
+            `Array.from(${unpackFns}.${type}(wireValues))`
+          );
+        } else {
+          wireValuesToJsValuesCode = (
+            `wireValues.map((wireValue) => ${wireValueToJsValueCode}).filter(x => x !== undefined)`
+          );
+        }
         return [
           "  collection: {\n",
-          `    const wireValue = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber});\n`,
-          "    const value = todo(wireValue);\n",
-          "    if (value === undefined) break collection;\n",
+          `    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber}).map(([, wireValue]) => wireValue);\n`,
+          `    const value = ${wireValuesToJsValuesCode};\n`,
+          "    if (!value.length) break collection;\n",
           `    result.${name} = value;\n`,
           "  }\n",
         ].join("");
       } else {
-        const wireValueToJsValueCode = getGetWireValueToJsValueCode(
-          customTypeMapping,
-          schema,
-        )(
-          filePath,
-          importBuffer,
-          field,
-        );
-        if (!wireValueToJsValueCode) return "";
         return [
           "  field: {\n",
           `    const wireValue = wireFields.get(${fieldNumber});\n`,
