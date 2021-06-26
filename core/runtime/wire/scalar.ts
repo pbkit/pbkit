@@ -3,21 +3,21 @@ import { decode as decodeVarint } from "./varint.ts";
 import { decode as decodeZigzag } from "./zigzag.ts";
 import { Field, WireType } from "./index.ts";
 
-type WireValueToJsValue<T> = (wireValue: Field) => T | undefined;
+type WireValueToTsValue<T> = (wireValue: Field) => T | undefined;
 type Unpack<T> = (wireValues: Iterable<Field>) => Generator<T>;
 
-interface WireValueToJsValueFns extends NumericWireValueToJsValueFns {
-  string: WireValueToJsValue<string>;
-  bytes: WireValueToJsValue<Uint8Array>;
+interface WireValueToTsValueFns extends NumericWireValueToTsValueFns {
+  string: WireValueToTsValue<string>;
+  bytes: WireValueToTsValue<Uint8Array>;
 }
 
-interface NumericWireValueToJsValueFns extends VarintFieldToJsValueFns {
-  double: WireValueToJsValue<number>;
-  float: WireValueToJsValue<number>;
-  fixed32: WireValueToJsValue<number>;
-  fixed64: WireValueToJsValue<string>;
-  sfixed32: WireValueToJsValue<number>;
-  sfixed64: WireValueToJsValue<string>;
+interface NumericWireValueToTsValueFns extends VarintFieldToTsValueFns {
+  double: WireValueToTsValue<number>;
+  float: WireValueToTsValue<number>;
+  fixed32: WireValueToTsValue<number>;
+  fixed64: WireValueToTsValue<string>;
+  sfixed32: WireValueToTsValue<number>;
+  sfixed64: WireValueToTsValue<string>;
 }
 
 type PostprocessVarintFns = typeof postprocessVarintFns;
@@ -31,8 +31,8 @@ export const postprocessVarintFns = {
   bool: (long: Long) => long[0] !== 0,
 };
 
-type VarintFieldToJsValueFns = typeof varintFieldToJsValueFns;
-const varintFieldToJsValueFns = Object.fromEntries(
+type VarintFieldToTsValueFns = typeof varintFieldToTsValueFns;
+const varintFieldToTsValueFns = Object.fromEntries(
   Object.entries(postprocessVarintFns).map(([type, fn]) => [
     type,
     (wireValue: Field) => {
@@ -41,13 +41,13 @@ const varintFieldToJsValueFns = Object.fromEntries(
     },
   ]),
 ) as {
-  [type in keyof PostprocessVarintFns]: WireValueToJsValue<
+  [type in keyof PostprocessVarintFns]: WireValueToTsValue<
     ReturnType<PostprocessVarintFns[type]>
   >;
 };
 
-export const wireValueToJsValueFns: WireValueToJsValueFns = {
-  ...varintFieldToJsValueFns,
+export const wireValueToTsValueFns: WireValueToTsValueFns = {
+  ...varintFieldToTsValueFns,
   double: (wireValue) => {
     if (wireValue.type !== WireType.Fixed64) return;
     const dataview = new DataView(wireValue.value.buffer);
@@ -86,8 +86,8 @@ export const wireValueToJsValueFns: WireValueToJsValueFns = {
 };
 
 type UnpackFns = {
-  [type in keyof NumericWireValueToJsValueFns]: Unpack<
-    NonNullable<ReturnType<NumericWireValueToJsValueFns[type]>>
+  [type in keyof NumericWireValueToTsValueFns]: Unpack<
+    NonNullable<ReturnType<NumericWireValueToTsValueFns[type]>>
   >;
 };
 const unpackVarintFns = Object.fromEntries(
@@ -96,7 +96,7 @@ const unpackVarintFns = Object.fromEntries(
     function* (wireValues: Iterable<Field>) {
       type Key = keyof typeof postprocessVarintFns;
       for (const wireValue of wireValues) {
-        const value = wireValueToJsValueFns[type as Key](wireValue);
+        const value = wireValueToTsValueFns[type as Key](wireValue);
         if (value != null) yield value;
         else {
           for (const long of unpackVarint(wireValue)) {
@@ -115,28 +115,28 @@ export const unpackFns: UnpackFns = {
   ...unpackVarintFns,
   *double(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.double(wireValue);
+      const value = wireValueToTsValueFns.double(wireValue);
       if (value != null) yield value;
       else yield* unpackDouble(wireValue);
     }
   },
   *float(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.float(wireValue);
+      const value = wireValueToTsValueFns.float(wireValue);
       if (value != null) yield value;
       else yield* unpackFloat(wireValue);
     }
   },
   *fixed32(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.fixed32(wireValue);
+      const value = wireValueToTsValueFns.fixed32(wireValue);
       if (value != null) yield value;
       else for (const value of unpackFixed32(wireValue)) yield value >>> 0;
     }
   },
   *fixed64(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.fixed64(wireValue);
+      const value = wireValueToTsValueFns.fixed64(wireValue);
       if (value != null) yield value;
       else {
         for (const value of unpackFixed64(wireValue)) {
@@ -147,14 +147,14 @@ export const unpackFns: UnpackFns = {
   },
   *sfixed32(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.sfixed32(wireValue);
+      const value = wireValueToTsValueFns.sfixed32(wireValue);
       if (value != null) yield value;
       else for (const value of unpackFixed32(wireValue)) yield value | 0;
     }
   },
   *sfixed64(wireValues) {
     for (const wireValue of wireValues) {
-      const value = wireValueToJsValueFns.sfixed64(wireValue);
+      const value = wireValueToTsValueFns.sfixed64(wireValue);
       if (value != null) yield value;
       else {
         for (const value of unpackFixed64(wireValue)) {

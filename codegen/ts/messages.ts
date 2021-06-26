@@ -6,7 +6,7 @@ import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { CodeEntry } from "../index.ts";
-import { CustomTypeMapping, GetWireValueToJsValueCodeFn } from "./index.ts";
+import { CustomTypeMapping, GetWireValueToTsValueCodeFn } from "./index.ts";
 import {
   AddInternalImport,
   createImportBuffer,
@@ -81,13 +81,13 @@ interface Message {
 export interface Field {
   schema: schema.MessageField;
   fieldNumber: number;
-  name: string;
-  type: string;
+  tsName: string;
+  tsType: string;
   isEnum: boolean;
   default: string | undefined;
 }
 interface OneofField {
-  name: string;
+  tsName: string;
   fields: Field[];
 }
 
@@ -123,10 +123,10 @@ function* genMessage(
   for (const schemaOneofField of schemaOneofFields) {
     const [, schemaField] = schemaOneofField;
     if (schemaField.kind !== "oneof") continue;
-    const name = snakeToCamel(schemaField.oneof);
-    const oneofField = oneofFieldTable[name] ?? { name, fields: [] };
+    const tsName = snakeToCamel(schemaField.oneof);
+    const oneofField = oneofFieldTable[tsName] ?? { tsName, fields: [] };
     oneofField.fields.push(toField(schemaOneofField));
-    oneofFieldTable[name] = oneofField;
+    oneofFieldTable[tsName] = oneofField;
   }
   const message: Message = {
     schema: type,
@@ -158,8 +158,8 @@ function* genMessage(
     return {
       schema: field,
       fieldNumber: +fieldNumber,
-      name: snakeToCamel(field.name),
-      type: getFieldTypeCode(field),
+      tsName: snakeToCamel(field.name),
+      tsType: getFieldTypeCode(field),
       isEnum: getFieldIsEnum(field),
       default: getFieldDefaultCode(field),
     };
@@ -218,14 +218,15 @@ const getMessageTypeDefCode: GetCodeFn = ({ message }) => {
       );
       const opt = nullable ? "?" : "";
       const arr = (field.schema.kind === "repeated") ? "[]" : "";
-      return `  ${field.name}${opt}: ${field.type}${arr};\n`;
+      return `  ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
     }).join("");
   }
   function getOneofsCode() {
     return message.oneofFields.map((oneofField) => {
-      return `  ${oneofField.name}?: (\n${
+      return `  ${oneofField.tsName}?: (\n${
         oneofField.fields.map(
-          (field) => `    | { field: "${field.name}", value: ${field.type} }\n`,
+          (field) =>
+            `    | { field: "${field.tsName}", value: ${field.tsType} }\n`,
         ).join("")
       }  );\n`;
     }).join("");
@@ -237,11 +238,11 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
     "export function getDefaultValue(): Type {\n",
     "  return {\n",
     message.fields.map((field) => {
-      if (!field.default) return `    ${field.name}: undefined,\n`;
-      return `    ${field.name}: ${field.default},\n`;
+      if (!field.default) return `    ${field.tsName}: undefined,\n`;
+      return `    ${field.tsName}: ${field.default},\n`;
     }).join(""),
     message.oneofFields.map(
-      (field) => `    ${field.name}: undefined,\n`,
+      (field) => `    ${field.tsName}: undefined,\n`,
     ).join(""),
     "  };\n",
     "}\n",
@@ -270,9 +271,9 @@ const getDecodeBinaryCode: GetCodeFn = (
     message.oneofFields.length
       ? [
         "const oneofFieldNumbersMap: { [oneof: string]: Set<number> } = {\n",
-        message.oneofFields.map(({ name, fields }) => {
+        message.oneofFields.map(({ tsName, fields }) => {
           return [
-            `  ${name}: new Set([`,
+            `  ${tsName}: new Set([`,
             fields.map(({ fieldNumber }) => fieldNumber).join(", "),
             "]),\n",
           ].join("");
@@ -289,8 +290,8 @@ const getDecodeBinaryCode: GetCodeFn = (
       ? "  const wireFieldNumbers = Array.from(wireFields.keys()).reverse();\n"
       : "",
     message.fields.map((field) => {
-      const { fieldNumber, name, schema } = field;
-      const wireValueToJsValueCode = getGetWireValueToJsValueCode(
+      const { fieldNumber, tsName, schema } = field;
+      const wireValueToTsValueCode = getGetWireValueToTsValueCode(
         customTypeMapping,
         schema,
       )(
@@ -298,51 +299,51 @@ const getDecodeBinaryCode: GetCodeFn = (
         importBuffer,
         field,
       );
-      if (!wireValueToJsValueCode) return "";
+      if (!wireValueToTsValueCode) return "";
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
         const type = (schema as schema.RepeatedField).typePath?.substr(1);
-        let wireValuesToJsValuesCode: string;
+        let wireValuesToTsValuesCode: string;
         if (type as keyof typeof unpackFns in unpackFns) {
           const unpackFns = importBuffer.addInternalImport(
             filePath,
             "runtime/wire/scalar.ts",
             "unpackFns",
           );
-          wireValuesToJsValuesCode = (
+          wireValuesToTsValuesCode = (
             `Array.from(${unpackFns}.${type}(wireValues))`
           );
         } else {
-          wireValuesToJsValuesCode = (
-            `wireValues.map((wireValue) => ${wireValueToJsValueCode}).filter(x => x !== undefined)`
+          wireValuesToTsValuesCode = (
+            `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`
           );
         }
         return [
           "  collection: {\n",
           `    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber}).map(([, wireValue]) => wireValue);\n`,
-          `    const value = ${wireValuesToJsValuesCode};\n`,
+          `    const value = ${wireValuesToTsValuesCode};\n`,
           "    if (!value.length) break collection;\n",
-          `    result.${name} = value;\n`,
+          `    result.${tsName} = value;\n`,
           "  }\n",
         ].join("");
       } else {
         return [
           "  field: {\n",
           `    const wireValue = wireFields.get(${fieldNumber});\n`,
-          `    const value = ${wireValueToJsValueCode};\n`,
+          `    const value = ${wireValueToTsValueCode};\n`,
           "    if (value === undefined) break field;\n",
-          `    result.${name} = value;\n`,
+          `    result.${tsName} = value;\n`,
           "  }\n",
         ].join("");
       }
     }).join(""),
     message.oneofFields.map((field) => {
-      const { name, fields } = field;
-      const wireValueToJsValueCode = [
+      const { tsName, fields } = field;
+      const wireValueToTsValueCode = [
         "{\n",
         fields.map((field) => {
           const { fieldNumber, schema } = field;
-          const wireValueToJsValueCode = getGetWireValueToJsValueCode(
+          const wireValueToTsValueCode = getGetWireValueToTsValueCode(
             customTypeMapping,
             schema,
           )(
@@ -350,19 +351,19 @@ const getDecodeBinaryCode: GetCodeFn = (
             importBuffer,
             field,
           ) || "undefined";
-          return `      ${fieldNumber}(wireValue) { return ${wireValueToJsValueCode}; },\n`;
+          return `      ${fieldNumber}(wireValue) { return ${wireValueToTsValueCode}; },\n`;
         }).join(""),
         "    }[fieldNumber]?.(wireValue)",
       ].join("");
       return [
         "  oneof: {\n",
-        `    const oneofFieldNumbers = oneofFieldNumbersMap.${name};\n`,
+        `    const oneofFieldNumbers = oneofFieldNumbersMap.${tsName};\n`,
         "    const fieldNumber = wireFieldNumbers.find(v => oneofFieldNumbers.has(v));\n",
         "    if (fieldNumber == null) break oneof;\n",
         "    const wireValue = wireFields.get(fieldNumber);\n",
-        `    const value = ${wireValueToJsValueCode};\n`,
+        `    const value = ${wireValueToTsValueCode};\n`,
         "    if (value === undefined) break oneof;\n",
-        `    result.${name} = { field: fieldNames[fieldNumber], value };\n`,
+        `    result.${tsName} = { field: fieldNames[fieldNumber], value };\n`,
         "  }\n",
       ].join("");
     }).join(""),
@@ -372,16 +373,16 @@ const getDecodeBinaryCode: GetCodeFn = (
 };
 
 type NonMapMessageField = Exclude<schema.MessageField, schema.MapField>;
-function getGetWireValueToJsValueCode(
+function getGetWireValueToTsValueCode(
   customTypeMapping: CustomTypeMapping,
   schema: schema.MessageField,
-): GetWireValueToJsValueCodeFn {
+): GetWireValueToTsValueCodeFn {
   return (
     customTypeMapping[(schema as NonMapMessageField).typePath!]
-      ?.getWireValueToJsValueCode ?? getDefaultWireValueToJsValueCode
+      ?.getWireValueToTsValueCode ?? getDefaultWireValueToTsValueCode
   );
 }
-export function getDefaultWireValueToJsValueCode(
+export function getDefaultWireValueToTsValueCode(
   filePath: string,
   importBuffer: ImportBuffer,
   field: Field,
@@ -391,12 +392,12 @@ export function getDefaultWireValueToJsValueCode(
   const { typePath } = schema;
   if (!typePath) return;
   if (typePath in scalarTypeMapping) {
-    const wireValueToJsValueFns = importBuffer.addInternalImport(
+    const wireValueToTsValueFns = importBuffer.addInternalImport(
       filePath,
       "runtime/wire/scalar.ts",
-      "wireValueToJsValueFns",
+      "wireValueToTsValueFns",
     );
-    return `${wireValueToJsValueFns}.${typePath.substr(1)}(wireValue)`;
+    return `${wireValueToTsValueFns}.${typePath.substr(1)}(wireValue)`;
   }
   const WireType = importBuffer.addInternalImport(
     filePath,
@@ -474,64 +475,64 @@ const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
 export const wellKnownTypeMapping: CustomTypeMapping = {
   ".google.protobuf.BoolValue": {
     tsType: "boolean",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.BytesValue": {
     tsType: "Uint8Array",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.DoubleValue": {
     tsType: "number",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.FloatValue": {
     tsType: "number",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.Int32Value": {
     tsType: "number",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.Int64Value": {
     tsType: "string",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.NullValue": {
     tsType: "null",
-    getWireValueToJsValueCode(...args) {
+    getWireValueToTsValueCode(...args) {
       return `(${
-        getDefaultWireValueToJsValueCode(...args)
+        getDefaultWireValueToTsValueCode(...args)
       }) === 0 ? null : undefined`;
     },
   },
   ".google.protobuf.StringValue": {
     tsType: "string",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.UInt32Value": {
     tsType: "number",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.UInt64Value": {
     tsType: "string",
-    getWireValueToJsValueCode(...args) {
-      return `(${getDefaultWireValueToJsValueCode(...args)})?.value`;
+    getWireValueToTsValueCode(...args) {
+      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
     },
   },
 };
