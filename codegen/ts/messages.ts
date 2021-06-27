@@ -143,6 +143,7 @@ function* genMessage(
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   const getDefaultValueCode = getGetDefaultValueCode(getCodeConfig);
+  const encodeBinaryCode = getEncodeBinaryCode(getCodeConfig);
   const decodeBinaryCode = getDecodeBinaryCode(getCodeConfig);
   const importCode = importBuffer.getCode();
   yield [
@@ -151,6 +152,7 @@ function* genMessage(
       importCode ? importCode + "\n" : "",
       typeDefCode,
       "\n" + getDefaultValueCode,
+      "\n" + encodeBinaryCode,
       "\n" + decodeBinaryCode,
     ].join("")),
   ];
@@ -249,12 +251,35 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
   ].join("");
 };
 
+const getEncodeBinaryCode: GetCodeFn = (
+  { filePath, importBuffer, message, customTypeMapping },
+) => {
+  const WireMessage = importBuffer.addInternalImport(
+    filePath,
+    "runtime/wire/index.ts",
+    "WireMessage",
+  );
+  const serialize = importBuffer.addInternalImport(
+    filePath,
+    "runtime/wire/serialize.ts",
+    "default",
+    "serialize",
+  );
+  return [
+    "export function encodeBinary(value: Type): Uint8Array {\n",
+    `  const result: ${WireMessage} = [];\n`,
+    // TODO
+    `  return ${serialize}(result);\n`,
+    "}\n",
+  ].join("");
+};
+
 const getDecodeBinaryCode: GetCodeFn = (
   { filePath, importBuffer, message, customTypeMapping },
 ) => {
   const deserialize = importBuffer.addInternalImport(
     filePath,
-    "runtime/wire/deserialize",
+    "runtime/wire/deserialize.ts",
     "default",
     "deserialize",
   );
