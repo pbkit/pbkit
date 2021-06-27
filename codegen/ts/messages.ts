@@ -343,12 +343,13 @@ const getDecodeBinaryCode: GetCodeFn = (
             `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`
           );
         }
+        const value = schema.kind === "map" ? "new Map(value)" : "value";
         return [
           "  collection: {\n",
           `    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber}).map(([, wireValue]) => wireValue);\n`,
           `    const value = ${wireValuesToTsValuesCode};\n`,
           "    if (!value.length) break collection;\n",
-          `    result.${tsName} = value;\n`,
+          `    result.${tsName} = ${value};\n`,
           "  }\n",
         ].join("");
       } else {
@@ -412,37 +413,65 @@ export function getDefaultWireValueToTsValueCode(
   importBuffer: ImportBuffer,
   field: Field,
 ): string | undefined {
-  const schema = field.schema as NonMapMessageField;
+  const { schema } = field;
   if (schema.kind === "optional") return;
-  const { typePath } = schema;
-  if (!typePath) return;
-  if (typePath in scalarTypeMapping) {
-    const wireValueToTsValueFns = importBuffer.addInternalImport(
+  if (schema.kind === "map") {
+    const { keyTypePath, valueTypePath } = schema;
+    if (!keyTypePath || !valueTypePath) return;
+    const deserialize = importBuffer.addInternalImport(
       filePath,
-      "runtime/wire/scalar.ts",
-      "wireValueToTsValueFns",
+      "runtime/wire/deserialize.ts",
+      "default",
+      "deserialize",
     );
-    return `${wireValueToTsValueFns}.${typePath.substr(1)}(wireValue)`;
+    const WireType = importBuffer.addInternalImport(
+      filePath,
+      "runtime/wire/index.ts",
+      "WireType",
+    );
+    const keyTypePathCode = typePathToCode("key", keyTypePath);
+    const valueTypePathCode = typePathToCode("value", valueTypePath);
+    return [
+      "(() => { ",
+      `if (wireValue.type !== ${WireType}.LengthDelimited) { return; } `,
+      `const { 0: key, 1: value } = Object.fromEntries(${deserialize}(wireValue.value)); `,
+      "if (key === undefined || value === undefined) return; ",
+      `return [${keyTypePathCode}, ${valueTypePathCode}] as const;`,
+      "})()",
+    ].join("");
   }
-  const WireType = importBuffer.addInternalImport(
-    filePath,
-    "runtime/wire/index.ts",
-    "WireType",
-  );
-  if (field.isEnum) {
-    const num2name = importBuffer.addInternalImport(
+  const { typePath } = schema;
+  return typePathToCode("wireValue", typePath);
+  function typePathToCode(wireValue: string, typePath?: string) {
+    if (!typePath) return;
+    if (typePath in scalarTypeMapping) {
+      const wireValueToTsValueFns = importBuffer.addInternalImport(
+        filePath,
+        "runtime/wire/scalar.ts",
+        "wireValueToTsValueFns",
+      );
+      return `${wireValueToTsValueFns}.${typePath.substr(1)}(${wireValue})`;
+    }
+    const WireType = importBuffer.addInternalImport(
+      filePath,
+      "runtime/wire/index.ts",
+      "WireType",
+    );
+    if (field.isEnum) {
+      const num2name = importBuffer.addInternalImport(
+        filePath,
+        getFilePath(typePath),
+        "num2name",
+      );
+      return `${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0]] : undefined`;
+    }
+    const decodeBinary = importBuffer.addInternalImport(
       filePath,
       getFilePath(typePath),
-      "num2name",
+      "decodeBinary",
     );
-    return `wireValue.type === ${WireType}.Varint ? ${num2name}[wireValue.value[0]] : undefined`;
+    return `${wireValue}.type === ${WireType}.LengthDelimited ? ${decodeBinary}(${wireValue}.value) : undefined`;
   }
-  const decodeBinary = importBuffer.addInternalImport(
-    filePath,
-    getFilePath(typePath),
-    "decodeBinary",
-  );
-  return `wireValue.type === ${WireType}.LengthDelimited ? ${decodeBinary}(wireValue.value) : undefined`;
 }
 
 export function pbTypeToTsType(
