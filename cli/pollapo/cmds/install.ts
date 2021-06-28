@@ -69,6 +69,7 @@ export default new Command()
       );
       const cacheDir = getCacheDir();
       const pollapoYml = await loadPollapoYml(options.config);
+      const outDir = pollapoYml?.outDir ?? options.outDir;
       const caching = cacheDeps({
         cacheDir,
         clean: !!options.clean,
@@ -98,14 +99,14 @@ export default new Command()
         }
       }
       const analyzeDepsResult = await analyzeDeps({ cacheDir, pollapoYml });
-      await emptyDir(options.outDir);
+      await emptyDir(outDir);
       for (const [repo, revs] of Object.entries(analyzeDepsResult)) {
         await installDep(options, cacheDir, pollapoYml, repo, revs);
       }
       const pollapoYmlText = stringify(
         sanitizeDeps({
           ...pollapoYml,
-          outDir: options.outDir,
+          outDir,
           root: { ...pollapoYml?.root, lock: lockTable },
         }) as Record<string, unknown>,
       );
