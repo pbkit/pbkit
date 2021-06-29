@@ -1,14 +1,21 @@
 import Long from "../Long.ts";
 import { decode as decodeVarint } from "./varint.ts";
-import { decode as decodeZigzag } from "./zigzag.ts";
+import { decode as decodeZigzag, encode as encodeZigzag } from "./zigzag.ts";
 import { Field, WireType } from "./index.ts";
 
 type WireValueToTsValue<T> = (wireValue: Field) => T | undefined;
+type TsValueToWireValue<T> = (tsValue: T) => Field;
 type Unpack<T> = (wireValues: Iterable<Field>) => Generator<T>;
+type Pack<T> = (values: Iterable<T>) => Field;
 
 interface WireValueToTsValueFns extends NumericWireValueToTsValueFns {
   string: WireValueToTsValue<string>;
   bytes: WireValueToTsValue<Uint8Array>;
+}
+
+interface TsValueToWireValueFns extends TsValueToNumericWireValueFns {
+  string: TsValueToWireValue<string>;
+  bytes: TsValueToWireValue<Uint8Array>;
 }
 
 interface NumericWireValueToTsValueFns extends VarintFieldToTsValueFns {
@@ -18,6 +25,15 @@ interface NumericWireValueToTsValueFns extends VarintFieldToTsValueFns {
   fixed64: WireValueToTsValue<string>;
   sfixed32: WireValueToTsValue<number>;
   sfixed64: WireValueToTsValue<string>;
+}
+
+interface TsValueToNumericWireValueFns extends TsValueToVarintFieldFns {
+  double: TsValueToWireValue<number>;
+  float: TsValueToWireValue<number>;
+  fixed32: TsValueToWireValue<number>;
+  fixed64: TsValueToWireValue<string>;
+  sfixed32: TsValueToWireValue<number>;
+  sfixed64: TsValueToWireValue<string>;
 }
 
 type PostprocessVarintFns = typeof postprocessVarintFns;
@@ -44,6 +60,27 @@ const varintFieldToTsValueFns = Object.fromEntries(
   [type in keyof PostprocessVarintFns]: WireValueToTsValue<
     ReturnType<PostprocessVarintFns[type]>
   >;
+};
+
+type TsValueToVarintFieldFns = typeof tsValueToVarintFieldFns;
+const tsValueToVarintFieldFns: {
+  [type in keyof PostprocessVarintFns]: TsValueToWireValue<
+    ReturnType<PostprocessVarintFns[type]>
+  >;
+} = {
+  int32: (tsValue) => ({ type: WireType.Varint, value: new Long(tsValue) }),
+  int64: (tsValue) => ({ type: WireType.Varint, value: Long.parse(tsValue) }),
+  uint32: (tsValue) => ({ type: WireType.Varint, value: new Long(tsValue) }),
+  uint64: (tsValue) => ({ type: WireType.Varint, value: Long.parse(tsValue) }),
+  sint32: (tsValue) => ({
+    type: WireType.Varint,
+    value: encodeZigzag(new Long(tsValue)),
+  }),
+  sint64: (tsValue) => ({
+    type: WireType.Varint,
+    value: encodeZigzag(tsValue),
+  }),
+  bool: (tsValue) => ({ type: WireType.Varint, value: new Long(+tsValue) }),
 };
 
 export const wireValueToTsValueFns: WireValueToTsValueFns = {
@@ -82,6 +119,40 @@ export const wireValueToTsValueFns: WireValueToTsValueFns = {
   bytes: (wireValue) => {
     if (wireValue.type !== WireType.LengthDelimited) return;
     return wireValue.value;
+  },
+};
+
+export const tsValueToWireValueFns: TsValueToWireValueFns = {
+  ...tsValueToVarintFieldFns,
+  double: (tsValue) => {
+    const long = new Long();
+    const dataview = new DataView(long.buffer);
+    dataview.setFloat64(0, tsValue, true);
+    return { type: WireType.Fixed64, value: long };
+  },
+  float: (tsValue) => {
+    const u32 = new Uint32Array(1);
+    const dataview = new DataView(u32.buffer);
+    dataview.setFloat32(0, tsValue, true);
+    return { type: WireType.Fixed32, value: dataview.getUint32(0, true) };
+  },
+  fixed32: (tsValue) => {
+    // TODO
+  },
+  fixed64: (tsValue) => {
+    // TODO
+  },
+  sfixed32: (tsValue) => {
+    // TODO
+  },
+  sfixed64: (tsValue) => {
+    // TODO
+  },
+  string: (tsValue) => {
+    // TODO
+  },
+  bytes: (tsValue) => {
+    // TODO
   },
 };
 
