@@ -136,24 +136,24 @@ export const tsValueToWireValueFns: TsValueToWireValueFns = {
     dataview.setFloat32(0, tsValue, true);
     return { type: WireType.Fixed32, value: dataview.getUint32(0, true) };
   },
-  fixed32: (tsValue) => {
-    // TODO
-  },
-  fixed64: (tsValue) => {
-    // TODO
-  },
-  sfixed32: (tsValue) => {
-    // TODO
-  },
-  sfixed64: (tsValue) => {
-    // TODO
-  },
+  fixed32: (tsValue) => ({ type: WireType.Fixed32, value: tsValue >>> 0 }),
+  fixed64: (tsValue) => ({
+    type: WireType.Fixed64,
+    value: Long.parse(tsValue),
+  }),
+  sfixed32: (tsValue) => ({ type: WireType.Fixed32, value: tsValue | 0 }),
+  sfixed64: (tsValue) => ({
+    type: WireType.Fixed64,
+    value: Long.parse(tsValue),
+  }),
   string: (tsValue) => {
-    // TODO
+    const textEncoder = new TextEncoder();
+    return {
+      type: WireType.LengthDelimited,
+      value: textEncoder.encode(tsValue),
+    };
   },
-  bytes: (tsValue) => {
-    // TODO
-  },
+  bytes: (tsValue) => ({ type: WireType.LengthDelimited, value: tsValue }),
 };
 
 type UnpackFns = {
