@@ -31,9 +31,6 @@ export default new Command()
     const schema = await build({ loader, files: protoFiles });
     await save(
       options.outDir,
-      gen(schema, {
-        removeTsFileExtensionInImportStatement:
-          options.removeTsFileExtensionInImportStatement,
-      }),
+      gen(schema, {}),
     );
   });
