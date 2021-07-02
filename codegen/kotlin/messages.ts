@@ -6,7 +6,7 @@ import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { CodeEntry } from "../index.ts";
-import { CustomTypeMapping, GetWireValueToTsValueCodeFn } from "./index.ts";
+import { CustomTypeMapping, GetWireValueToKotlinValueCodeFn } from "./index.ts";
 import {
   AddInternalImport,
   createImportBuffer,
@@ -42,7 +42,7 @@ export function getIndexFilePath(typePath: string): string {
 }
 
 export function getFilePath(typePath: string): string {
-  return path.join("messages", typePath.replaceAll(".", "/") + ".ts");
+  return path.join("messages", typePath.replaceAll(".", "/") + ".kt");
 }
 
 function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
@@ -53,21 +53,14 @@ function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
   });
   yield [
     filePath,
-    new StringReader([
-      `export type Type =\n${
-        fields.map(([, { name }]) => `  | "${name}"`).join("\n")
-      };\n\n`,
-      `export const num2name = {\n${
-        fields.map(
-          ([fieldNumber, { name }]) => `  ${fieldNumber}: "${name}",`,
-        ).join("\n")
-      }\n} as const;\n\n`,
-      `export const name2num = {\n${
-        fields.map(
-          ([fieldNumber, { name }]) => `  ${name}: ${fieldNumber},`,
-        ).join("\n")
-      }\n} as const;\n`,
-    ].join("")),
+    new StringReader(
+      `public enum class ${
+        typePath.split(".").slice(-1)[0]
+      }(val value: Int) {\n${
+        fields.map(([fieldNumber, { name }]) => `    ${name}(${fieldNumber}),`)
+          .join("\n")
+      }\n}\n\n`,
+    ),
   ];
 }
 
@@ -316,7 +309,7 @@ const getDecodeBinaryCode: GetCodeFn = (
       : "",
     message.fields.map((field) => {
       const { fieldNumber, tsName, schema } = field;
-      const wireValueToTsValueCode = getGetWireValueToTsValueCode(
+      const wireValueToTsValueCode = getGetWireValueToKotlinValueCode(
         customTypeMapping,
         schema,
       )(
@@ -328,18 +321,18 @@ const getDecodeBinaryCode: GetCodeFn = (
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
         const type = (schema as schema.RepeatedField).typePath?.substr(1);
-        let wireValuesToTsValuesCode: string;
+        let wireValuesToKotlinValuesCode: string;
         if (type as keyof typeof unpackFns in unpackFns) {
           const unpackFns = importBuffer.addInternalImport(
             filePath,
             "runtime/wire/scalar.ts",
             "unpackFns",
           );
-          wireValuesToTsValuesCode = (
+          wireValuesToKotlinValuesCode = (
             `Array.from(${unpackFns}.${type}(wireValues))`
           );
         } else {
-          wireValuesToTsValuesCode = (
+          wireValuesToKotlinValuesCode = (
             `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`
           );
         }
@@ -347,7 +340,7 @@ const getDecodeBinaryCode: GetCodeFn = (
         return [
           "  collection: {\n",
           `    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber}).map(([, wireValue]) => wireValue);\n`,
-          `    const value = ${wireValuesToTsValuesCode};\n`,
+          `    const value = ${wireValuesToKotlinValuesCode};\n`,
           "    if (!value.length) break collection;\n",
           `    result.${tsName} = ${value};\n`,
           "  }\n",
@@ -369,7 +362,7 @@ const getDecodeBinaryCode: GetCodeFn = (
         "{\n",
         fields.map((field) => {
           const { fieldNumber, schema } = field;
-          const wireValueToTsValueCode = getGetWireValueToTsValueCode(
+          const wireValueToTsValueCode = getGetWireValueToKotlinValueCode(
             customTypeMapping,
             schema,
           )(
@@ -399,16 +392,16 @@ const getDecodeBinaryCode: GetCodeFn = (
 };
 
 type NonMapMessageField = Exclude<schema.MessageField, schema.MapField>;
-function getGetWireValueToTsValueCode(
+function getGetWireValueToKotlinValueCode(
   customTypeMapping: CustomTypeMapping,
   schema: schema.MessageField,
-): GetWireValueToTsValueCodeFn {
+): GetWireValueToKotlinValueCodeFn {
   return (
     customTypeMapping[(schema as NonMapMessageField).typePath!]
-      ?.getWireValueToTsValueCode ?? getDefaultWireValueToTsValueCode
+      ?.getWireValueToKotlinValueCode ?? getDefaultWireValueToKotlinValueCode
   );
 }
-export function getDefaultWireValueToTsValueCode(
+export function getDefaultWireValueToKotlinValueCode(
   filePath: string,
   importBuffer: ImportBuffer,
   field: Field,
@@ -529,64 +522,64 @@ const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
 export const wellKnownTypeMapping: CustomTypeMapping = {
   ".google.protobuf.BoolValue": {
     tsType: "boolean",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.BytesValue": {
     tsType: "Uint8Array",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.DoubleValue": {
     tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.FloatValue": {
     tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.Int32Value": {
     tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.Int64Value": {
     tsType: "string",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.NullValue": {
     tsType: "null",
-    getWireValueToTsValueCode(...args) {
+    getWireValueToKotlinValueCode(...args) {
       return `(${
-        getDefaultWireValueToTsValueCode(...args)
+        getDefaultWireValueToKotlinValueCode(...args)
       }) === 0 ? null : undefined`;
     },
   },
   ".google.protobuf.StringValue": {
     tsType: "string",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.UInt32Value": {
     tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.UInt64Value": {
     tsType: "string",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    getWireValueToKotlinValueCode(...args) {
+      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
     },
   },
 };
