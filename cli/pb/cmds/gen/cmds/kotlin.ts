@@ -5,7 +5,7 @@ import {
 } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import { save } from "../../../../../codegen/index.ts";
-import gen from "../../../../../codegen/ts/index.ts";
+import gen from "../../../../../codegen/kotlin/index.ts";
 
 interface Options {
   protoPath?: string[];
