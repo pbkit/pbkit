@@ -18,11 +18,11 @@ export interface GenConfig {
 export interface CustomTypeMapping {
   [typePath: string]: {
     tsType: string;
-    getWireValueToKotlinValueCode: GetWireValueToKotlinValueCodeFn;
+    getWireValueToKotlinValueCode: GetWireValueToKtValueCodeFn;
   };
 }
 
-export interface GetWireValueToKotlinValueCodeFn {
+export interface GetWireValueToKtValueCodeFn {
   (
     filePath: string,
     importBuffer: ImportBuffer,

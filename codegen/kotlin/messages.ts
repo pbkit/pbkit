@@ -6,7 +6,7 @@ import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { CodeEntry } from "../index.ts";
-import { CustomTypeMapping, GetWireValueToKotlinValueCodeFn } from "./index.ts";
+import { CustomTypeMapping, GetWireValueToKtValueCodeFn } from "./index.ts";
 import {
   AddInternalImport,
   createImportBuffer,
@@ -74,8 +74,8 @@ interface Message {
 export interface Field {
   schema: schema.MessageField;
   fieldNumber: number;
-  tsName: string;
-  tsType: string;
+  ktName: string;
+  ktType: string;
   isEnum: boolean;
   default: string | undefined;
 }
@@ -395,7 +395,7 @@ type NonMapMessageField = Exclude<schema.MessageField, schema.MapField>;
 function getGetWireValueToKotlinValueCode(
   customTypeMapping: CustomTypeMapping,
   schema: schema.MessageField,
-): GetWireValueToKotlinValueCodeFn {
+): GetWireValueToKtValueCodeFn {
   return (
     customTypeMapping[(schema as NonMapMessageField).typePath!]
       ?.getWireValueToKotlinValueCode ?? getDefaultWireValueToKotlinValueCode

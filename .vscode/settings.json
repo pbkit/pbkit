@@ -6,5 +6,8 @@
   },
   "deno.import_intellisense_origins": {
     "https://deno.land": true
-  }
+  },
+  "cSpell.words": [
+    "oneof"
+  ]
 }

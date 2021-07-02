@@ -25,6 +25,7 @@ export default new Command()
   })
   .description("[WIP]Generate kotlin library.")
   .action(async (options: Options, protoFiles: string[]) => {
+    console.log("[WIP]");
     const protoPaths = options.protoPath ?? [];
     const roots = [...protoPaths, Deno.cwd(), vendorPath];
     const loader = createLoader({ roots });
