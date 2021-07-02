@@ -23,7 +23,7 @@ export default new Command()
   .option("-o, --out-dir <value:string>", "Out directory", {
     default: "out",
   })
-  .description("Generate kotlin library.")
+  .description("[WIP]Generate kotlin library.")
   .action(async (options: Options, protoFiles: string[]) => {
     const protoPaths = options.protoPath ?? [];
     const roots = [...protoPaths, Deno.cwd(), vendorPath];
