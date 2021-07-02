@@ -5,7 +5,6 @@ import {
   resolve,
 } from "https://deno.land/std@0.98.0/path/mod.ts";
 import { Schema } from "../../core/schema/model.ts";
-import { removeTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";
 import { getAutoClosingFileReader } from "../../misc/file.ts";
 import { CodeEntry } from "../index.ts";
 import genMessages, { Field, wellKnownTypeMapping } from "./messages.ts";
@@ -13,7 +12,6 @@ import genServices from "./services.ts";
 import { ImportBuffer } from "./import-buffer.ts";
 
 export interface GenConfig {
-  removeTsFileExtensionInImportStatement?: boolean;
   customTypeMapping?: CustomTypeMapping;
 }
 
@@ -36,8 +34,6 @@ export default async function* gen(
   schema: Schema,
   config: GenConfig = {},
 ): AsyncGenerator<CodeEntry> {
-  const removeDotTs = !!config.removeTsFileExtensionInImportStatement;
-  const removeDotTsFn = removeTsFileExtensionInImportStatementFromReader;
   const customTypeMapping: CustomTypeMapping = {
     ...wellKnownTypeMapping,
     ...config.customTypeMapping,
@@ -49,18 +45,18 @@ export default async function* gen(
     const file = await getAutoClosingFileReader(filePath);
     yield [
       join("runtime", relative(runtimePath, filePath)),
-      removeDotTs ? await removeDotTsFn(file) : file,
+      file,
     ];
   }
 
   // gen messages
   for (const [filePath, data] of genMessages(schema, customTypeMapping)) {
-    yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
+    yield [filePath, data];
   }
 
   // gen services
   for (const [filePath, data] of genServices(schema, customTypeMapping)) {
-    yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
+    yield [filePath, data];
   }
 }
 
