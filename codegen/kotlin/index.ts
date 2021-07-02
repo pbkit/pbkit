@@ -18,7 +18,7 @@ export interface GenConfig {
 export interface CustomTypeMapping {
   [typePath: string]: {
     tsType: string;
-    getWireValueToKotlinValueCode: GetWireValueToKtValueCodeFn;
+    getWireValueToKtValueCode: GetWireValueToKtValueCodeFn;
   };
 }
 
