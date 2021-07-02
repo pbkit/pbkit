@@ -153,8 +153,8 @@ function* genMessage(
     return {
       schema: field,
       fieldNumber: +fieldNumber,
-      tsName: snakeToCamel(field.name),
-      tsType: getFieldTypeCode(field),
+      ktName: snakeToCamel(field.name),
+      ktType: getFieldTypeCode(field),
       isEnum: getFieldIsEnum(field),
       default: getFieldDefaultCode(field),
     };
@@ -213,7 +213,7 @@ const getMessageTypeDefCode: GetCodeFn = ({ message }) => {
       );
       const opt = nullable ? "?" : "";
       const arr = (field.schema.kind === "repeated") ? "[]" : "";
-      return `  ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
+      return `  ${field.ktName}${opt}: ${field.ktType}${arr};\n`;
     }).join("");
   }
   function getOneofsCode() {
@@ -221,7 +221,7 @@ const getMessageTypeDefCode: GetCodeFn = ({ message }) => {
       return `  ${oneofField.tsName}?: (\n${
         oneofField.fields.map(
           (field) =>
-            `    | { field: "${field.tsName}", value: ${field.tsType} }\n`,
+            `    | { field: "${field.ktName}", value: ${field.ktType} }\n`,
         ).join("")
       }  );\n`;
     }).join("");
@@ -233,8 +233,8 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
     "export function getDefaultValue(): Type {\n",
     "  return {\n",
     message.fields.map((field) => {
-      if (!field.default) return `    ${field.tsName}: undefined,\n`;
-      return `    ${field.tsName}: ${field.default},\n`;
+      if (!field.default) return `    ${field.ktName}: undefined,\n`;
+      return `    ${field.ktName}: ${field.default},\n`;
     }).join(""),
     message.oneofFields.map(
       (field) => `    ${field.tsName}: undefined,\n`,
@@ -308,8 +308,8 @@ const getDecodeBinaryCode: GetCodeFn = (
       ? "  const wireFieldNumbers = Array.from(wireFields.keys()).reverse();\n"
       : "",
     message.fields.map((field) => {
-      const { fieldNumber, tsName, schema } = field;
-      const wireValueToTsValueCode = getGetWireValueToKotlinValueCode(
+      const { fieldNumber, ktName, schema } = field;
+      const wireValueToKtValueCode = getGetWireValueToKtValueCode(
         customTypeMapping,
         schema,
       )(
@@ -317,41 +317,41 @@ const getDecodeBinaryCode: GetCodeFn = (
         importBuffer,
         field,
       );
-      if (!wireValueToTsValueCode) return "";
+      if (!wireValueToKtValueCode) return "";
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
         const type = (schema as schema.RepeatedField).typePath?.substr(1);
-        let wireValuesToKotlinValuesCode: string;
+        let wireValuesToKtValuesCode: string;
         if (type as keyof typeof unpackFns in unpackFns) {
           const unpackFns = importBuffer.addInternalImport(
             filePath,
             "runtime/wire/scalar.ts",
             "unpackFns",
           );
-          wireValuesToKotlinValuesCode = (
+          wireValuesToKtValuesCode = (
             `Array.from(${unpackFns}.${type}(wireValues))`
           );
         } else {
-          wireValuesToKotlinValuesCode = (
-            `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`
+          wireValuesToKtValuesCode = (
+            `wireValues.map((wireValue) => ${wireValueToKtValueCode}).filter(x => x !== undefined)`
           );
         }
         const value = schema.kind === "map" ? "new Map(value)" : "value";
         return [
           "  collection: {\n",
           `    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber}).map(([, wireValue]) => wireValue);\n`,
-          `    const value = ${wireValuesToKotlinValuesCode};\n`,
+          `    const value = ${wireValuesToKtValuesCode};\n`,
           "    if (!value.length) break collection;\n",
-          `    result.${tsName} = ${value};\n`,
+          `    result.${ktName} = ${value};\n`,
           "  }\n",
         ].join("");
       } else {
         return [
           "  field: {\n",
           `    const wireValue = wireFields.get(${fieldNumber});\n`,
-          `    const value = ${wireValueToTsValueCode};\n`,
+          `    const value = ${wireValueToKtValueCode};\n`,
           "    if (value === undefined) break field;\n",
-          `    result.${tsName} = value;\n`,
+          `    result.${ktName} = value;\n`,
           "  }\n",
         ].join("");
       }
@@ -362,7 +362,7 @@ const getDecodeBinaryCode: GetCodeFn = (
         "{\n",
         fields.map((field) => {
           const { fieldNumber, schema } = field;
-          const wireValueToTsValueCode = getGetWireValueToKotlinValueCode(
+          const wireValueToTsValueCode = getGetWireValueToKtValueCode(
             customTypeMapping,
             schema,
           )(
@@ -392,16 +392,16 @@ const getDecodeBinaryCode: GetCodeFn = (
 };
 
 type NonMapMessageField = Exclude<schema.MessageField, schema.MapField>;
-function getGetWireValueToKotlinValueCode(
+function getGetWireValueToKtValueCode(
   customTypeMapping: CustomTypeMapping,
   schema: schema.MessageField,
 ): GetWireValueToKtValueCodeFn {
   return (
     customTypeMapping[(schema as NonMapMessageField).typePath!]
-      ?.getWireValueToKotlinValueCode ?? getDefaultWireValueToKotlinValueCode
+      ?.getWireValueToKtValueCode ?? getDefaultWireValueToKtValueCode
   );
 }
-export function getDefaultWireValueToKotlinValueCode(
+export function getDefaultWireValueToKtValueCode(
   filePath: string,
   importBuffer: ImportBuffer,
   field: Field,
@@ -522,64 +522,64 @@ const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
 export const wellKnownTypeMapping: CustomTypeMapping = {
   ".google.protobuf.BoolValue": {
     tsType: "boolean",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.BytesValue": {
     tsType: "Uint8Array",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.DoubleValue": {
     tsType: "number",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.FloatValue": {
     tsType: "number",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.Int32Value": {
     tsType: "number",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.Int64Value": {
     tsType: "string",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.NullValue": {
     tsType: "null",
-    getWireValueToKotlinValueCode(...args) {
+    getWireValueToKtValueCode(...args) {
       return `(${
-        getDefaultWireValueToKotlinValueCode(...args)
+        getDefaultWireValueToKtValueCode(...args)
       }) === 0 ? null : undefined`;
     },
   },
   ".google.protobuf.StringValue": {
     tsType: "string",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.UInt32Value": {
     tsType: "number",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
   ".google.protobuf.UInt64Value": {
     tsType: "string",
-    getWireValueToKotlinValueCode(...args) {
-      return `(${getDefaultWireValueToKotlinValueCode(...args)})?.value`;
+    getWireValueToKtValueCode(...args) {
+      return `(${getDefaultWireValueToKtValueCode(...args)})?.value`;
     },
   },
 };
