@@ -16,12 +16,14 @@ export interface GenConfig {
   removeTsFileExtensionInImportStatement?: boolean;
   customTypeMapping?: CustomTypeMapping;
 }
+
 export interface CustomTypeMapping {
   [typePath: string]: {
     tsType: string;
     getWireValueToTsValueCode: GetWireValueToTsValueCodeFn;
   };
 }
+
 export interface GetWireValueToTsValueCodeFn {
   (
     filePath: string,
@@ -29,6 +31,7 @@ export interface GetWireValueToTsValueCodeFn {
     field: Field,
   ): string | undefined;
 }
+
 export default async function* gen(
   schema: Schema,
   config: GenConfig = {},
@@ -39,6 +42,7 @@ export default async function* gen(
     ...wellKnownTypeMapping,
     ...config.customTypeMapping,
   };
+
   // copy runtime files
   for await (const { path: filePath } of walk(runtimePath, { exts: [".ts"] })) {
     if (filePath.endsWith(".test.ts")) continue;
@@ -48,10 +52,12 @@ export default async function* gen(
       removeDotTs ? await removeDotTsFn(file) : file,
     ];
   }
+
   // gen messages
   for (const [filePath, data] of genMessages(schema, customTypeMapping)) {
     yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
   }
+
   // gen services
   for (const [filePath, data] of genServices(schema, customTypeMapping)) {
     yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
