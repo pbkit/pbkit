@@ -1,12 +1,13 @@
 import Long from "../Long.ts";
-import { decode as decodeVarint } from "./varint.ts";
+import { decode as decodeVarint, encode as encodeVarint } from "./varint.ts";
 import { decode as decodeZigzag, encode as encodeZigzag } from "./zigzag.ts";
-import { Field, WireType } from "./index.ts";
+import { concat } from "./serialize.ts";
+import { Field, LengthDelimited, WireType } from "./index.ts";
 
 type WireValueToTsValue<T> = (wireValue: Field) => T | undefined;
 type TsValueToWireValue<T> = (tsValue: T) => Field;
 type Unpack<T> = (wireValues: Iterable<Field>) => Generator<T>;
-type Pack<T> = (values: Iterable<T>) => Field;
+type Pack<T> = (values: T[]) => LengthDelimited;
 
 interface WireValueToTsValueFns extends NumericWireValueToTsValueFns {
   string: WireValueToTsValue<string>;
@@ -36,20 +37,35 @@ interface TsValueToNumericWireValueFns extends TsValueToVarintFieldFns {
   sfixed64: TsValueToWireValue<string>;
 }
 
-type PostprocessVarintFns = typeof postprocessVarintFns;
-export const postprocessVarintFns = {
+type DecodeVarintFns = typeof decodeVarintFns;
+const decodeVarintFns = {
   int32: (long: Long) => long[0] | 0,
   int64: (long: Long) => long.toString(true),
   uint32: (long: Long) => long[0] >>> 0,
   uint64: (long: Long) => long.toString(false),
   sint32: (long: Long) => decodeZigzag(long[0]),
-  sint64: (long: Long) => decodeZigzag(long),
+  sint64: (long: Long) => decodeZigzag(long).toString(true),
   bool: (long: Long) => long[0] !== 0,
+};
+
+type EncodeVarintFns = {
+  [key in keyof DecodeVarintFns]: (
+    tsValue: ReturnType<DecodeVarintFns[key]>,
+  ) => Long;
+};
+const encodeVarintFns: EncodeVarintFns = {
+  int32: (tsValue) => new Long(tsValue),
+  int64: (tsValue) => Long.parse(tsValue),
+  uint32: (tsValue) => new Long(tsValue),
+  uint64: (tsValue) => Long.parse(tsValue),
+  sint32: (tsValue) => encodeZigzag(new Long(tsValue)),
+  sint64: (tsValue) => encodeZigzag(Long.parse(tsValue)),
+  bool: (tsValue) => new Long(+tsValue),
 };
 
 type VarintFieldToTsValueFns = typeof varintFieldToTsValueFns;
 const varintFieldToTsValueFns = Object.fromEntries(
-  Object.entries(postprocessVarintFns).map(([type, fn]) => [
+  Object.entries(decodeVarintFns).map(([type, fn]) => [
     type,
     (wireValue: Field) => {
       if (wireValue.type !== WireType.Varint) return;
@@ -57,30 +73,24 @@ const varintFieldToTsValueFns = Object.fromEntries(
     },
   ]),
 ) as {
-  [type in keyof PostprocessVarintFns]: WireValueToTsValue<
-    ReturnType<PostprocessVarintFns[type]>
+  [type in keyof DecodeVarintFns]: WireValueToTsValue<
+    ReturnType<DecodeVarintFns[type]>
   >;
 };
 
 type TsValueToVarintFieldFns = typeof tsValueToVarintFieldFns;
-const tsValueToVarintFieldFns: {
-  [type in keyof PostprocessVarintFns]: TsValueToWireValue<
-    ReturnType<PostprocessVarintFns[type]>
+const tsValueToVarintFieldFns = Object.fromEntries(
+  Object.entries(encodeVarintFns).map(([type, fn]) => ([
+    type,
+    <T extends never>(tsValue: T) => ({
+      type: WireType.Varint,
+      value: fn(tsValue),
+    }),
+  ])),
+) as {
+  [type in keyof DecodeVarintFns]: TsValueToWireValue<
+    ReturnType<DecodeVarintFns[type]>
   >;
-} = {
-  int32: (tsValue) => ({ type: WireType.Varint, value: new Long(tsValue) }),
-  int64: (tsValue) => ({ type: WireType.Varint, value: Long.parse(tsValue) }),
-  uint32: (tsValue) => ({ type: WireType.Varint, value: new Long(tsValue) }),
-  uint64: (tsValue) => ({ type: WireType.Varint, value: Long.parse(tsValue) }),
-  sint32: (tsValue) => ({
-    type: WireType.Varint,
-    value: encodeZigzag(new Long(tsValue)),
-  }),
-  sint64: (tsValue) => ({
-    type: WireType.Varint,
-    value: encodeZigzag(tsValue),
-  }),
-  bool: (tsValue) => ({ type: WireType.Varint, value: new Long(+tsValue) }),
 };
 
 export const wireValueToTsValueFns: WireValueToTsValueFns = {
@@ -162,24 +172,24 @@ type UnpackFns = {
   >;
 };
 const unpackVarintFns = Object.fromEntries(
-  Object.keys(postprocessVarintFns).map((type) => [
+  Object.keys(decodeVarintFns).map((type) => [
     type,
     function* (wireValues: Iterable<Field>) {
-      type Key = keyof typeof postprocessVarintFns;
+      type Key = keyof typeof decodeVarintFns;
       for (const wireValue of wireValues) {
         const value = wireValueToTsValueFns[type as Key](wireValue);
         if (value != null) yield value;
         else {
           for (const long of unpackVarint(wireValue)) {
-            yield postprocessVarintFns[type as Key](long);
+            yield decodeVarintFns[type as Key](long);
           }
         }
       }
     },
   ]),
 ) as {
-  [type in keyof PostprocessVarintFns]: Unpack<
-    NonNullable<ReturnType<PostprocessVarintFns[type]>>
+  [type in keyof DecodeVarintFns]: Unpack<
+    ReturnType<DecodeVarintFns[type]>
   >;
 };
 export const unpackFns: UnpackFns = {
@@ -234,6 +244,69 @@ export const unpackFns: UnpackFns = {
       }
     }
   },
+};
+
+type PackFns = {
+  [type in keyof NumericWireValueToTsValueFns]: Pack<
+    NonNullable<ReturnType<NumericWireValueToTsValueFns[type]>>
+  >;
+};
+const packVarintFns = Object.fromEntries(
+  Object.keys(encodeVarintFns).map((type) => [
+    type,
+    function <T extends never>(tsValues: T[]) {
+      type Key = keyof typeof encodeVarintFns;
+      return {
+        type: WireType.LengthDelimited,
+        value: concat(tsValues.map((tsValue) => {
+          const value = encodeVarintFns[type as Key](tsValue);
+          return encodeVarint(value);
+        })),
+      };
+    },
+  ]),
+) as {
+  [type in keyof EncodeVarintFns]: Pack<
+    ReturnType<DecodeVarintFns[type]>
+  >;
+};
+function getFixedPackFn<T>(
+  size: number,
+  setFn: (dataview: DataView, byteOffset: number, value: T) => void,
+): Pack<T> {
+  return function pack(values) {
+    const value = new Uint8Array(values.length * size);
+    const dataview = new DataView(value.buffer);
+    for (let i = 0; i < values.length; ++i) {
+      setFn(dataview, i * size, values[i]);
+    }
+    return { type: WireType.LengthDelimited, value };
+  };
+}
+export const packFns: PackFns = {
+  ...packVarintFns,
+  double: getFixedPackFn(8, (dataView, byteOffset, value) => {
+    dataView.setFloat64(byteOffset, value, true);
+  }),
+  float: getFixedPackFn(4, (dataView, byteOffset, value) => {
+    dataView.setFloat32(byteOffset, value, true);
+  }),
+  fixed32: getFixedPackFn(4, (dataView, byteOffset, value) => {
+    dataView.setUint32(byteOffset, value, true);
+  }),
+  fixed64: getFixedPackFn(8, (dataView, byteOffset, value) => {
+    const long = Long.parse(value);
+    dataView.setUint32(byteOffset, long[0], true);
+    dataView.setUint32(byteOffset + 4, long[1], true);
+  }),
+  sfixed32: getFixedPackFn(4, (dataView, byteOffset, value) => {
+    dataView.setInt32(byteOffset, value, true);
+  }),
+  sfixed64: getFixedPackFn(8, (dataView, byteOffset, value) => {
+    const long = Long.parse(value);
+    dataView.setUint32(byteOffset, long[0], true);
+    dataView.setUint32(byteOffset + 4, long[1], true);
+  }),
 };
 
 function* unpackDouble(wireValue: Field): Generator<number> {
