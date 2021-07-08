@@ -268,7 +268,22 @@ const getEncodeBinaryCode: GetCodeFn = (
   return [
     "export function encodeBinary(value: Type): Uint8Array {\n",
     `  const result: ${WireMessage} = [];\n`,
-    // TODO
+    message.fields.map(({ schema }) => {
+      if (schema.kind === "oneof") return ""; // never
+      if (schema.kind === "map") {
+        return ""; // TODO
+      }
+      if (schema.kind === "repeated") {
+        return ""; // TODO
+      }
+      if (schema.kind === "optional") {
+        return ""; // TODO
+      }
+      return ""; // TODO: normal and required
+    }).join(""),
+    message.oneofFields.map(({ tsName, fields }) => {
+      return ""; // TODO
+    }).join(""),
     `  return ${serialize}(result);\n`,
     "}\n",
   ].join("");
