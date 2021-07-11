@@ -19,10 +19,11 @@ export interface GenConfig {
 export interface CustomTypeMapping {
   [typePath: string]: {
     tsType: string;
-    getWireValueToTsValueCode: GetWireValueToTsValueCodeFn;
+    getWireValueToTsValueCode: GetFieldCodeFn;
+    getTsValueToWireValueCode: GetFieldCodeFn;
   };
 }
-export interface GetWireValueToTsValueCodeFn {
+export interface GetFieldCodeFn {
   (
     filePath: string,
     importBuffer: ImportBuffer,
