@@ -524,7 +524,7 @@ export function getDefaultTsValueToWireValueCode(
       getFilePath(typePath),
       "encodeBinary",
     );
-    return `{ type:${WireType}.LengthDelimited, value: ${encodeBinary}(${tsValue}) }`;
+    return `{ type: ${WireType}.LengthDelimited, value: ${encodeBinary}(${tsValue}) }`;
   }
 }
 
