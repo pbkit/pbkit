@@ -280,13 +280,32 @@ const getEncodeBinaryCode: GetCodeFn = (
         field,
       );
       if (schema.kind === "map") {
-        return ""; // TODO
+        return [
+          `  for (const [key, value] of Object.entries(value.${tsName})) {\n`,
+          "    result.push(\n",
+          `      [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
+          "    );\n",
+          "  }\n",
+        ].join("");
       }
       if (schema.kind === "repeated") {
-        return ""; // TODO
+        return [
+          `  for (const tsValue of value.${tsName}) {\n`,
+          "    result.push(\n",
+          `      [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
+          "    );\n",
+          "  }\n",
+        ].join("");
       }
       if (schema.kind === "optional") {
-        return ""; // TODO
+        return [
+          `  if (value.${tsName} !== undefined) {\n`,
+          `    const tsValue = value.${tsName};\n`,
+          "    result.push(\n",
+          `      [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
+          "    );\n",
+          "  }\n",
+        ].join("");
       }
       return [
         "  {\n",
@@ -387,6 +406,7 @@ const getDecodeBinaryCode: GetCodeFn = (
         return [
           "  field: {\n",
           `    const wireValue = wireFields.get(${fieldNumber});\n`,
+          "    if (wireValue === undefined) break field;\n",
           `    const value = ${wireValueToTsValueCode};\n`,
           "    if (value === undefined) break field;\n",
           `    result.${tsName} = value;\n`,
@@ -447,7 +467,6 @@ export function getDefaultTsValueToWireValueCode(
   field: Field,
 ): string | undefined {
   const { schema } = field;
-  if (schema.kind === "optional") return;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
@@ -524,7 +543,6 @@ export function getDefaultWireValueToTsValueCode(
   field: Field,
 ): string | undefined {
   const { schema } = field;
-  if (schema.kind === "optional") return;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
