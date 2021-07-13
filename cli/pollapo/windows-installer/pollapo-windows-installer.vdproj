@@ -15,7 +15,7 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_04A46DF57596496488028B17B50C5809"
+        "MsmKey" = "8:_7DBC1D764543465BBFE47AF1DFEBD383"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -106,9 +106,9 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_04A46DF57596496488028B17B50C5809"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7DBC1D764543465BBFE47AF1DFEBD383"
             {
-            "SourcePath" = "8:..\\pollapo.exe"
+            "SourcePath" = "8:pollapo.exe"
             "TargetName" = "8:pollapo.exe"
             "Tag" = "8:"
             "Folder" = "8:_BDA08E27DFD34159BD162FD694F55B8B"
