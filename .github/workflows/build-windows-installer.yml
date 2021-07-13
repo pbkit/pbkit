@@ -25,6 +25,8 @@ jobs:
           path: cli/pollapo/pollapo.exe
   build-msi:
     runs-on: windows-latest
+    env:
+      TAG: ${{ github.event.release.tag_name }}
     needs: [build-exe]
     defaults:
       run:
@@ -32,6 +34,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Setup Version by tag
+        run: .\scripts\change-version.ps1
       - name: Download pollapo.exe
         uses: actions/download-artifact@v2
         with:
