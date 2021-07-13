@@ -6,5 +6,7 @@
   },
   "deno.import_intellisense_origins": {
     "https://deno.land": true
-  }
+  },
+  "deno.lint": true,
+  "deno.unstable": true
 }
