@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
 
 export interface AddImport {
   (from: string, item: string, as?: string): string;

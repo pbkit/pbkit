@@ -1,9 +1,9 @@
-import { walk } from "https://deno.land/std@0.98.0/fs/walk.ts";
+import { walk } from "https://deno.land/std@0.101.0/fs/walk.ts";
 import {
   join,
   relative,
   resolve,
-} from "https://deno.land/std@0.98.0/path/mod.ts";
+} from "https://deno.land/std@0.101.0/path/mod.ts";
 import { Schema } from "../../core/schema/model.ts";
 import { removeTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";
 import { getAutoClosingFileReader } from "../../misc/file.ts";

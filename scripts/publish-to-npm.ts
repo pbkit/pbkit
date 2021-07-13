@@ -1,6 +1,6 @@
-import { emptyDir, ensureDir } from "https://deno.land/std@0.98.0/fs/mod.ts";
-import { walk } from "https://deno.land/std@0.98.0/fs/walk.ts";
-import * as path from "https://deno.land/std@0.98.0/path/mod.ts";
+import { emptyDir, ensureDir } from "https://deno.land/std@0.101.0/fs/mod.ts";
+import { walk } from "https://deno.land/std@0.101.0/fs/walk.ts";
+import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
 import { removeTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
 
 await emptyDir("tmp/npm");

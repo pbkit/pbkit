@@ -7,7 +7,7 @@ import {
 } from "../../../misc/github/auth.ts";
 import { print, println } from "../misc/stdio.ts";
 import { open } from "../misc/browser.ts";
-import { bold, yellow } from "https://deno.land/std@0.98.0/fmt/colors.ts";
+import { bold, yellow } from "https://deno.land/std@0.101.0/fmt/colors.ts";
 import {
   getToken,
   GithubNotLoggedInError,

@@ -1,4 +1,4 @@
-import { walk } from "https://deno.land/std@0.98.0/fs/walk.ts";
+import { walk } from "https://deno.land/std@0.101.0/fs/walk.ts";
 import { parse } from "./proto.ts";
 
 const entries = walk("vendor", { includeDirs: false, exts: [".proto"] });
