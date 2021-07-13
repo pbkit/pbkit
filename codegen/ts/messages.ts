@@ -317,7 +317,29 @@ const getEncodeBinaryCode: GetCodeFn = (
       ].join("");
     }).join(""),
     message.oneofFields.map(({ tsName, fields }) => {
-      return ""; // TODO
+      return [
+        `  switch (value.${tsName}?.field) {\n`,
+        fields.map((field) => {
+          const tsValueToWireValueCode = getGetTsValueToWireValueCode(
+            customTypeMapping,
+            field.schema,
+          )(
+            filePath,
+            importBuffer,
+            field,
+          );
+          return [
+            `    case "${field.tsName}": {\n`,
+            `      const tsValue = value.${tsName}.value;\n`,
+            "      result.push(\n",
+            `        [${field.fieldNumber}, ${tsValueToWireValueCode}],\n`,
+            "      );\n",
+            "      break;\n",
+            "    }\n",
+          ].join("");
+        }).join(""),
+        "  }\n",
+      ].join("");
     }).join(""),
     `  return ${serialize}(result);\n`,
     "}\n",
