@@ -1,4 +1,4 @@
-name: Build Windows Installer
+name: Pollapo - Build Windows Installer
 on:
   release:
     types: [created]
