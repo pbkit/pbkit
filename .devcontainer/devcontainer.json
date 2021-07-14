@@ -1,0 +1,7 @@
+{
+  "name": "Deno",
+  "dockerFile": "Dockerfile",
+  "settings": {},
+  "extensions": ["denoland.vscode-deno"],
+  "remoteUser": "vscode"
+}
