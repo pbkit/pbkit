@@ -1,4 +1,4 @@
-﻿"DeployProject"
+"DeployProject"
 {
 "VSVersion" = "3:800"
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
@@ -182,24 +182,24 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:pollapo"
-        "ProductCode" = "8:{648A2DF2-6DB7-4852-8C51-BB7E4C22BB8D}"
-        "PackageCode" = "8:{B5957C70-9AF2-4C89-B680-B7CBAFD51E18}"
+        "ProductCode" = "8:{A97EEA13-D986-4B20-A2B6-6C03D78C31FA}"
+        "PackageCode" = "8:{DADFF803-4398-419D-A209-C2BC4198D735}"
         "UpgradeCode" = "8:{586D265E-F9D2-4CF5-AA7D-E73931A8488A}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:0.0.11"
+        "ProductVersion" = "8:0.0.0"
         "Manufacturer" = "8:Riiid"
-        "ARPHELPTELEPHONE" = "8:"
+        "ARPHELPTELEPHONE" = "8:0.0.0"
         "ARPHELPLINK" = "8:"
         "Title" = "8:pollapo-installer"
         "Subject" = "8:"
         "ARPCONTACT" = "8:Riiid"
         "Keywords" = "8:"
-        "ARPCOMMENTS" = "8:"
-        "ARPURLINFOABOUT" = "8:"
+        "ARPCOMMENTS" = "8:Riiid protobuf dependency manager"
+        "ARPURLINFOABOUT" = "8:https:://company.riiid.co"
         "ARPPRODUCTICON" = "8:"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
@@ -705,3 +705,10 @@
         }
     }
 }
+
+
+
+
+
+
+
