@@ -15,6 +15,12 @@
     {
         "Entry"
         {
+        "MsmKey" = "8:_39EEECE7E41D405BAB6DD973D0AD3AB8"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_7DBC1D764543465BBFE47AF1DFEBD383"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -91,6 +97,20 @@
     {
         "CustomAction"
         {
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_F75738A037834A5B805AB05E9130D010"
+            {
+            "Name" = "8:add-pollapo-to-path.exe"
+            "Condition" = "8:"
+            "Object" = "8:_39EEECE7E41D405BAB6DD973D0AD3AB8"
+            "FileType" = "3:2"
+            "InstallAction" = "3:1"
+            "Arguments" = "8:/Install"
+            "EntryPoint" = "8:"
+            "Sequence" = "3:1"
+            "Identifier" = "8:_3EBC2CDD_1D95_4FF0_A6D4_DC9641575671"
+            "InstallerClass" = "11:FALSE"
+            "CustomActionData" = "8:"
+            }
         }
         "DefaultFeature"
         {
@@ -106,6 +126,26 @@
         }
         "File"
         {
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_39EEECE7E41D405BAB6DD973D0AD3AB8"
+            {
+            "SourcePath" = "8:scripts\\add-pollapo-to-path.exe"
+            "TargetName" = "8:add-pollapo-to-path.exe"
+            "Tag" = "8:"
+            "Folder" = "8:_99B57C25055D47D79478C8EBD325596A"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7DBC1D764543465BBFE47AF1DFEBD383"
             {
             "SourcePath" = "8:pollapo.exe"
@@ -164,6 +204,17 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
+                    "{9EF0B969-E518-4E46-987F-47570745A589}:_99B57C25055D47D79478C8EBD325596A"
+                    {
+                    "Name" = "8:scripts"
+                    "AlwaysCreate" = "11:FALSE"
+                    "Condition" = "8:"
+                    "Transitive" = "11:FALSE"
+                    "Property" = "8:_23C8D4178E8547C38EF51DC5F4356B9E"
+                        "Folders"
+                        {
+                        }
+                    }
                 }
             }
         }
@@ -183,7 +234,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:pollapo"
         "ProductCode" = "8:{A97EEA13-D986-4B20-A2B6-6C03D78C31FA}"
-        "PackageCode" = "8:{DADFF803-4398-419D-A209-C2BC4198D735}"
+        "PackageCode" = "8:{3289FF8B-F30A-4E17-A4FA-B3BD36A310D8}"
         "UpgradeCode" = "8:{586D265E-F9D2-4CF5-AA7D-E73931A8488A}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -233,6 +284,92 @@
                             "Transitive" = "11:FALSE"
                                 "Keys"
                                 {
+                                }
+                                "Values"
+                                {
+                                    "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_3027F73FFF1B4C338F23DA740374DAD8"
+                                    {
+                                    "Name" = "8:POLLAPO_DIR"
+                                    "Condition" = "8:"
+                                    "Transitive" = "11:FALSE"
+                                    "ValueTypes" = "3:1"
+                                    "Value" = "8:[TARGETDIR]"
+                                    }
+                                }
+                            }
+                        }
+                        "Values"
+                        {
+                        }
+                    }
+                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_D573537A9093485B965494A4D8B8E95A"
+                    {
+                    "Name" = "8:SYSTEM"
+                    "Condition" = "8:"
+                    "AlwaysCreate" = "11:FALSE"
+                    "DeleteAtUninstall" = "11:FALSE"
+                    "Transitive" = "11:FALSE"
+                        "Keys"
+                        {
+                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_1BB06C16AC5F43A48665F4B3ABE2B8A5"
+                            {
+                            "Name" = "8:CurrentControlSet"
+                            "Condition" = "8:"
+                            "AlwaysCreate" = "11:FALSE"
+                            "DeleteAtUninstall" = "11:FALSE"
+                            "Transitive" = "11:FALSE"
+                                "Keys"
+                                {
+                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_E7598EF573784EE8BC26ECEC5D4A885D"
+                                    {
+                                    "Name" = "8:Control"
+                                    "Condition" = "8:"
+                                    "AlwaysCreate" = "11:FALSE"
+                                    "DeleteAtUninstall" = "11:FALSE"
+                                    "Transitive" = "11:FALSE"
+                                        "Keys"
+                                        {
+                                            "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_47CC26FC3D174A1FB0077911CBE115F0"
+                                            {
+                                            "Name" = "8:Session Manager"
+                                            "Condition" = "8:"
+                                            "AlwaysCreate" = "11:FALSE"
+                                            "DeleteAtUninstall" = "11:FALSE"
+                                            "Transitive" = "11:FALSE"
+                                                "Keys"
+                                                {
+                                                    "{60EA8692-D2D5-43EB-80DC-7906BF13D6EF}:_2A11771597CD4182B219EF3BA415E593"
+                                                    {
+                                                    "Name" = "8:Environment"
+                                                    "Condition" = "8:"
+                                                    "AlwaysCreate" = "11:FALSE"
+                                                    "DeleteAtUninstall" = "11:FALSE"
+                                                    "Transitive" = "11:FALSE"
+                                                        "Keys"
+                                                        {
+                                                        }
+                                                        "Values"
+                                                        {
+                                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_C7EF51495F1C4E4792F61841D3E432F8"
+                                                            {
+                                                            "Name" = "8:POLLAPO_DIR"
+                                                            "Condition" = "8:"
+                                                            "Transitive" = "11:FALSE"
+                                                            "ValueTypes" = "3:1"
+                                                            "Value" = "8:[TARGETDIR]"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                "Values"
+                                                {
+                                                }
+                                            }
+                                        }
+                                        "Values"
+                                        {
+                                        }
+                                    }
                                 }
                                 "Values"
                                 {
@@ -705,10 +842,3 @@
         }
     }
 }
-
-
-
-
-
-
-
