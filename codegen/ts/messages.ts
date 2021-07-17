@@ -508,7 +508,7 @@ export function getDefaultTsValueToWireValueCode(
     const value = (
       `${serialize}([[1, ${keyTypePathCode}], [2, ${valueTypePathCode}]])`
     );
-    return `{ type: ${WireType}.LengthDelimited, value: ${value} }`;
+    return `{ type: ${WireType}.LengthDelimited as const, value: ${value} }`;
   }
   const { typePath } = schema;
   return typePathToCode("tsValue", typePath);
@@ -539,7 +539,7 @@ export function getDefaultTsValueToWireValueCode(
         getFilePath(typePath),
         "name2num",
       );
-      return `{ type: ${WireType}.Varint, value: new ${Long}(${name2num}[${tsValue}]) }`;
+      return `{ type: ${WireType}.Varint as const, value: new ${Long}(${name2num}[${tsValue}]) }`;
     }
     const encodeBinary = importBuffer.addInternalImport(
       filePath,
