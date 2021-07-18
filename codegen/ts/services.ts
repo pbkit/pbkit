@@ -47,12 +47,17 @@ function* genService(
     importBuffer,
     type,
   );
-  const importCode = importBuffer.getCode();
+  const createServiceClientCode = getCreateServiceClientCode(
+    filePath,
+    importBuffer,
+    type,
+  );
   yield [
     filePath,
     new StringReader([
-      importCode ? importCode + "\n" : "",
-      serviceTypeDefCode,
+      importBuffer.getCode() + "\n",
+      serviceTypeDefCode + "\n",
+      createServiceClientCode,
     ].join("")),
   ];
 }
@@ -76,16 +81,63 @@ function getServiceTypeDefCode(
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
-  const serviceBodyCodes: string[] = [];
-  const rpcs = Object.entries(service.rpcs);
-  if (rpcs.length) serviceBodyCodes.push(getRpcsCode());
-  if (!serviceBodyCodes.length) return `export interface Service {}\n`;
-  return `export interface Service {\n${serviceBodyCodes.join("")}}\n`;
+  return `export interface Service<TArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
   function getRpcsCode() {
-    return rpcs.map(([rpcName, rpc]) => {
+    return Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const reqType = getTsRpcType(rpc.reqType);
       const resType = getTsRpcType(rpc.resType, true);
-      return `  ${pascalToCamel(rpcName)}(request: ${reqType}): ${resType};\n`;
+      return `  ${
+        pascalToCamel(rpcName)
+      }(request: ${reqType}, ...args: TArgs): ${resType};\n`;
     }).join("");
   }
+}
+
+function getCreateServiceClientCode(
+  filePath: string,
+  importBuffer: ImportBuffer,
+  service: Service,
+) {
+  const RpcImpl = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "RpcImpl",
+  );
+  return [
+    `export function createServiceClient<TMetadata>(rpcImpl: ${RpcImpl}<TMetadata>): Service<[] | [TMetadata]> {\n`,
+    "  return {\n",
+    Object.entries(service.rpcs).map(([rpcName, rpc]) => {
+      if (!rpc.reqType.stream && !rpc.resType.stream) {
+        return [
+          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          "      // TODO\n",
+          "    },\n",
+        ].join("");
+      }
+      if (rpc.reqType.stream && rpc.resType.stream) {
+        return [
+          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          "      // TODO\n",
+          "    },\n",
+        ].join("");
+      }
+      if (!rpc.reqType.stream && rpc.resType.stream) {
+        return [
+          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          "      // TODO\n",
+          "    },\n",
+        ].join("");
+      }
+      if (rpc.reqType.stream && !rpc.resType.stream) {
+        return [
+          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          "      // TODO\n",
+          "    },\n",
+        ].join("");
+      }
+      return "";
+    }).join(""),
+    "  };\n",
+    "}\n",
+  ].join("");
 }

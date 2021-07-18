@@ -1,4 +1,4 @@
-export type RpcImpl<TReq, TRes, TMetadata> = (
+export type RpcImpl<TMetadata> = <TReq, TRes>(
   servicePath: string,
   methodName: string,
   utilFns: RpcImplUtilFns<TReq, TRes>,
