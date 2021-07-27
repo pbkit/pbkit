@@ -1,4 +1,4 @@
-name: Pollapo - Build macOS Binary
+name: Pollapo - Build Ubuntu Binary
 on:
   release:
     types: [created]
