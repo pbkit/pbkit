@@ -14,7 +14,7 @@
 (In this case, you don't need to install deno manually)
 ```sh
 brew tap riiid/riiid
-brew install pollapo
+brew install pbkit
 ```
 
 ### Install from source
