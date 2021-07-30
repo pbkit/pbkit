@@ -6,5 +6,6 @@ export function getConfigDir() {
 }
 
 export function getCacheDir() {
-  return path.resolve(getConfigDir(), "cache");
+  return Deno.env.get("POLLAPO_CACHE_DIR") ||
+    path.resolve(getConfigDir(), "cache");
 }
