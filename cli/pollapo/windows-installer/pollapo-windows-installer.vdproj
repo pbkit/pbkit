@@ -15,12 +15,6 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_39EEECE7E41D405BAB6DD973D0AD3AB8"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_7DBC1D764543465BBFE47AF1DFEBD383"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
@@ -97,20 +91,6 @@
     {
         "CustomAction"
         {
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_F75738A037834A5B805AB05E9130D010"
-            {
-            "Name" = "8:add-pollapo-to-path.exe"
-            "Condition" = "8:"
-            "Object" = "8:_39EEECE7E41D405BAB6DD973D0AD3AB8"
-            "FileType" = "3:2"
-            "InstallAction" = "3:1"
-            "Arguments" = "8:/Install"
-            "EntryPoint" = "8:"
-            "Sequence" = "3:1"
-            "Identifier" = "8:_3EBC2CDD_1D95_4FF0_A6D4_DC9641575671"
-            "InstallerClass" = "11:FALSE"
-            "CustomActionData" = "8:"
-            }
         }
         "DefaultFeature"
         {
@@ -126,26 +106,6 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_39EEECE7E41D405BAB6DD973D0AD3AB8"
-            {
-            "SourcePath" = "8:scripts\\add-pollapo-to-path.exe"
-            "TargetName" = "8:add-pollapo-to-path.exe"
-            "Tag" = "8:"
-            "Folder" = "8:_99B57C25055D47D79478C8EBD325596A"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7DBC1D764543465BBFE47AF1DFEBD383"
             {
             "SourcePath" = "8:pollapo.exe"
@@ -204,17 +164,6 @@
             "Property" = "8:TARGETDIR"
                 "Folders"
                 {
-                    "{9EF0B969-E518-4E46-987F-47570745A589}:_99B57C25055D47D79478C8EBD325596A"
-                    {
-                    "Name" = "8:scripts"
-                    "AlwaysCreate" = "11:FALSE"
-                    "Condition" = "8:"
-                    "Transitive" = "11:FALSE"
-                    "Property" = "8:_23C8D4178E8547C38EF51DC5F4356B9E"
-                        "Folders"
-                        {
-                        }
-                    }
                 }
             }
         }
@@ -459,7 +408,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_1D21E604AACA43879B164EF18A231B2B"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Finished"
+                    "DisplayName" = "8:마침"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFinishedDlg.wid"
@@ -509,7 +458,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_7CC6307051B2494283CC0C82BA0DEC0A"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
+                    "DisplayName" = "8:환영"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminWelcomeDlg.wid"
@@ -557,7 +506,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_F1A6B3559EB448A7BCE1C12E8146954E"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
+                    "DisplayName" = "8:설치 확인"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminConfirmDlg.wid"
@@ -579,7 +528,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_FA581323AC844BB7B98A25EA15277CC5"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "DisplayName" = "8:설치 폴더"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFolderDlg.wid"
@@ -610,7 +559,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_CDB5BEB9A2784725A5DADE7D60B6E0CA"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Progress"
+                    "DisplayName" = "8:진행률"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdProgressDlg.wid"
@@ -654,7 +603,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_AEC177313C004273ADB42B89E7F4034C"
                     {
                     "Sequence" = "3:200"
-                    "DisplayName" = "8:Installation Folder"
+                    "DisplayName" = "8:설치 폴더"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdFolderDlg.wid"
@@ -689,7 +638,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_D0AC7A6BCF1F4671A145E725488A72C9"
                     {
                     "Sequence" = "3:300"
-                    "DisplayName" = "8:Confirm Installation"
+                    "DisplayName" = "8:설치 확인"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdConfirmDlg.wid"
@@ -711,7 +660,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_F973221E8E40440086B2CD643CA7D905"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Welcome"
+                    "DisplayName" = "8:환영"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdWelcomeDlg.wid"
@@ -768,7 +717,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_C5E45515DF4B4A048CEE992AC3693B21"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Finished"
+                    "DisplayName" = "8:마침"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminFinishedDlg.wid"
@@ -799,7 +748,7 @@
                     "{688940B3-5CA9-4162-8DEE-2993FA9D8CBC}:_FFDF0A26FD6441A5A1372E831C87AA30"
                     {
                     "Sequence" = "3:100"
-                    "DisplayName" = "8:Progress"
+                    "DisplayName" = "8:진행률"
                     "UseDynamicProperties" = "11:TRUE"
                     "IsDependency" = "11:FALSE"
                     "SourcePath" = "8:<VsdDialogDir>\\VsdAdminProgressDlg.wid"
