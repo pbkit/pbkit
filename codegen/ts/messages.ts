@@ -281,10 +281,13 @@ const getEncodeBinaryCode: GetCodeFn = (
       );
       if (schema.kind === "map") {
         return [
-          `  for (const [key, value] of Object.entries(value.${tsName})) {\n`,
-          "    result.push(\n",
-          `      [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
-          "    );\n",
+          "  {\n",
+          `    const fields = Object.entries(value.${tsName});\n`,
+          "    for (const [key, value] of fields) {\n",
+          "      result.push(\n",
+          `        [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
+          "      );\n",
+          "    }\n",
           "  }\n",
         ].join("");
       }
