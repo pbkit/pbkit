@@ -381,6 +381,19 @@ const getDecodeBinaryCode: GetCodeFn = (
         "};\n",
       ].join("")
       : "",
+    message.oneofFields.length
+      ? [
+        "const oneofFieldNamesMap = {\n",
+        message.oneofFields.map(({ tsName, fields }) => {
+          return [
+            `  ${tsName}: new Map([\n`,
+            fields.map(({ fieldNumber, tsName }) => `    [${fieldNumber}, "${tsName}" as const],\n`).join(""),
+            "  ]),\n",
+          ].join("");
+        }).join(""),
+        "};\n",
+      ].join("")
+      : "",
     "export function decodeBinary(binary: Uint8Array): Type {\n",
     "  const result = getDefaultValue();\n",
     `  const wireMessage = ${deserialize}(binary);\n`,
@@ -460,12 +473,13 @@ const getDecodeBinaryCode: GetCodeFn = (
       return [
         "  oneof: {\n",
         `    const oneofFieldNumbers = oneofFieldNumbersMap.${tsName};\n`,
+        `    const oneofFieldNames = oneofFieldNamesMap.${tsName};\n`,
         "    const fieldNumber = wireFieldNumbers.find(v => oneofFieldNumbers.has(v));\n",
         "    if (fieldNumber == null) break oneof;\n",
         "    const wireValue = wireFields.get(fieldNumber);\n",
         `    const value = ${wireValueToTsValueCode};\n`,
         "    if (value === undefined) break oneof;\n",
-        `    result.${tsName} = { field: fieldNames[fieldNumber], value };\n`,
+        `    result.${tsName} = { field: oneofFieldNames.get(fieldNumber), value };\n`,
         "  }\n",
       ].join("");
     }).join(""),
