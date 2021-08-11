@@ -23,5 +23,8 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: cli/pollapo/pollapo-ubuntu
+      - name: 'get tag'
+        id: tags
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Upload pollapo binary to Nexus
-        run: curl -X PUT -v -u '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' --upload-file pollapo-ubuntu ${{ secrets.NEXUS_URL }}/pollapo-ubuntu
+        run: curl -X PUT -v -u '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' --upload-file pollapo-ubuntu ${{ secrets.NEXUS_URL }}/pollapo-ubuntu-${{ steps.tags.outputs.tag }}
