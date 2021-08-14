@@ -71,3 +71,11 @@ Deno.test("#55", () => {
     }
   `);
 });
+
+Deno.test("#78", () => {
+  parse(`
+    message TestAllTypesLite {
+      optional double default_double = 72 [default = 52e3];
+    }
+  `);
+});
