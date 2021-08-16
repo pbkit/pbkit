@@ -313,7 +313,7 @@ function acceptAggregate(
   if (!parenthesisOpen) return;
   let character = parenthesisOpen;
   let depth = 1;
-  while (character = parser.expect(/^./)) {
+  while (character = parser.expect(/^(?:\s|\S)/)) {
     switch (character.text) {
       case "{":
         ++depth;

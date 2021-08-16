@@ -79,3 +79,12 @@ Deno.test("#78", () => {
     }
   `);
 });
+
+Deno.test("#80", () => {
+  parse(`
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*}/draft:write"
+      body: "*"
+    };
+  `);
+});
