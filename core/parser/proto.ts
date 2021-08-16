@@ -97,7 +97,7 @@ const multilineCommentPattern = /^\/\*(?:.|\r?\n)*?\*\//;
 const singlelineCommentPattern = /^\/\/.*(?:\r?\n|$)/;
 const intLitPattern = /^0(?:x[0-9a-f]+|[0-7]*)|^[1-9]\d*/i;
 const floatLitPattern =
-  /^\d+\.\d*(?:e[-+]?\d+)?|^\d+(?:e[-+]?\d+)?|^\.\d+(?:e[-+]?\d+)?|^inf|^nan/i;
+  /^\d+\.\d*(?:e[-+]?\d+)?|^\d+e[-+]?\d+|^\.\d+(?:e[-+]?\d+)?|^inf|^nan/i;
 const boolLitPattern = /^true|^false/;
 const strLitPattern =
   /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
