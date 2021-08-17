@@ -94,3 +94,11 @@ Deno.test("#83", () => {
     option (bytes_opt) = "Hello\0World";
   `);
 });
+
+Deno.test("#86", () => {
+  parse(String.raw`
+    message TestMessage {
+      optional bytes optional_bytes = 9 [default = "\0\1\2\100fubar"];
+    }
+  `);
+});
