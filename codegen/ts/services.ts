@@ -7,7 +7,10 @@ import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping } from "./index.ts";
 import { createImportBuffer, ImportBuffer } from "./import-buffer.ts";
 import genIndex from "./genIndex.ts";
-import { pbTypeToTsType } from "./messages.ts";
+import {
+  getFilePath as getMessageFilePath,
+  pbTypeToTsType,
+} from "./messages.ts";
 
 export default function* gen(
   schema: Schema,
@@ -49,6 +52,7 @@ function* genService(
   );
   const createServiceClientCode = getCreateServiceClientCode(
     filePath,
+    typePath,
     importBuffer,
     type,
   );
@@ -95,6 +99,7 @@ function getServiceTypeDefCode(
 
 function getCreateServiceClientCode(
   filePath: string,
+  typePath: string,
   importBuffer: ImportBuffer,
   service: Service,
 ) {
@@ -103,34 +108,78 @@ function getCreateServiceClientCode(
     "runtime/rpc.ts",
     "RpcImpl",
   );
+  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "singleValueToAsyncGenerator",
+  );
+  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "getFirstValueFromAsyncGenerator",
+  );
   return [
     `export function createServiceClient<TMetadata>(rpcImpl: ${RpcImpl}<TMetadata>): Service<[] | [TMetadata]> {\n`,
     "  return {\n",
     Object.entries(service.rpcs).map(([rpcName, rpc]) => {
+      const camelRpcName = pascalToCamel(rpcName);
+      const encodeRequestBinary = importBuffer.addInternalImport(
+        filePath,
+        getMessageFilePath(rpc.reqType.typePath!),
+        "encodeBinary",
+      );
+      const decodeRequestBinary = importBuffer.addInternalImport(
+        filePath,
+        getMessageFilePath(rpc.reqType.typePath!),
+        "decodeBinary",
+      );
+      const encodeResponseBinary = importBuffer.addInternalImport(
+        filePath,
+        getMessageFilePath(rpc.resType.typePath!),
+        "encodeBinary",
+      );
+      const decodeResponseBinary = importBuffer.addInternalImport(
+        filePath,
+        getMessageFilePath(rpc.resType.typePath!),
+        "decodeBinary",
+      );
+
       if (!rpc.reqType.stream && !rpc.resType.stream) {
         return [
-          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
-          "      // TODO\n",
+          `    async ${camelRpcName}(request, metadata) {\n`,
+          `      const ${camelRpcName}Rpc = rpcImpl(\n`,
+          `        "${typePath.substr(1)}",\n`,
+          `        "${rpcName}",\n`,
+          `        {\n`,
+          `          encodeRequestBinary: ${encodeRequestBinary},\n`,
+          `          decodeRequestBinary: ${decodeRequestBinary},\n`,
+          `          encodeResponseBinary: ${encodeResponseBinary},\n`,
+          `          decodeResponseBinary: ${decodeResponseBinary},\n`,
+          "        }\n",
+          "      );\n",
+          `      const reqAsyncGenerator = ${singleValueToAsyncGenerator}(request);\n`,
+          `      const resAsyncGenerator = ${camelRpcName}Rpc(reqAsyncGenerator, metadata);\n`,
+          `      return await ${getFirstValueFromAsyncGenerator}(resAsyncGenerator);\n`,
           "    },\n",
         ].join("");
       }
       if (rpc.reqType.stream && rpc.resType.stream) {
         return [
-          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          `    ${camelRpcName}(request, metadata) {\n`,
           "      // TODO\n",
           "    },\n",
         ].join("");
       }
       if (!rpc.reqType.stream && rpc.resType.stream) {
         return [
-          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          `    ${camelRpcName}(request, metadata) {\n`,
           "      // TODO\n",
           "    },\n",
         ].join("");
       }
       if (rpc.reqType.stream && !rpc.resType.stream) {
         return [
-          `    ${pascalToCamel(rpcName)}(request, metadata) {\n`,
+          `    ${camelRpcName}(request, metadata) {\n`,
           "      // TODO\n",
           "    },\n",
         ].join("");
