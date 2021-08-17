@@ -293,7 +293,7 @@ function acceptBoolLit(
   return { type: "bool-lit", ...boolLit };
 }
 
-function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined { // TODO: fix
+function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   const strLit = parser.accept(strLitPattern);
   if (!strLit) return;
   return { type: "str-lit", ...strLit };
