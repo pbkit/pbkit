@@ -90,7 +90,7 @@ Deno.test("#80", () => {
 });
 
 Deno.test("#83", () => {
-  parse(`
+  parse(String.raw`
     option (bytes_opt) = "Hello\0World";
   `);
 });
