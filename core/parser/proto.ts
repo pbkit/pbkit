@@ -100,7 +100,7 @@ const floatLitPattern =
   /^\d+\.\d*(?:e[-+]?\d+)?|^\d+e[-+]?\d+|^\.\d+(?:e[-+]?\d+)?|^inf|^nan/i;
 const boolLitPattern = /^true|^false/;
 const strLitPattern =
-  /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
+  /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv0\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[abfnrtv0\\'"]|[^"\0\n\\])*"/i;
 const identPattern = /^[a-z_][a-z0-9_]*/i;
 
 const acceptDot = acceptPatternAndThen<ast.Dot>(
@@ -293,7 +293,7 @@ function acceptBoolLit(
   return { type: "bool-lit", ...boolLit };
 }
 
-function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
+function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined { // TODO: fix
   const strLit = parser.accept(strLitPattern);
   if (!strLit) return;
   return { type: "str-lit", ...strLit };

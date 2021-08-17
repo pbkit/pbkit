@@ -88,3 +88,9 @@ Deno.test("#80", () => {
     };
   `);
 });
+
+Deno.test("#83", () => {
+  parse(`
+    option (bytes_opt) = "Hello\0World";
+  `);
+});
