@@ -311,7 +311,7 @@ const getEncodeBinaryCode: GetCodeFn = (
         ].join("");
       }
       return [
-        "  {\n",
+        `  if (value.${tsName} !== undefined) {\n`,
         `    const tsValue = value.${tsName};\n`,
         "    result.push(\n",
         `      [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
