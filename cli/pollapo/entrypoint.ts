@@ -1,4 +1,7 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
+import {
+  Command,
+  CompletionsCommand,
+} from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
 
 import add from "./cmds/add.ts";
 import install from "./cmds/install.ts";
@@ -15,4 +18,5 @@ command
   .command("login", login)
   .command("remove", remove)
   .command("why", why)
+  .command("completions", new CompletionsCommand())
   .parse(Deno.args);
