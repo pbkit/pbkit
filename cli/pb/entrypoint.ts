@@ -10,5 +10,5 @@ command
   .arguments("<command> [options]")
   .command("completions", new CompletionsCommand())
   .command("gen", (await import("./cmds/gen/index.ts")).default)
-  .command("help", new HelpCommand().global())
+  .command("help", new HelpCommand())
   .parse(Deno.args);

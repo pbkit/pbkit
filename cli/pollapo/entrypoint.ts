@@ -16,7 +16,7 @@ command
   .arguments("<command> [options]")
   .command("add", add)
   .command("completions", new CompletionsCommand())
-  .command("help", new HelpCommand().global())
+  .command("help", new HelpCommand())
   .command("install", install)
   .command("login", login)
   .command("remove", remove)
