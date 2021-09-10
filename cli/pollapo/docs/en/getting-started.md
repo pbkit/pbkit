@@ -46,3 +46,23 @@ pollapo add riiid/interface-common-model riiid/interface-inside-model
 # Install dependencies
 pollapo install # Check the created `.pollapo` directory
 ```
+
+## Auto completion
+
+### Bash
+
+```sh
+source <(pollapo completions bash)
+```
+
+### Fish
+
+```sh
+source (pollapo completions fish | psub)
+```
+
+### Zsh
+
+```sh
+source <(pollapo completions zsh)
+```
