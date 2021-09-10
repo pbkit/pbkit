@@ -1,6 +1,7 @@
 import {
   Command,
   CompletionsCommand,
+  HelpCommand,
 } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
 
 import add from "./cmds/add.ts";
@@ -15,6 +16,7 @@ command
   .arguments("<command> [options]")
   .command("add", add)
   .command("completions", new CompletionsCommand())
+  .command("help", new HelpCommand().global())
   .command("install", install)
   .command("login", login)
   .command("remove", remove)
