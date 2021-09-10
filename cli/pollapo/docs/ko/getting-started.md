@@ -46,3 +46,24 @@ pollapo add riiid/interface-common-model riiid/interface-inside-model
 # 의존성 설치
 pollapo install # 생성된 `.pollapo` 디렉토리 확인
 ```
+
+## 자동 완성
+
+### Bash
+
+```sh
+source <(pollapo completions bash)
+```
+
+### Fish
+
+```sh
+source (pollapo completions fish | psub)
+```
+
+### Zsh
+
+```sh
+source <(pollapo completions zsh)
+```
+
