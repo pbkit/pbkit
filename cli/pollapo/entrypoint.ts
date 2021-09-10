@@ -14,9 +14,9 @@ command
   .name("pollapo")
   .arguments("<command> [options]")
   .command("add", add)
+  .command("completions", new CompletionsCommand())
   .command("install", install)
   .command("login", login)
   .command("remove", remove)
   .command("why", why)
-  .command("completions", new CompletionsCommand())
   .parse(Deno.args);

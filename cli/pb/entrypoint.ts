@@ -7,6 +7,6 @@ const command = new Command();
 command
   .name("pb")
   .arguments("<command> [options]")
-  .command("gen", (await import("./cmds/gen/index.ts")).default)
   .command("completions", new CompletionsCommand())
+  .command("gen", (await import("./cmds/gen/index.ts")).default)
   .parse(Deno.args);
