@@ -13,7 +13,10 @@ import why from "./cmds/why.ts";
 const command = new Command();
 command
   .name("pollapo")
-  .arguments("<command> [options]")
+  .action(() => {
+    command.showHelp();
+    Deno.exit(0);
+  })
   .command("add", add)
   .command("completions", new CompletionsCommand())
   .command("help", new HelpCommand())
