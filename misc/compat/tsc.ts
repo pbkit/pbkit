@@ -2,7 +2,7 @@ import {
   readAll,
   readAllSync,
   StringReader,
-} from "https://deno.land/std@0.101.0/io/mod.ts";
+} from "https://deno.land/std@0.107.0/io/mod.ts";
 
 export function removeTsFileExtensionInImportStatement(code: string): string {
   return code.replaceAll(

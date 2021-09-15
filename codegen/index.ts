@@ -1,6 +1,6 @@
-import { ensureDir } from "https://deno.land/std@0.101.0/fs/mod.ts";
-import { copy } from "https://deno.land/std@0.101.0/io/util.ts";
-import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.107.0/fs/mod.ts";
+import { copy } from "https://deno.land/std@0.107.0/io/util.ts";
+import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 
 export type CodeEntry = [filePath: string, data: Deno.Reader | Deno.ReaderSync];
 export type SyncCodeEntry = [filePath: string, data: Deno.ReaderSync];

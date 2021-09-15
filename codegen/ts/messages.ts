@@ -1,5 +1,5 @@
-import { StringReader } from "https://deno.land/std@0.101.0/io/mod.ts";
-import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
+import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
+import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
@@ -387,7 +387,9 @@ const getDecodeBinaryCode: GetCodeFn = (
         message.oneofFields.map(({ tsName, fields }) => {
           return [
             `  ${tsName}: new Map([\n`,
-            fields.map(({ fieldNumber, tsName }) => `    [${fieldNumber}, "${tsName}" as const],\n`).join(""),
+            fields.map(({ fieldNumber, tsName }) =>
+              `    [${fieldNumber}, "${tsName}" as const],\n`
+            ).join(""),
             "  ]),\n",
           ].join("");
         }).join(""),

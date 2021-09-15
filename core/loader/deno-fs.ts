@@ -1,5 +1,5 @@
-import { exists } from "https://deno.land/std@0.101.0/fs/exists.ts";
-import { resolve } from "https://deno.land/std@0.101.0/path/mod.ts";
+import { exists } from "https://deno.land/std@0.107.0/fs/exists.ts";
+import { resolve } from "https://deno.land/std@0.107.0/path/mod.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {

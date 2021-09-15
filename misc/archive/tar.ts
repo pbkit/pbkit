@@ -1,4 +1,4 @@
-import { Untar } from "https://deno.land/std@0.101.0/archive/tar.ts";
+import { Untar } from "https://deno.land/std@0.107.0/archive/tar.ts";
 import { gunzip } from "https://deno.land/x/denoflate@1.2.1/mod.ts";
 import { stripComponent } from "./index.ts";
 

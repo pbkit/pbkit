@@ -1,5 +1,5 @@
-import { StringReader } from "https://deno.land/std@0.101.0/io/mod.ts";
-import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
+import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
+import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import {
   iterTypePathTree,
   TypePathTree,
