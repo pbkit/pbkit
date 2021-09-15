@@ -146,7 +146,7 @@ function getCreateServiceClientCode(
 
       if (!rpc.reqType.stream && !rpc.resType.stream) {
         return [
-          `    async ${camelRpcName}(request, metadata) {\n`,
+          `    async ${camelRpcName}(request, metadata?) {\n`,
           `      const ${camelRpcName}Rpc = rpcImpl(\n`,
           `        "${typePath.substr(1)}",\n`,
           `        "${rpcName}",\n`,
@@ -165,21 +165,21 @@ function getCreateServiceClientCode(
       }
       if (rpc.reqType.stream && rpc.resType.stream) {
         return [
-          `    ${camelRpcName}(request, metadata) {\n`,
+          `    ${camelRpcName}(request, metadata?) {\n`,
           "      // TODO\n",
           "    },\n",
         ].join("");
       }
       if (!rpc.reqType.stream && rpc.resType.stream) {
         return [
-          `    ${camelRpcName}(request, metadata) {\n`,
+          `    ${camelRpcName}(request, metadata?) {\n`,
           "      // TODO\n",
           "    },\n",
         ].join("");
       }
       if (rpc.reqType.stream && !rpc.resType.stream) {
         return [
-          `    ${camelRpcName}(request, metadata) {\n`,
+          `    ${camelRpcName}(request, metadata?) {\n`,
           "      // TODO\n",
           "    },\n",
         ].join("");
