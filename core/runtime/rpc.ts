@@ -19,7 +19,7 @@ export async function* singleValueToAsyncGenerator<T>(
 
 export async function getFirstValueFromAsyncGenerator<T>(
   generator: AsyncGenerator<T>,
-): Promise<T | undefined> {
+): Promise<T> {
   for await (const value of generator) return value;
-  return undefined;
+  throw Error("The generator should yield at least one value.");
 }
