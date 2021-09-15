@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import { stringify } from "https://deno.land/std@0.101.0/encoding/yaml.ts";
 import {
   loadPollapoYml,

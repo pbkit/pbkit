@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import json from "./cmds/json.ts";
 import ts from "./cmds/ts.ts";
 

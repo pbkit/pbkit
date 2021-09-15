@@ -6,7 +6,7 @@ import {
 } from "https://deno.land/std@0.101.0/fmt/colors.ts";
 import { emptyDir, ensureDir } from "https://deno.land/std@0.101.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.101.0/path/mod.ts";
-import { Command } from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import { parse } from "../../../core/parser/proto.ts";
 import minify from "../../../core/stringifier/minify.ts";
 import replaceFileOption from "../postprocess/replaceFileOption.ts";
@@ -45,7 +45,7 @@ import {
   PollapoUnauthorizedError,
   validateToken,
 } from "../../../misc/github/auth.ts";
-import { Confirm } from "https://deno.land/x/cliffy@v0.18.0/prompt/confirm.ts";
+import { Confirm } from "https://deno.land/x/cliffy@v0.19.5/prompt/confirm.ts";
 
 interface Options {
   clean?: true;

@@ -2,8 +2,7 @@ import {
   Command,
   CompletionsCommand,
   HelpCommand,
-} from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
-
+} from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import add from "./cmds/add.ts";
 import install from "./cmds/install.ts";
 import login from "./cmds/login.ts";

@@ -2,7 +2,7 @@ import {
   Command,
   CompletionsCommand,
   HelpCommand,
-} from "https://deno.land/x/cliffy@v0.19.1/command/mod.ts";
+} from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import gen from "./cmds/gen/index.ts";
 
 const command = new Command();
