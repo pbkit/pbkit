@@ -33,12 +33,10 @@ export default new Command()
     const roots = [...protoPaths, Deno.cwd(), vendorPath];
     const loader = createLoader({ roots });
     const schema = await build({ loader, files: protoFiles });
-
     if (Object.keys(schema.files).length == 0) {
       console.log("Missing input file.");
       return;
     }
-
     await save(
       options.outDir,
       gen(schema, {
