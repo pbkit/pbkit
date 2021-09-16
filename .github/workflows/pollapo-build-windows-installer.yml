@@ -44,7 +44,7 @@ jobs:
       - name: Setup Developer Command Prompt
         uses: ilammy/msvc-dev-cmd@v1
       - name: Build msi
-        run: devenv pollapo-windows-installer.sln /build Release
+        run: devenv pollapo-windows-installer.sln /build Release && exit
       - name: Upload msi
         uses: shogo82148/actions-upload-release-asset@v1
         with:
