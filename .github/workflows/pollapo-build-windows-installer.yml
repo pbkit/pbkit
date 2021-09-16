@@ -44,7 +44,7 @@ jobs:
           name: pollapo.exe
           path: cli/pollapo/windows-installer
       - name: Build msi
-        run:  "(cmd /c \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\devenv.exe\" pollapo-windows-installer.sln /build Release); while (!(Test-Path \".\\Release\\pollapo-windows-installer.msi\")) { dir; Start-Sleep 100 }"
+        run:  "(cmd /c \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\devenv.exe\" pollapo-windows-installer.sln /build Release); while (!(Test-Path \".\\Release\\pollapo-windows-installer.msi\")) { Start-Sleep 10 }"
       - name: Upload msi
         uses: shogo82148/actions-upload-release-asset@v1
         with:
