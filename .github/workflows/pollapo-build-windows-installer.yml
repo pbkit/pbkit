@@ -41,10 +41,8 @@ jobs:
         with:
           name: pollapo.exe
           path: cli/pollapo/windows-installer
-      - name: Setup Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
       - name: Build msi
-        run: devenv pollapo-windows-installer.sln /build Release && exit
+        run:  "cmd \\c \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\Common7\\IDE\\devenv.exe\" pollapo-windows-installer.sln /build Release"
       - name: Upload msi
         uses: shogo82148/actions-upload-release-asset@v1
         with:
