@@ -46,7 +46,7 @@ jobs:
           name: pollapo.exe
           path: cli/pollapo/windows-installer
       - name: Build msi
-        run:  "(devenv pollapo-windows-installer.sln /build Release); (while (!(Test-Path .\\Release)) { Start-Sleep -Seconds 1; })"
+        run:  "(devenv pollapo-windows-installer.sln /build Release); (powershell while (!(Test-Path .\\Release)) { Start-Sleep -Seconds 1; })"
       - name: Upload msi
         uses: shogo82148/actions-upload-release-asset@v1
         with:
