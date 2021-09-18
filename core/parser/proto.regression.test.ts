@@ -115,3 +115,11 @@ Deno.test("#88", () => {
     }
   `);
 });
+
+Deno.test("#103", () => {
+  parse(String.raw`
+    message TestReservedFields {
+      reserved "bar", "baz";
+    }
+  `);
+});
