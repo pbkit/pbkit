@@ -84,8 +84,9 @@ export interface BoolLit extends Token {
   type: "bool-lit";
 }
 
-export interface StrLit extends Token {
+export interface StrLit extends Span {
   type: "str-lit";
+  tokens: Token[];
 }
 
 export interface Aggregate extends Span {

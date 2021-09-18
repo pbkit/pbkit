@@ -108,7 +108,7 @@ export const visitor: Visitor = {
     visitStatementBase(visitor, node, () => {
       visitor.visitKeyword(visitor, node.keyword);
       node.weakOrPublic && visitor.visitToken(visitor, node.weakOrPublic);
-      visitor.visitToken(visitor, node.strLit);
+      visitor.visitStrLit(visitor, node.strLit);
       visitor.visitSemi(visitor, node.semi);
     });
   },
@@ -547,7 +547,9 @@ export const visitor: Visitor = {
     visitor.visitFloatLit(visitor, node.value);
   },
   visitStrLit(visitor, node) {
-    visitor.visitToken(visitor, node);
+    for (const token of node.tokens) {
+      visitor.visitToken(visitor, token);
+    }
   },
   visitBoolLit(visitor, node) {
     visitor.visitToken(visitor, node);

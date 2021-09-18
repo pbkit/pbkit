@@ -296,7 +296,16 @@ function acceptBoolLit(
 function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   const strLit = parser.accept(strLitPattern);
   if (!strLit) return;
-  return { type: "str-lit", ...strLit };
+  const tokens = [strLit];
+  while (true) {
+    skipWsAndComments(parser);
+    const strLit = parser.accept(strLitPattern);
+    if (!strLit) break;
+    tokens.push(strLit);
+  }
+  const start = tokens[0].start;
+  const end = tokens[tokens.length - 1].end;
+  return { type: "str-lit", start, end, tokens };
 }
 
 function expectStrLit(parser: RecursiveDescentParser): ast.StrLit {

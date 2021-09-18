@@ -52,7 +52,11 @@ export function evalSignedFloatLit(signedFloatLit: ast.SignedFloatLit): number {
 }
 
 export function evalStrLit(strLit: ast.StrLit): string {
-  return strLit.text
+  return strLit.tokens.map((token) => evalStrLitFragment(token.text)).join("");
+}
+
+function evalStrLitFragment(text: string): string {
+  return text
     .slice(1, -1)
     .replace(
       /(?:\\x([0-9a-f]{2})|\\([0-7]{3})|\\([0abfnrtv\\'"]))/i,

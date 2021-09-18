@@ -21,5 +21,10 @@ Deno.test("evalStrLit", () => {
 });
 
 function strLit(text: string): ast.StrLit {
-  return { start: 0, end: 0, text, type: "str-lit" };
+  return {
+    start: 0,
+    end: 0,
+    tokens: [{ start: 0, end: 0, text }],
+    type: "str-lit",
+  };
 }
