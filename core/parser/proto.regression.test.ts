@@ -123,3 +123,11 @@ Deno.test("#103", () => {
     }
   `);
 });
+
+Deno.test("#104", () => {
+  parse(String.raw`
+    message TestExtremeDefaultValues {
+      optional string cpp_trigraph = 20 [default = "? \? ?? \?? \??? ??/ ?\?-"];
+    }
+  `);
+});
