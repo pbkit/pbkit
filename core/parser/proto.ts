@@ -885,6 +885,7 @@ function expectFieldNames(parser: RecursiveDescentParser): ast.FieldNames {
   const strLitOrCommas = many(
     parser,
     choice<ast.StrLit | ast.Comma>([
+      skipWsAndComments,
       acceptComma,
       acceptStrLit,
     ]),
