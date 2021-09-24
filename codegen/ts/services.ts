@@ -56,11 +56,25 @@ function* genService(
     importBuffer,
     type,
   );
-  const createServiceClientCode = getCreateServiceClientCode(
+  const RpcClientImpl = importBuffer.addInternalImport(
     filePath,
-    typePath,
-    importBuffer,
-    type,
+    "runtime/rpc.ts",
+    "RpcClientImpl",
+  );
+  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "singleValueToAsyncGenerator",
+  );
+  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "getFirstValueFromAsyncGenerator",
+  );
+  const createServiceClientCode = getCreateServiceClientCode(
+    RpcClientImpl,
+    singleValueToAsyncGenerator,
+    getFirstValueFromAsyncGenerator,
   );
   yield [
     filePath,
@@ -165,50 +179,40 @@ function getMethodDescriptorsCode(
   ].join("");
 }
 
-function getCreateServiceClientCode(
-  filePath: string,
-  typePath: string,
-  importBuffer: ImportBuffer,
-  service: Service,
-) {
-  const RpcClientImpl = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "RpcClientImpl",
-  );
-  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "singleValueToAsyncGenerator",
-  );
-  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "getFirstValueFromAsyncGenerator",
-  );
-  return [
-    "export function createServiceClient<TReqMetadata, TResMetadata>(\n",
-    `  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>\n`,
-    "): Service<[] | [TReqMetadata], [Promise<TResMetadata>]> {\n",
-    "  const rpcs = Object.fromEntries(Object.entries(methodDescriptors).map(\n",
-    "    ([camelRpcName, methodDescriptor]) => [camelRpcName, rpcClientImpl(methodDescriptor)]\n",
-    "  ));\n",
-    "  return {\n",
-    Object.entries(service.rpcs).map(([rpcName, rpc]) => {
-      const camelRpcName = pascalToCamel(rpcName);
-      return [
-        `    ${camelRpcName}(request, metadata?) {\n`,
-        rpc.reqType.stream
-          ? `      const reqAsyncGenerator = request;\n`
-          : `      const reqAsyncGenerator = ${singleValueToAsyncGenerator}(request);\n`,
-        `      const [resAsyncGenerator, resMetadataPromise] = rpcs.${camelRpcName}(reqAsyncGenerator, metadata);\n`,
-        rpc.resType.stream
-          ? `      return [resAsyncGenerator, resMetadataPromise];\n`
-          : `      return [${getFirstValueFromAsyncGenerator}(resAsyncGenerator), resMetadataPromise];\n`,
-        "    },\n",
-      ].join("");
-    }).join(""),
-    "  };\n",
-    "}\n",
-  ].join("");
+const getCreateServiceClientCode = (
+  RpcClientImpl: string,
+  singleValueToAsyncGenerator: string,
+  getFirstValueFromAsyncGenerator: string,
+) => (`export interface CreateServiceClientConfig {
+  ignoreResMetadata?: boolean;
 }
+export function createServiceClient<TReqMetadata, TResMetadata>(
+  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
+  config?: undefined
+): Service<[] | [TReqMetadata], [Promise<TResMetadata>]>;
+export function createServiceClient<TReqMetadata, TResMetadata>(
+  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
+  config: CreateServiceClientConfig & { ignoreResMetadata?: false | undefined }
+): Service<[] | [TReqMetadata], [Promise<TResMetadata>]>;
+export function createServiceClient<TReqMetadata, TResMetadata>(
+  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
+  config: CreateServiceClientConfig & { ignoreResMetadata: true }
+): Service<[] | [TReqMetadata], []>;
+export function createServiceClient<TReqMetadata, TResMetadata>(
+  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
+  config?: CreateServiceClientConfig
+): Service<[] | [TReqMetadata], [] | [Promise<TResMetadata>]> {
+  return Object.fromEntries(Object.entries(methodDescriptors).map(
+    ([camelRpcName, methodDescriptor]) => [
+      camelRpcName,
+      (request: any, metadata?: any) => {
+        const reqAsyncGenerator = methodDescriptor.requestStream ? request : ${singleValueToAsyncGenerator}(request);
+        const [resAsyncGenerator, resMetadataPromise] = rpcClientImpl(methodDescriptor)(reqAsyncGenerator, metadata);
+        const response = methodDescriptor.responseStream ? resAsyncGenerator : ${getFirstValueFromAsyncGenerator}(resAsyncGenerator);
+        if (config?.ignoreResMetadata) return response;
+        return [response, resMetadataPromise];
+      },
+    ]
+  )) as unknown as Service;
+}
+`);
