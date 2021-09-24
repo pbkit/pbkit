@@ -1,14 +1,24 @@
-export type RpcImpl<TMetadata> = <TReq, TRes>(
-  servicePath: string,
-  methodName: string,
-  utilFns: RpcImplUtilFns<TReq, TRes>,
-) => (req: AsyncGenerator<TReq>, metadata?: TMetadata) => AsyncGenerator<TRes>;
+export type RpcClientImpl<TReqMetadata = any, TResMetadata = any> = <
+  TReq,
+  TRes,
+>(methodDescriptor: MethodDescriptor<TReq, TRes>) => (
+  req: AsyncGenerator<TReq>,
+  metadata?: TReqMetadata,
+) => [AsyncGenerator<TRes>, Promise<TResMetadata>];
 
-export interface RpcImplUtilFns<TReq, TRes> {
-  encodeRequestBinary: (value: TReq) => Uint8Array;
-  decodeRequestBinary: (value: Uint8Array) => TReq;
-  encodeResponseBinary: (value: TRes) => Uint8Array;
-  decodeResponseBinary: (value: Uint8Array) => TRes;
+export interface MethodDescriptor<TReq, TRes> {
+  methodName: string;
+  service: { serviceName: string };
+  requestStream: boolean;
+  responseStream: boolean;
+  requestType: {
+    serializeBinary: (value: TReq) => Uint8Array;
+    deserializeBinary: (value: Uint8Array) => TReq;
+  };
+  responseType: {
+    serializeBinary: (value: TRes) => Uint8Array;
+    deserializeBinary: (value: Uint8Array) => TRes;
+  };
 }
 
 export async function* singleValueToAsyncGenerator<T>(

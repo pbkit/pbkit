@@ -50,6 +50,12 @@ function* genService(
     importBuffer,
     type,
   );
+  const methodDescriptorsCode = getMethodDescriptorsCode(
+    filePath,
+    typePath,
+    importBuffer,
+    type,
+  );
   const createServiceClientCode = getCreateServiceClientCode(
     filePath,
     typePath,
@@ -61,6 +67,7 @@ function* genService(
     new StringReader([
       importBuffer.getCode() + "\n",
       serviceTypeDefCode + "\n",
+      methodDescriptorsCode + "\n",
       createServiceClientCode,
     ].join("")),
   ];
@@ -85,42 +92,31 @@ function getServiceTypeDefCode(
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
-  return `export interface Service<TArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
+  return `export interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
   function getRpcsCode() {
     return Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const reqType = getTsRpcType(rpc.reqType);
       const resType = getTsRpcType(rpc.resType, true);
       return `  ${
         pascalToCamel(rpcName)
-      }(request: ${reqType}, ...args: TArgs): ${resType};\n`;
+      }(request: ${reqType}, ...args: TReqArgs): [${resType}, ...TResArgs];\n`;
     }).join("");
   }
 }
 
-function getCreateServiceClientCode(
+function getMethodDescriptorsCode(
   filePath: string,
   typePath: string,
   importBuffer: ImportBuffer,
   service: Service,
 ) {
-  const RpcImpl = importBuffer.addInternalImport(
+  const MethodDescriptor = importBuffer.addInternalImport(
     filePath,
     "runtime/rpc.ts",
-    "RpcImpl",
-  );
-  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "singleValueToAsyncGenerator",
-  );
-  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "getFirstValueFromAsyncGenerator",
+    "MethodDescriptor",
   );
   return [
-    `export function createServiceClient<TMetadata>(rpcImpl: ${RpcImpl}<TMetadata>): Service<[] | [TMetadata]> {\n`,
-    "  return {\n",
+    `export const methodDescriptors: { [methodName in keyof Service]: ${MethodDescriptor}<any, any> } = {\n`,
     Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const camelRpcName = pascalToCamel(rpcName);
       const encodeRequestBinary = importBuffer.addInternalImport(
@@ -143,48 +139,69 @@ function getCreateServiceClientCode(
         getMessageFilePath(rpc.resType.typePath!),
         "decodeBinary",
       );
+      return [
+        `  ${camelRpcName}: {\n`,
+        `    methodName: "${rpcName}",\n`,
+        `    service: { serviceName: "${typePath.substr(1)}" },\n`,
+        `    requestStream: ${rpc.reqType.stream ? "true" : "false"},\n`,
+        `    responseStream: ${rpc.resType.stream ? "true" : "false"},\n`,
+        `    requestType: {\n`,
+        `      serializeBinary: ${encodeRequestBinary},\n`,
+        `      deserializeBinary: ${decodeRequestBinary},\n`,
+        `    },\n`,
+        `    responseType: {\n`,
+        `      serializeBinary: ${encodeResponseBinary},\n`,
+        `      deserializeBinary: ${decodeResponseBinary},\n`,
+        `    },\n`,
+        "  },\n",
+      ].join("");
+    }).join(""),
+    "};\n",
+  ].join("");
+}
 
-      if (!rpc.reqType.stream && !rpc.resType.stream) {
-        return [
-          `    async ${camelRpcName}(request, metadata?) {\n`,
-          `      const ${camelRpcName}Rpc = rpcImpl(\n`,
-          `        "${typePath.substr(1)}",\n`,
-          `        "${rpcName}",\n`,
-          `        {\n`,
-          `          encodeRequestBinary: ${encodeRequestBinary},\n`,
-          `          decodeRequestBinary: ${decodeRequestBinary},\n`,
-          `          encodeResponseBinary: ${encodeResponseBinary},\n`,
-          `          decodeResponseBinary: ${decodeResponseBinary},\n`,
-          "        }\n",
-          "      );\n",
-          `      const reqAsyncGenerator = ${singleValueToAsyncGenerator}(request);\n`,
-          `      const resAsyncGenerator = ${camelRpcName}Rpc(reqAsyncGenerator, metadata);\n`,
-          `      return await ${getFirstValueFromAsyncGenerator}(resAsyncGenerator);\n`,
-          "    },\n",
-        ].join("");
-      }
-      if (rpc.reqType.stream && rpc.resType.stream) {
-        return [
-          `    ${camelRpcName}(request, metadata?) {\n`,
-          "      // TODO\n",
-          "    },\n",
-        ].join("");
-      }
-      if (!rpc.reqType.stream && rpc.resType.stream) {
-        return [
-          `    ${camelRpcName}(request, metadata?) {\n`,
-          "      // TODO\n",
-          "    },\n",
-        ].join("");
-      }
-      if (rpc.reqType.stream && !rpc.resType.stream) {
-        return [
-          `    ${camelRpcName}(request, metadata?) {\n`,
-          "      // TODO\n",
-          "    },\n",
-        ].join("");
-      }
-      return "";
+function getCreateServiceClientCode(
+  filePath: string,
+  typePath: string,
+  importBuffer: ImportBuffer,
+  service: Service,
+) {
+  const RpcClientImpl = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "RpcClientImpl",
+  );
+  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "singleValueToAsyncGenerator",
+  );
+  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "getFirstValueFromAsyncGenerator",
+  );
+  return [
+    "export function createServiceClient<TReqMetadata, TResMetadata>(\n",
+    `  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>\n`,
+    "): Service<[] | [TReqMetadata], [Promise<TResMetadata>]> {\n",
+    "  const rpcs = Object.fromEntries(Object.entries(methodDescriptors).map(\n",
+    "    ([camelRpcName, methodDescriptor]) => [camelRpcName, rpcClientImpl(methodDescriptor)]\n",
+    "  ));\n",
+    "  return {\n",
+    Object.entries(service.rpcs).map(([rpcName, rpc]) => {
+      const camelRpcName = pascalToCamel(rpcName);
+      return [
+        `    ${camelRpcName}(request, metadata?) {\n`,
+        rpc.reqType.stream
+          ? `      const reqAsyncGenerator = request;\n`
+          : `      const reqAsyncGenerator = ${singleValueToAsyncGenerator}(request);\n`,
+        `      const [resAsyncGenerator, resMetadataPromise] = rpcs.${camelRpcName}(reqAsyncGenerator, metadata);\n`,
+        rpc.resType.stream
+          ? `      return [resAsyncGenerator, resMetadataPromise];\n`
+          : `      return [${getFirstValueFromAsyncGenerator}(resAsyncGenerator), resMetadataPromise];\n`,
+        "    },\n",
+      ].join("");
     }).join(""),
     "  };\n",
     "}\n",
