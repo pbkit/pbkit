@@ -92,6 +92,11 @@ function getServiceTypeDefCode(
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
+  const RpcReturnType = importBuffer.addInternalImport(
+    filePath,
+    "runtime/rpc.ts",
+    "RpcReturnType",
+  );
   return `export interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
   function getRpcsCode() {
     return Object.entries(service.rpcs).map(([rpcName, rpc]) => {
@@ -99,7 +104,7 @@ function getServiceTypeDefCode(
       const resType = getTsRpcType(rpc.resType, true);
       return `  ${
         pascalToCamel(rpcName)
-      }(request: ${reqType}, ...args: TReqArgs): [${resType}, ...TResArgs];\n`;
+      }(request: ${reqType}, ...args: TReqArgs): ${RpcReturnType}<${resType}, TResArgs>;\n`;
     }).join("");
   }
 }

@@ -21,6 +21,10 @@ export interface MethodDescriptor<TReq, TRes> {
   };
 }
 
+export type RpcReturnType<TRes, TResArgs extends any[]> = (
+  TResArgs extends [] ? TRes : [TRes, ...TResArgs]
+);
+
 export async function* singleValueToAsyncGenerator<T>(
   value: T,
 ): AsyncGenerator<T> {
