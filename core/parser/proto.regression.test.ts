@@ -131,3 +131,15 @@ Deno.test("#104", () => {
     }
   `);
 });
+
+Deno.test("#105", () => {
+  parse(String.raw`
+    message TestOneof {
+      oneof foo {
+        group FooGroup = 4 {
+          optional int32 a = 5;
+        }
+      }
+    }
+  `);
+});
