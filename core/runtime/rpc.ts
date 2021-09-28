@@ -1,10 +1,10 @@
-export type RpcClientImpl<TReqMetadata = any, TResMetadata = any> = <
+export type RpcClientImpl<TMetadata = any, THeader = any, TTrailer = any> = <
   TReq,
   TRes,
 >(methodDescriptor: MethodDescriptor<TReq, TRes>) => (
   req: AsyncGenerator<TReq>,
-  metadata?: TReqMetadata,
-) => [AsyncGenerator<TRes>, Promise<TResMetadata>];
+  metadata?: TMetadata,
+) => [AsyncGenerator<TRes>, Promise<THeader>, Promise<TTrailer>];
 
 export interface MethodDescriptor<TReq, TRes> {
   methodName: string;
@@ -21,8 +21,9 @@ export interface MethodDescriptor<TReq, TRes> {
   };
 }
 
+type ThenArg<T> = T extends Promise<infer U> ? U : T;
 export type RpcReturnType<TRes, TResArgs extends any[]> = (
-  TResArgs extends [] ? TRes : [TRes, ...TResArgs]
+  Promise<TResArgs extends [] ? ThenArg<TRes> : [ThenArg<TRes>, ...TResArgs]>
 );
 
 export async function* singleValueToAsyncGenerator<T>(

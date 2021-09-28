@@ -183,34 +183,42 @@ const getCreateServiceClientCode = (
   RpcClientImpl: string,
   singleValueToAsyncGenerator: string,
   getFirstValueFromAsyncGenerator: string,
-) => (`export interface CreateServiceClientConfig {
-  ignoreResMetadata?: boolean;
+) => (`export class RpcError<TTrailer = any> extends Error {
+  constructor(public trailer: TTrailer) { super(); }
 }
-export function createServiceClient<TReqMetadata, TResMetadata>(
-  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
+export interface CreateServiceClientConfig {
+  responseOnly?: boolean;
+}
+export function createServiceClient<TMetadata, THeader, TTrailer>(
+  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: undefined
-): Service<[] | [TReqMetadata], [Promise<TResMetadata>]>;
-export function createServiceClient<TReqMetadata, TResMetadata>(
-  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
-  config: CreateServiceClientConfig & { ignoreResMetadata?: false | undefined }
-): Service<[] | [TReqMetadata], [Promise<TResMetadata>]>;
-export function createServiceClient<TReqMetadata, TResMetadata>(
-  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
-  config: CreateServiceClientConfig & { ignoreResMetadata: true }
-): Service<[] | [TReqMetadata], []>;
-export function createServiceClient<TReqMetadata, TResMetadata>(
-  rpcClientImpl: ${RpcClientImpl}<TReqMetadata, TResMetadata>,
+): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
+export function createServiceClient<TMetadata, THeader, TTrailer>(
+  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
+  config: CreateServiceClientConfig & { responseOnly?: false | undefined }
+): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
+export function createServiceClient<TMetadata, THeader, TTrailer>(
+  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
+  config: CreateServiceClientConfig & { responseOnly: true }
+): Service<[] | [TMetadata], []>;
+export function createServiceClient<TMetadata, THeader, TTrailer>(
+  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: CreateServiceClientConfig
-): Service<[] | [TReqMetadata], [] | [Promise<TResMetadata>]> {
+): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> {
   return Object.fromEntries(Object.entries(methodDescriptors).map(
     ([camelRpcName, methodDescriptor]) => [
       camelRpcName,
-      (request: any, metadata?: any) => {
+      async (request: any, metadata?: any) => {
         const reqAsyncGenerator = methodDescriptor.requestStream ? request : ${singleValueToAsyncGenerator}(request);
-        const [resAsyncGenerator, resMetadataPromise] = rpcClientImpl(methodDescriptor)(reqAsyncGenerator, metadata);
+        const [resAsyncGenerator, headerPromise, trailerPromise] = rpcClientImpl(methodDescriptor)(reqAsyncGenerator, metadata);
         const response = methodDescriptor.responseStream ? resAsyncGenerator : ${getFirstValueFromAsyncGenerator}(resAsyncGenerator);
-        if (config?.ignoreResMetadata) return response;
-        return [response, resMetadataPromise];
+        const header = await Promise.race([
+          headerPromise,
+          trailerPromise.then(trailer => { throw new RpcError(trailer); }),
+        ]);
+        const result = [await response, header, trailerPromise];
+        if (config?.responseOnly) return result[0];
+        return result;
       },
     ]
   )) as unknown as Service;
