@@ -1,4 +1,4 @@
-import { wait } from "../../../misc/async.ts";
+import wait from "../../../core/misc/async/wait.ts";
 
 export default async function backoff<T>(
   op: () => Promise<T>,

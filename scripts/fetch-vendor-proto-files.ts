@@ -2,7 +2,7 @@ import { green, yellow } from "https://deno.land/std@0.107.0/fmt/colors.ts";
 import { emptyDir, ensureDir } from "https://deno.land/std@0.107.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.3/mod.ts";
-import { subscribeFnToAsyncGenerator } from "../misc/observer.ts";
+import { subscribeFnToAsyncGenerator } from "../core/misc/async/observer.ts";
 import { progressResponse } from "../misc/fetch.ts";
 import { iterFiles, stripComponents, unzip } from "../misc/archive/zip.ts";
 import { fetchArchive } from "../misc/github/index.ts";

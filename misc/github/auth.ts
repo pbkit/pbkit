@@ -2,7 +2,7 @@ import { stringify } from "https://deno.land/std@0.107.0/encoding/yaml.ts";
 import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import { ensureDir } from "https://deno.land/std@0.107.0/fs/mod.ts";
 import { wait as spinner } from "https://deno.land/x/wait@0.1.12/mod.ts";
-import { wait } from "../async.ts";
+import wait from "../../core/misc/async/wait.ts";
 import { getDefaultGhConfigPath } from "./index.ts";
 
 // https://github.com/cli/cli/blob/trunk/internal/authflow/flow.go#L18-L23

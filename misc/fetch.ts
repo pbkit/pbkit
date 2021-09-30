@@ -1,4 +1,9 @@
-import { createSubscribeFn, defer, Observer, SubscribeFn } from "./observer.ts";
+import {
+  createSubscribeFn,
+  defer,
+  Observer,
+  SubscribeFn,
+} from "../core/misc/async/observer.ts";
 
 export interface ProgressResult {
   originalResponse: Response;
