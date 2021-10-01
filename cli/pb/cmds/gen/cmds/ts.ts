@@ -6,15 +6,22 @@ import {
 import { build } from "../../../../../core/schema/builder.ts";
 import { save } from "../../../../../codegen/index.ts";
 import gen from "../../../../../codegen/ts/index.ts";
+import expandEntryPaths from "../expandEntryPaths.ts";
 
 interface Options {
+  entryPath?: string[];
   protoPath?: string[];
   outDir: string;
   removeTsFileExtensionInImportStatement?: boolean;
 }
 
 export default new Command()
-  .arguments("<proto-files...:string>")
+  .arguments("[proto-files...:string]")
+  .option(
+    "--entry-path <dir:string>",
+    "Specify the directory containing entry proto files.",
+    { collect: true },
+  )
   .option(
     "--proto-path <dir:string>",
     "Specify the directory in which to search for imports.",
@@ -28,11 +35,16 @@ export default new Command()
     "Remove '.ts' in import statement.",
   )
   .description("Generate typescript library.")
-  .action(async (options: Options, protoFiles: string[]) => {
+  .action(async (options: Options, protoFiles: string[] = []) => {
+    const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
-    const roots = [...protoPaths, Deno.cwd(), vendorPath];
+    const roots = [...entryPaths, ...protoPaths, Deno.cwd(), vendorPath];
     const loader = createLoader({ roots });
-    const schema = await build({ loader, files: protoFiles });
+    const files = [
+      ...await expandEntryPaths(entryPaths),
+      ...protoFiles,
+    ];
+    const schema = await build({ loader, files });
     await save(
       options.outDir,
       gen(schema, {

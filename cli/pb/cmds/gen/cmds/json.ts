@@ -5,15 +5,22 @@ import {
 } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import gen from "../../../../../codegen/json/index.ts";
+import expandEntryPaths from "../expandEntryPaths.ts";
 
 interface Options {
+  entryPath?: string[];
   protoPath?: string[];
   ast?: boolean;
   space?: Parameters<typeof JSON.stringify>[2];
 }
 
 export default new Command()
-  .arguments("<proto-files...:string>")
+  .arguments("[proto-files...:string]")
+  .option(
+    "--entry-path <dir:string>",
+    "Specify the directory containing entry proto files.",
+    { collect: true },
+  )
   .option(
     "--proto-path <dir:string>",
     "Specify the directory in which to search for imports.",
@@ -25,11 +32,16 @@ export default new Command()
     "The number of space characters to use as white space for indenting.",
   )
   .description("Generate json.")
-  .action(async (options: Options, protoFiles: string[]) => {
+  .action(async (options: Options, protoFiles: string[] = []) => {
+    const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
-    const roots = [...protoPaths, Deno.cwd(), vendorPath];
+    const roots = [...entryPaths, ...protoPaths, Deno.cwd(), vendorPath];
     const loader = createLoader({ roots });
-    const schema = await build({ loader, files: protoFiles });
+    const files = [
+      ...await expandEntryPaths(entryPaths),
+      ...protoFiles,
+    ];
+    const schema = await build({ loader, files });
     console.log(gen(schema, {
       includeParseResult: options.ast,
       space: options.space,
