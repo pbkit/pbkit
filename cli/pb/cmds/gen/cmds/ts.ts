@@ -33,7 +33,7 @@ export default new Command()
     { default: "out" },
   )
   .option(
-    "--ext-in-import",
+    "--ext-in-import <extension:string>",
     "Specify the file extension in import statement.",
     { default: ".ts" },
   )

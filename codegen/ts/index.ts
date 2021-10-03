@@ -1,13 +1,7 @@
-import { walk } from "https://deno.land/std@0.107.0/fs/walk.ts";
-import {
-  join,
-  relative,
-  resolve,
-} from "https://deno.land/std@0.107.0/path/mod.ts";
 import { Schema } from "../../core/schema/model.ts";
 import { replaceTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";
-import { getAutoClosingFileReader } from "../../misc/file.ts";
 import { CodeEntry } from "../index.ts";
+import iterRuntimeFiles from "./iterRuntimeFiles.ts";
 import genMessages, { Field, wellKnownTypeMapping } from "./messages.ts";
 import genServices from "./services.ts";
 import { ImportBuffer } from "./import-buffer.ts";
@@ -15,6 +9,7 @@ import { ImportBuffer } from "./import-buffer.ts";
 export interface GenConfig {
   extInImport?: string;
   customTypeMapping?: CustomTypeMapping;
+  iterRuntimeFiles?: () => AsyncGenerator<CodeEntry>;
 }
 export interface CustomTypeMapping {
   [typePath: string]: {
@@ -34,31 +29,19 @@ export default async function* gen(
   schema: Schema,
   config: GenConfig = {},
 ): AsyncGenerator<CodeEntry> {
-  const ext = config.extInImport ?? ".ts";
+  const ext = (config.extInImport ?? ".ts").trim();
   const replace = ext !== ".ts";
   const replaceExt = replaceTsFileExtensionInImportStatementFromReader;
   const customTypeMapping: CustomTypeMapping = {
     ...wellKnownTypeMapping,
     ...config.customTypeMapping,
   };
-  // copy runtime files
-  for await (const { path: filePath } of walk(runtimePath, { exts: [".ts"] })) {
-    if (filePath.endsWith(".test.ts")) continue;
-    const file = await getAutoClosingFileReader(filePath);
-    yield [
-      join("runtime", relative(runtimePath, filePath)),
-      replace ? await replaceExt(file, ext) : file,
-    ];
+  async function* iterGeneratedFiles() {
+    yield* (config.iterRuntimeFiles ?? iterRuntimeFiles)();
+    yield* genMessages(schema, customTypeMapping);
+    yield* genServices(schema, customTypeMapping);
   }
-  // gen messages
-  for (const [filePath, data] of genMessages(schema, customTypeMapping)) {
-    yield [filePath, replace ? await replaceExt(data, ext) : data];
-  }
-  // gen services
-  for (const [filePath, data] of genServices(schema, customTypeMapping)) {
+  for await (const [filePath, data] of iterGeneratedFiles()) {
     yield [filePath, replace ? await replaceExt(data, ext) : data];
   }
 }
-
-const __dirname = new URL(".", import.meta.url).pathname;
-const runtimePath: string = resolve(__dirname, "../../core/runtime");
