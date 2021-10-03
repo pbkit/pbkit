@@ -5,7 +5,7 @@ import {
   resolve,
 } from "https://deno.land/std@0.107.0/path/mod.ts";
 import { Schema } from "../../core/schema/model.ts";
-import { removeTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";
+import { replaceTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";
 import { getAutoClosingFileReader } from "../../misc/file.ts";
 import { CodeEntry } from "../index.ts";
 import genMessages, { Field, wellKnownTypeMapping } from "./messages.ts";
@@ -13,7 +13,7 @@ import genServices from "./services.ts";
 import { ImportBuffer } from "./import-buffer.ts";
 
 export interface GenConfig {
-  removeTsFileExtensionInImportStatement?: boolean;
+  extInImport?: string;
   customTypeMapping?: CustomTypeMapping;
 }
 export interface CustomTypeMapping {
@@ -34,8 +34,9 @@ export default async function* gen(
   schema: Schema,
   config: GenConfig = {},
 ): AsyncGenerator<CodeEntry> {
-  const removeDotTs = !!config.removeTsFileExtensionInImportStatement;
-  const removeDotTsFn = removeTsFileExtensionInImportStatementFromReader;
+  const ext = config.extInImport ?? ".ts";
+  const replace = ext !== ".ts";
+  const replaceExt = replaceTsFileExtensionInImportStatementFromReader;
   const customTypeMapping: CustomTypeMapping = {
     ...wellKnownTypeMapping,
     ...config.customTypeMapping,
@@ -46,16 +47,16 @@ export default async function* gen(
     const file = await getAutoClosingFileReader(filePath);
     yield [
       join("runtime", relative(runtimePath, filePath)),
-      removeDotTs ? await removeDotTsFn(file) : file,
+      replace ? await replaceExt(file, ext) : file,
     ];
   }
   // gen messages
   for (const [filePath, data] of genMessages(schema, customTypeMapping)) {
-    yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
+    yield [filePath, replace ? await replaceExt(data, ext) : data];
   }
   // gen services
   for (const [filePath, data] of genServices(schema, customTypeMapping)) {
-    yield [filePath, removeDotTs ? await removeDotTsFn(data) : data];
+    yield [filePath, replace ? await replaceExt(data, ext) : data];
   }
 }
 

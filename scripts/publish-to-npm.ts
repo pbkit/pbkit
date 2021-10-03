@@ -1,7 +1,7 @@
 import { emptyDir, ensureDir } from "https://deno.land/std@0.107.0/fs/mod.ts";
 import { walk } from "https://deno.land/std@0.107.0/fs/walk.ts";
 import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
-import { removeTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
+import { replaceTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
 
 await emptyDir("tmp/npm");
 
@@ -39,7 +39,7 @@ for await (const { path: fromPath } of entries) {
   const code = await Deno.readTextFile(fromPath);
   await Deno.writeTextFile(
     toPath,
-    removeTsFileExtensionInImportStatement(code),
+    replaceTsFileExtensionInImportStatement(code, ""),
   );
 }
 

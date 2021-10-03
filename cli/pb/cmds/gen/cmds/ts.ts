@@ -12,7 +12,7 @@ interface Options {
   entryPath?: string[];
   protoPath?: string[];
   outDir: string;
-  removeTsFileExtensionInImportStatement?: boolean;
+  extInImport: string;
 }
 
 export default new Command()
@@ -27,12 +27,15 @@ export default new Command()
     "Specify the directory in which to search for imports.",
     { collect: true },
   )
-  .option("-o, --out-dir <value:string>", "Out directory", {
-    default: "out",
-  })
   .option(
-    "--remove-ts-file-extension-in-import-statement",
-    "Remove '.ts' in import statement.",
+    "-o, --out-dir <value:string>",
+    "Out directory",
+    { default: "out" },
+  )
+  .option(
+    "--ext-in-import",
+    "Specify the file extension in import statement.",
+    { default: ".ts" },
   )
   .description("Generate typescript library.")
   .action(async (options: Options, protoFiles: string[] = []) => {
@@ -45,11 +48,9 @@ export default new Command()
       ...protoFiles,
     ];
     const schema = await build({ loader, files });
+    const extInImport = options.extInImport;
     await save(
       options.outDir,
-      gen(schema, {
-        removeTsFileExtensionInImportStatement:
-          options.removeTsFileExtensionInImportStatement,
-      }),
+      gen(schema, { extInImport }),
     );
   });
