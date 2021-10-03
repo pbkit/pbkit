@@ -17,6 +17,20 @@ export interface ZipObject {
   async(type: "uint8array"): Promise<Uint8Array>;
 }
 
+export async function zip(
+  files: AsyncGenerator<[string, Uint8Array]>,
+): Promise<Uint8Array> {
+  const zip = new (JSZip as any)();
+  for await (const [name, file] of files) await zip.file(name, file);
+  return await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
+    compressionOptions: {
+      level: 9,
+    },
+  });
+}
+
 export async function unzip(zip: Uint8Array): Promise<Files> {
   const { files } = await (JSZip as any).loadAsync(zip);
   return files;

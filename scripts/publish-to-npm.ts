@@ -1,7 +1,12 @@
 import { emptyDir, ensureDir } from "https://deno.land/std@0.107.0/fs/mod.ts";
 import { walk } from "https://deno.land/std@0.107.0/fs/walk.ts";
-import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
+import {
+  dirname,
+  join,
+  relative,
+} from "https://deno.land/std@0.107.0/path/mod.ts";
 import { replaceTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
+import { zip } from "../misc/archive/zip.ts";
 
 await emptyDir("tmp/npm");
 
@@ -34,8 +39,8 @@ const entries = walk("core", { includeDirs: false, exts: [".ts"] });
 for await (const { path: fromPath } of entries) {
   if (fromPath.endsWith(".test.ts")) continue;
   if (/\bdeno\b/.test(fromPath)) continue;
-  const toPath = path.join("tmp/npm/ts", fromPath);
-  await ensureDir(path.dirname(toPath));
+  const toPath = join("tmp/npm/ts", fromPath);
+  await ensureDir(dirname(toPath));
   const code = await Deno.readTextFile(fromPath);
   await Deno.writeTextFile(
     toPath,
@@ -66,4 +71,28 @@ for await (const { path: fromPath } of entries) {
   }).status();
 }
 
+await Deno.writeFile(
+  "tmp/npm/dist/runtime.zip",
+  await zip(filesInDir("core/runtime", ".ts", (p) => !p.endsWith(".test.ts"))),
+);
+
+console.log("writing 'vendor.zip'. it takes few minutes...");
+await Deno.writeFile(
+  "tmp/npm/dist/vendor.zip",
+  await zip(filesInDir("vendor", ".proto")),
+);
+
 await Deno.run({ cwd: "tmp/npm/dist", cmd: ["npm", "publish"] }).status();
+
+async function* filesInDir(
+  dir: string,
+  ext: string,
+  filter?: (path: string) => boolean,
+): AsyncGenerator<[string, Uint8Array]> {
+  const entries = walk(dir, { includeDirs: false, exts: [ext] });
+  for await (const { path } of entries) {
+    if (filter && !filter(path)) continue;
+    const file = await Deno.readFile(path);
+    yield [relative(dir, path), file];
+  }
+}
