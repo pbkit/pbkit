@@ -1,4 +1,5 @@
 import { walk } from "https://deno.land/std@0.107.0/fs/walk.ts";
+import { relative } from "https://deno.land/std@0.107.0/path/mod.ts";
 
 export default async function expandEntryPaths(
   entryPaths: string[],
@@ -6,8 +7,8 @@ export default async function expandEntryPaths(
   const result: string[] = [];
   for (const entryPath of entryPaths) {
     const entries = walk(entryPath, { includeDirs: false, exts: [".proto"] });
-    for await (const entry of entries) {
-      result.push(entry.path.substr(entryPath.length + 1));
+    for await (const { path } of entries) {
+      result.push(relative(entryPath, path));
     }
   }
   return result;
