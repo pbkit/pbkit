@@ -1,4 +1,4 @@
-const { relative } = require("path");
+const { join, relative } = require("path");
 const { runtimeZipPath } = require("./zip-path");
 const { createReader, walk } = require("./zipfs");
 

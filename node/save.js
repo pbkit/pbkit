@@ -1,5 +1,5 @@
 const { createWriteStream } = require("fs");
-const { finished } = require("stream");
+const { finished } = require("stream/promises");
 const { dirname, resolve } = require("path");
 const { ensureDir } = require("./fs");
 

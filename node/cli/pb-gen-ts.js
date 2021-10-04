@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const mri = require("mri");
 const createLoader = require("../createLoader").default;
 const expandEntryPaths = require("../expandEntryPaths").default;
@@ -28,8 +30,8 @@ async function run() {
 }
 
 async function getGen() {
-  const module = "../../codegen/ts";
-  return await import(module).default;
+  const module = "../../codegen/ts/index.mjs";
+  return (await import(module)).default;
 }
 
 function getCliArgs() {

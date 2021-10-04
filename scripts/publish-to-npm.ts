@@ -88,7 +88,7 @@ await Deno.writeTextFile(
       "bundle",
       "--unstable",
       "codegen/ts/index.ts",
-      "tmp/npm/dist/codegen/ts/index.js",
+      "tmp/npm/dist/codegen/ts/index.mjs",
     ],
   }).status();
 }

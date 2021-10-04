@@ -1,3 +1,4 @@
+const { join } = require("path");
 const { ZipOpenFS, PosixFS } = require("@yarnpkg/fslib");
 const { getLibzipSync } = require("@yarnpkg/libzip");
 
@@ -11,17 +12,14 @@ const zipfs = new PosixFS(
 
 async function createReader(filePath) {
   const fd = await zipfs.openPromise(filePath, "r");
-  const b = new Uint8Array(32 * 1024);
-  let acc = 0;
   return {
     async read(p) {
-      const n = await zipfs.readPromise(fd, b, 0, p, acc);
-      if (n < 1) {
+      const n = await zipfs.readPromise(fd, p, 0);
+      if (isNaN(n) || n == 0) {
         await zipfs.closePromise(fd);
         return null;
       }
-      acc += n;
-      return b.slice(0, n);
+      return n;
     },
   };
 }
