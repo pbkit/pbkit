@@ -25,7 +25,14 @@ const packageJson = {
   license: "(MIT OR Apache-2.0)",
   repository: {
     type: "git",
-    url: "git+https://github.com/riiid/pbkit.git",
+    url: "git+https://github.com/pbkit/pbkit.git",
+  },
+  bin: { "pb-gen-ts": "node/cli/pb-gen-ts.js" },
+  preferUnplugged: true,
+  dependencies: {
+    "@yarnpkg/fslib": "^2.6.0-rc.8",
+    "@yarnpkg/libzip": "^2.2.2",
+    mri: "^1.2.0",
   },
 };
 
@@ -35,17 +42,19 @@ await Deno.writeTextFile(
   JSON.stringify(packageJson, null, 2) + "\n",
 );
 
-const entries = walk("core", { includeDirs: false, exts: [".ts"] });
-for await (const { path: fromPath } of entries) {
-  if (fromPath.endsWith(".test.ts")) continue;
-  if (/\bdeno\b/.test(fromPath)) continue;
-  const toPath = join("tmp/npm/ts", fromPath);
-  await ensureDir(dirname(toPath));
-  const code = await Deno.readTextFile(fromPath);
-  await Deno.writeTextFile(
-    toPath,
-    replaceTsFileExtensionInImportStatement(code, ""),
-  );
+{ // copy core files
+  const entries = walk("core", { includeDirs: false, exts: [".ts"] });
+  for await (const { path: fromPath } of entries) {
+    if (fromPath.endsWith(".test.ts")) continue;
+    if (/\bdeno\b/.test(fromPath)) continue;
+    const toPath = join("tmp/npm/ts", fromPath);
+    await ensureDir(dirname(toPath));
+    const code = await Deno.readTextFile(fromPath);
+    await Deno.writeTextFile(
+      toPath,
+      replaceTsFileExtensionInImportStatement(code, ""),
+    );
+  }
 }
 
 { // tsc
@@ -69,6 +78,29 @@ for await (const { path: fromPath } of entries) {
       ...tsFiles,
     ],
   }).status();
+}
+
+{ // bundle codegen logic
+  await ensureDir("tmp/npm/dist/codegen/ts");
+  await Deno.run({
+    cmd: [
+      "deno",
+      "bundle",
+      "--unstable",
+      "codegen/ts/index.ts",
+      "tmp/npm/dist/codegen/ts/index.js",
+    ],
+  }).status();
+}
+
+{ // copy nodejs-specific files
+  const entries = walk("node", { includeDirs: false, exts: [".js"] });
+  for await (const { path: fromPath } of entries) {
+    const toPath = join("tmp/npm/dist", fromPath);
+    await ensureDir(dirname(toPath));
+    const code = await Deno.readTextFile(fromPath);
+    await Deno.writeTextFile(toPath, code);
+  }
 }
 
 await Deno.writeFile(
