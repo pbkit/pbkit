@@ -24,7 +24,7 @@ export function createImportBuffer(reservedNames: string[] = []): ImportBuffer {
   }
   const importBuffer: ImportBuffer = {
     addInternalImport(here, from, item, as) {
-      const _from = path.relative(path.dirname(here), from);
+      const _from = path.relative("/" + path.dirname(here), "/" + from);
       const __from = (_from[0] !== ".") ? `./${_from}` : _from;
       return importBuffer.addImport(__from, item, as);
     },
