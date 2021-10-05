@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-
+require("core-js/es");
 const mri = require("mri");
 const createLoader = require("../createLoader").default;
 const expandEntryPaths = require("../expandEntryPaths").default;

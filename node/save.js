@@ -1,7 +1,10 @@
 const { createWriteStream } = require("fs");
-const { finished } = require("stream/promises");
 const { dirname, resolve } = require("path");
+const { promisify } = require("util");
+const stream = require("stream");
 const { ensureDir } = require("./fs");
+
+const finished = promisify(stream.finished);
 
 async function save(outDir, files) {
   const asyncEntries = [];
