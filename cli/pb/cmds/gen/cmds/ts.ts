@@ -4,7 +4,7 @@ import {
   vendorPath,
 } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
-import { save } from "../../../../../codegen/index.ts";
+import save from "../../../../../codegen/save.ts";
 import gen from "../../../../../codegen/ts/index.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
 

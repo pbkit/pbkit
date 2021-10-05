@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
+import { dirname, relative } from "../path.ts";
 
 export interface AddImport {
   (from: string, item: string, as?: string): string;
@@ -24,7 +24,7 @@ export function createImportBuffer(reservedNames: string[] = []): ImportBuffer {
   }
   const importBuffer: ImportBuffer = {
     addInternalImport(here, from, item, as) {
-      const _from = path.relative("/" + path.dirname(here), "/" + from);
+      const _from = relative(dirname(here), from);
       const __from = (_from[0] !== ".") ? `./${_from}` : _from;
       return importBuffer.addImport(__from, item, as);
     },

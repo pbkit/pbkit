@@ -1,8 +1,8 @@
 import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
-import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
+import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping } from "./index.ts";
 import { createImportBuffer, ImportBuffer } from "./import-buffer.ts";
@@ -29,11 +29,11 @@ export default function* gen(
 }
 
 export function getIndexFilePath(typePath: string): string {
-  return path.join("services", typePath.replaceAll(".", "/"), "index.ts");
+  return join("services", typePath.replaceAll(".", "/"), "index.ts");
 }
 
 export function getFilePath(typePath: string): string {
-  return path.join("services", typePath.replaceAll(".", "/") + ".ts");
+  return join("services", typePath.replaceAll(".", "/") + ".ts");
 }
 
 const reservedNames = ["Service", "Uint8Array"];

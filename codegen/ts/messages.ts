@@ -1,10 +1,10 @@
 import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
-import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
+import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping, GetFieldCodeFn } from "./index.ts";
 import {
@@ -38,11 +38,11 @@ export default function* gen(
 }
 
 export function getIndexFilePath(typePath: string): string {
-  return path.join("messages", typePath.replaceAll(".", "/"), "index.ts");
+  return join("messages", typePath.replaceAll(".", "/"), "index.ts");
 }
 
 export function getFilePath(typePath: string): string {
-  return path.join("messages", typePath.replaceAll(".", "/") + ".ts");
+  return join("messages", typePath.replaceAll(".", "/") + ".ts");
 }
 
 function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {

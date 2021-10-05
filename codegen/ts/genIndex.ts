@@ -1,9 +1,9 @@
 import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
-import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
 import {
   iterTypePathTree,
   TypePathTree,
 } from "../../core/schema/type-path-tree.ts";
+import { dirname, relative } from "../path.ts";
 import { CodeEntry } from "../index.ts";
 
 export interface GenIndexConfig {
@@ -57,7 +57,7 @@ function getIndexCodeEntry(
   const indexFilePath = config.getIndexFilePath(typePath);
   if (config.exists(typePath)) {
     const filePath = config.getFilePath(typePath);
-    const from = path.relative(path.dirname(indexFilePath), filePath);
+    const from = relative(dirname(indexFilePath), filePath);
     codes.push([
       "\n",
       `import { ${config.itemIsExportedAs} as _ } from "${from}";\n`,
