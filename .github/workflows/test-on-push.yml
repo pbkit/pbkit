@@ -17,11 +17,11 @@ jobs:
       - name: Build
         run: deno compile -A --unstable entrypoint.ts
 
-  build-pbkit:
+  build-pb:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: cli/pbkit
+        working-directory: cli/pb
     steps:
       - name: Checkout
         uses: actions/checkout@v2
