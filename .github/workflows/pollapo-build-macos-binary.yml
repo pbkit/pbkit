@@ -23,3 +23,16 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: cli/pollapo/pollapo-macos
+
+  formula:
+    name: Update Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update the Homebrew formula with latest release
+        uses: NSHipster/update-homebrew-formula-action@main
+        with:
+          repository: riiid/homebrew-riiid
+          tap: riiid/riiid
+          formula: Formula/pbkit.rb
+        env:
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT }}
