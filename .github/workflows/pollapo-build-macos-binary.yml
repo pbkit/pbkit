@@ -23,4 +23,3 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: cli/pollapo/pollapo-macos
-
