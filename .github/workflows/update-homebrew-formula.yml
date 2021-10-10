@@ -1,0 +1,18 @@
+name: Update Hombrew Formula
+on:
+  release:
+    types: [released]
+
+jobs:
+  update-formula:
+    name: Update Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update the Homebrew formula with latest release
+        uses: NSHipster/update-homebrew-formula-action@main
+        with:
+          repository: riiid/homebrew-riiid
+          tap: riiid/riiid
+          formula: Formula/pbkit.rb
+        env:
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PAT_HOMEBREW }}
