@@ -1,4 +1,4 @@
-name: Pollapo - Build Ubuntu Binary
+name: Pollapo - Build Linux Binary
 on:
   release:
     types: [created]
@@ -17,14 +17,14 @@ jobs:
         with:
           deno-version: v1.x
       - name: Build
-        run: deno compile -A --unstable --output pollapo-ubuntu entrypoint.ts
+        run: deno compile -A --unstable --output pollapo-linux entrypoint.ts
       - name: Upload pollapo binary
         uses: shogo82148/actions-upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: cli/pollapo/pollapo-ubuntu
+          asset_path: cli/pollapo/pollapo-linux
       - name: 'get tag'
         id: tags
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Upload pollapo binary to Nexus
-        run: curl -X PUT -v -u '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' --upload-file pollapo-ubuntu ${{ secrets.NEXUS_URL }}/pollapo-ubuntu-${{ steps.tags.outputs.tag }}
+        run: curl -X PUT -v -u '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' --upload-file pollapo-linux ${{ secrets.NEXUS_URL }}/pollapo-linux-${{ steps.tags.outputs.tag }}
