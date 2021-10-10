@@ -61,20 +61,20 @@ function* genService(
     "runtime/rpc.ts",
     "RpcClientImpl",
   );
-  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
+  const fromSingle = importBuffer.addInternalImport(
     filePath,
-    "runtime/rpc.ts",
-    "singleValueToAsyncGenerator",
+    "runtime/async/async-generator.ts",
+    "fromSingle",
   );
-  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
+  const first = importBuffer.addInternalImport(
     filePath,
-    "runtime/rpc.ts",
-    "getFirstValueFromAsyncGenerator",
+    "runtime/async/async-generator.ts",
+    "first",
   );
   const createServiceClientCode = getCreateServiceClientCode(
     RpcClientImpl,
-    singleValueToAsyncGenerator,
-    getFirstValueFromAsyncGenerator,
+    fromSingle,
+    first,
   );
   yield [
     filePath,
@@ -129,13 +129,9 @@ function getMethodDescriptorsCode(
   importBuffer: ImportBuffer,
   service: Service,
 ) {
-  const MethodDescriptor = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "MethodDescriptor",
-  );
   return [
-    `export const methodDescriptors: { [methodName in keyof Service]: ${MethodDescriptor}<any, any> } = {\n`,
+    "export type MethodDescriptors = typeof methodDescriptors;\n",
+    "export const methodDescriptors = {\n",
     Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const camelRpcName = pascalToCamel(rpcName);
       const encodeRequestBinary = importBuffer.addInternalImport(
@@ -175,14 +171,14 @@ function getMethodDescriptorsCode(
         "  },\n",
       ].join("");
     }).join(""),
-    "};\n",
+    "} as const;\n",
   ].join("");
 }
 
 const getCreateServiceClientCode = (
   RpcClientImpl: string,
-  singleValueToAsyncGenerator: string,
-  getFirstValueFromAsyncGenerator: string,
+  fromSingle: string,
+  first: string,
 ) => (`export class RpcError<TTrailer = any> extends Error {
   constructor(public trailer: TTrailer) { super(); }
 }
@@ -209,9 +205,9 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
     ([camelRpcName, methodDescriptor]) => [
       camelRpcName,
       async (request: any, metadata?: any) => {
-        const reqAsyncGenerator = methodDescriptor.requestStream ? request : ${singleValueToAsyncGenerator}(request);
+        const reqAsyncGenerator = methodDescriptor.requestStream ? request : ${fromSingle}(request);
         const [resAsyncGenerator, headerPromise, trailerPromise] = rpcClientImpl(methodDescriptor)(reqAsyncGenerator, metadata);
-        const response = methodDescriptor.responseStream ? resAsyncGenerator : ${getFirstValueFromAsyncGenerator}(resAsyncGenerator);
+        const response = methodDescriptor.responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator);
         const header = await Promise.race([
           headerPromise,
           trailerPromise.then(trailer => { throw new RpcError(trailer); }),
