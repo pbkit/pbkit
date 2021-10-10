@@ -1,0 +1,16 @@
+{
+  "name": "benchmarks",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "setup": "yarn setup:gen && yarn setup:tsc",
+    "setup:gen": "pb-gen-ts --entry-path data --ext-in-import \" \" -o data/gen simple.proto file-descriptor.proto",
+    "setup:tsc": "tsc -p tsconfig.gen.json"
+  },
+  "devDependencies": {
+    "benchmark": "^2.1.4",
+    "pbkit": "^0.0.19",
+    "protobufjs": "^6.11.2",
+    "typescript": "^4.4.3"
+  }
+}
