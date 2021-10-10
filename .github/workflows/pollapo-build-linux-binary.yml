@@ -28,3 +28,4 @@ jobs:
         run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: Upload pollapo binary to Nexus
         run: curl -X PUT -v -u '${{ secrets.NEXUS_USERNAME }}:${{ secrets.NEXUS_PASSWORD }}' --upload-file pollapo-linux ${{ secrets.NEXUS_URL }}/pollapo-linux-${{ steps.tags.outputs.tag }}
+
