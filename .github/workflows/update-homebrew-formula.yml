@@ -15,5 +15,5 @@ jobs:
           tap: riiid/riiid
           formula: Formula/pbkit.rb
         env:
-          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.PAT }}
+          GH_PERSONAL_ACCESS_TOKEN: ${{ secrets.GH_PAT_HOMEBREW }}
 
