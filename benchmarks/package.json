@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "setup": "yarn setup:gen && yarn setup:tsc",
-    "setup:gen": "pb-gen-ts --entry-path data --ext-in-import \" \" -o data/gen simple.proto file-descriptor.proto",
+    "setup:gen": "pb-gen-ts --entry-path data --ext-in-import \" \" -o data/gen",
     "setup:tsc": "tsc -p tsconfig.gen.json"
   },
   "devDependencies": {
