@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2019",
+    "lib": ["es2019", "dom"],
+    "rootDir": "data/gen",
+    "outDir": "data/gen_js"
+  },
+  "include": ["data/gen"],
+  "exclude": []
+}
