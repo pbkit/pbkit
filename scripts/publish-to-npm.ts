@@ -116,7 +116,36 @@ await Deno.writeFile(
   await zip(filesInDir(getVendorDir(), ".proto")),
 );
 
-await Deno.run({ cwd: "tmp/npm/dist", cmd: ["npm", "publish"] }).status();
+await Deno.run({
+  cwd: "tmp/npm/dist",
+  cmd: ["npm", "publish"],
+}).status();
+
+const runtimePackageJson = {
+  name: "@pbkit/runtime",
+  version,
+  author: "JongChan Choi <jong@chan.moe>",
+  license: "(MIT OR Apache-2.0)",
+  repository: {
+    type: "git",
+    url: "git+https://github.com/pbkit/pbkit.git",
+  },
+};
+
+await ensureDir("tmp/npm/dist-runtime");
+await Deno.writeTextFile(
+  "tmp/npm/dist-runtime/package.json",
+  JSON.stringify(runtimePackageJson, null, 2) + "\n",
+);
+
+await Deno.run({
+  cwd: "tmp/npm",
+  cmd: ["cp", "-R", "dist/core/runtime/", "dist-runtime"],
+}).status();
+await Deno.run({
+  cwd: "tmp/npm/dist-runtime",
+  cmd: ["npm", "publish"],
+}).status();
 
 async function* filesInDir(
   dir: string,
