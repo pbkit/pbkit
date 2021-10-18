@@ -7,6 +7,7 @@ import {
 } from "https://deno.land/std@0.107.0/path/mod.ts";
 import { replaceTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
 import { zip } from "../misc/archive/zip.ts";
+import { getVendorDir } from "../cli/pb/config.ts";
 
 await emptyDir("tmp/npm");
 
@@ -112,7 +113,7 @@ await Deno.writeFile(
 console.log("writing 'vendor.zip'. it takes few minutes...");
 await Deno.writeFile(
   "tmp/npm/dist/vendor.zip",
-  await zip(filesInDir("vendor", ".proto")),
+  await zip(filesInDir(getVendorDir(), ".proto")),
 );
 
 await Deno.run({ cwd: "tmp/npm/dist", cmd: ["npm", "publish"] }).status();
