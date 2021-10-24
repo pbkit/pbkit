@@ -112,3 +112,17 @@ export function getMethodImpl<
     return [eventBuffer.drain(), headerPromise, trailerPromise];
   };
 }
+
+export function createServerImplBuilder<TMetadata, THeader, TTrailer>() {
+  const buffer = createEventBuffer<Method<TMetadata, THeader, TTrailer>>();
+  return {
+    register<TReq, TRes>(
+      methodDescriptor: MethodDescriptor<TReq, TRes>,
+      handler: MethodImplHandler<TReq, TRes, TMetadata, THeader, TTrailer>,
+    ) {
+      buffer.push([methodDescriptor, getMethodImpl(handler)]);
+    },
+    finish: buffer.finish,
+    drain: buffer.drain,
+  };
+}
