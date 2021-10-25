@@ -35,6 +35,8 @@ async function run() {
       runtime: runtimePackage
         ? { packageName: runtimePackage.trim() }
         : { iterRuntimeFiles, outDir: runtimeDir.trim() },
+      messages: { outDir: options.messagesDir.trim() },
+      services: { outDir: options.servicesDir.trim() },
     }),
   );
 }
@@ -49,6 +51,9 @@ function getCliArgs() {
     alias: { "out-dir": "o" },
     string: ["entry-path", "proto-path", "out-dir", "ext-in-import"],
     default: {
+      "runtime-dir": "runtime",
+      "messages-dir": "messages",
+      "services-dir": "services",
       "out-dir": "out",
       "ext-in-import": "",
     },
@@ -62,6 +67,8 @@ function getCliArgs() {
     protoFiles: wraparr(argv._),
     runtimeDir: argv["runtime-dir"],
     runtimePackage: argv["runtime-package"],
+    messagesDir: argv["messages-dir"],
+    servicesDir: argv["services-dir"],
     outDir: argv["out-dir"],
     extInImport: argv["ext-in-import"],
   };

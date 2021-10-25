@@ -6,7 +6,11 @@ import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
-import { CustomTypeMapping, GetFieldCodeFn } from "./index.ts";
+import {
+  CustomTypeMapping,
+  GenMessagesConfig,
+  GetFieldCodeFn,
+} from "./index.ts";
 import {
   AddInternalImport,
   CreateImportBufferFn,
@@ -17,23 +21,24 @@ import genIndex from "./genIndex.ts";
 export interface GenConfig {
   createImportBuffer: CreateImportBufferFn;
   customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
 }
 export default function* gen(
   schema: schema.Schema,
   config: GenConfig,
 ): Generator<CodeEntry> {
-  const { createImportBuffer, customTypeMapping } = config;
+  const { createImportBuffer, customTypeMapping, messages } = config;
   yield* genIndex({
     typePathTree: createTypePathTree(Object.keys(schema.types)),
     exists: (typePath) => typePath in schema.types,
-    getIndexFilePath,
-    getFilePath,
+    getIndexFilePath: (typePath) => getIndexFilePath(typePath, messages),
+    getFilePath: (typePath) => getFilePath(typePath, messages),
     itemIsExportedAs: "Type",
   });
   for (const [typePath, type] of Object.entries(schema.types)) {
     switch (type.kind) {
       case "enum":
-        yield* genEnum({ typePath, type });
+        yield* genEnum({ typePath, type, messages });
         continue;
       case "message":
         yield* genMessage({
@@ -42,26 +47,43 @@ export default function* gen(
           type,
           createImportBuffer,
           customTypeMapping,
+          messages,
         });
         continue;
     }
   }
 }
 
-export function getIndexFilePath(typePath: string): string {
-  return join("messages", typePath.replaceAll(".", "/"), "index.ts");
+export function getIndexFilePath(
+  typePath: string,
+  messages: GenMessagesConfig,
+): string {
+  return join(
+    messages.outDir,
+    typePath.replace(/^\./, "").replaceAll(".", "/"),
+    "index.ts",
+  );
 }
 
-export function getFilePath(typePath: string): string {
-  return join("messages", typePath.replaceAll(".", "/") + ".ts");
+export function getFilePath(
+  typePath: string,
+  messages: GenMessagesConfig,
+): string {
+  return join(
+    messages.outDir,
+    typePath.replace(/^\./, "").replaceAll(".", "/") + ".ts",
+  );
 }
 
 interface GenEnumConfig {
   typePath: string;
   type: schema.Enum;
+  messages: GenMessagesConfig;
 }
-function* genEnum({ typePath, type }: GenEnumConfig): Generator<CodeEntry> {
-  const filePath = getFilePath(typePath);
+function* genEnum(
+  { typePath, type, messages }: GenEnumConfig,
+): Generator<CodeEntry> {
+  const filePath = getFilePath(typePath, messages);
   const fields = Object.entries<schema.EnumField>({
     "0": { description: "", name: "UNSPECIFIED", options: {} },
     ...type.fields,
@@ -114,12 +136,17 @@ interface GenMessageConfig {
   type: schema.Message;
   createImportBuffer: CreateImportBufferFn;
   customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
 }
-function* genMessage(
-  { schema, typePath, type, createImportBuffer, customTypeMapping }:
-    GenMessageConfig,
-): Generator<CodeEntry> {
-  const filePath = getFilePath(typePath);
+function* genMessage({
+  schema,
+  typePath,
+  type,
+  createImportBuffer,
+  customTypeMapping,
+  messages,
+}: GenMessageConfig): Generator<CodeEntry> {
+  const filePath = getFilePath(typePath, messages);
   const importBuffer = createImportBuffer({ reservedNames });
   type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
   const schemaFields = Object.entries(type.fields);
@@ -160,6 +187,7 @@ function* genMessage(
     filePath,
     importBuffer,
     message,
+    messages,
     customTypeMapping,
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
@@ -210,12 +238,13 @@ function* genMessage(
     }
   }
   function toTsType(typePath?: string) {
-    return pbTypeToTsType(
+    return pbTypeToTsType({
       customTypeMapping,
-      importBuffer.addInternalImport,
-      filePath,
+      addInternalImport: importBuffer.addInternalImport,
+      messages,
+      here: filePath,
       typePath,
-    );
+    });
   }
 }
 
@@ -223,6 +252,7 @@ interface GetCodeConfig {
   filePath: string;
   importBuffer: ImportBuffer;
   message: Message;
+  messages: GenMessagesConfig;
   customTypeMapping: CustomTypeMapping;
 }
 type GetCodeFn = (config: GetCodeConfig) => string;
@@ -272,9 +302,13 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
   ].join("");
 };
 
-const getEncodeBinaryCode: GetCodeFn = (
-  { filePath, importBuffer, message, customTypeMapping },
-) => {
+const getEncodeBinaryCode: GetCodeFn = ({
+  filePath,
+  importBuffer,
+  message,
+  messages,
+  customTypeMapping,
+}) => {
   const WireMessage = importBuffer.addRuntimeImport(
     filePath,
     "wire/index.ts",
@@ -292,14 +326,11 @@ const getEncodeBinaryCode: GetCodeFn = (
     message.fields.map((field) => {
       const { fieldNumber, tsName, schema } = field;
       if (schema.kind === "oneof") return ""; // never
-      const tsValueToWireValueCode = getGetTsValueToWireValueCode(
+      const tsValueToWireValueCode = getGetTsValueToWireValueCode({
         customTypeMapping,
         schema,
-      )(
-        filePath,
-        importBuffer,
-        field,
-      );
+        messages,
+      })({ filePath, importBuffer, field });
       if (schema.kind === "map") {
         return [
           "  {\n",
@@ -344,14 +375,11 @@ const getEncodeBinaryCode: GetCodeFn = (
       return [
         `  switch (value.${tsName}?.field) {\n`,
         fields.map((field) => {
-          const tsValueToWireValueCode = getGetTsValueToWireValueCode(
+          const tsValueToWireValueCode = getGetTsValueToWireValueCode({
             customTypeMapping,
-            field.schema,
-          )(
-            filePath,
-            importBuffer,
-            field,
-          );
+            schema: field.schema,
+            messages,
+          })({ filePath, importBuffer, field });
           return [
             `    case "${field.tsName}": {\n`,
             `      const tsValue = value.${tsName}.value;\n`,
@@ -370,9 +398,13 @@ const getEncodeBinaryCode: GetCodeFn = (
   ].join("");
 };
 
-const getDecodeBinaryCode: GetCodeFn = (
-  { filePath, importBuffer, message, customTypeMapping },
-) => {
+const getDecodeBinaryCode: GetCodeFn = ({
+  filePath,
+  importBuffer,
+  message,
+  messages,
+  customTypeMapping,
+}) => {
   const deserialize = importBuffer.addRuntimeImport(
     filePath,
     "wire/deserialize.ts",
@@ -427,14 +459,11 @@ const getDecodeBinaryCode: GetCodeFn = (
       : "",
     message.fields.map((field) => {
       const { fieldNumber, tsName, schema } = field;
-      const wireValueToTsValueCode = getGetWireValueToTsValueCode(
+      const wireValueToTsValueCode = getGetWireValueToTsValueCode({
         customTypeMapping,
         schema,
-      )(
-        filePath,
-        importBuffer,
-        field,
-      );
+        messages,
+      })({ filePath, importBuffer, field });
       if (!wireValueToTsValueCode) return "";
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
@@ -479,14 +508,11 @@ const getDecodeBinaryCode: GetCodeFn = (
         "{\n",
         fields.map((field) => {
           const { fieldNumber, schema } = field;
-          const wireValueToTsValueCode = getGetWireValueToTsValueCode(
+          const wireValueToTsValueCode = getGetWireValueToTsValueCode({
             customTypeMapping,
             schema,
-          )(
-            filePath,
-            importBuffer,
-            field,
-          ) || "undefined";
+            messages,
+          })({ filePath, importBuffer, field }) || "undefined";
           return `      ${fieldNumber}(wireValue) { return ${wireValueToTsValueCode}; },\n`;
         }).join(""),
         "    }[fieldNumber]?.(wireValue)",
@@ -511,21 +537,37 @@ const getDecodeBinaryCode: GetCodeFn = (
 
 type NonMapMessageField = Exclude<schema.MessageField, schema.MapField>;
 
-function getGetTsValueToWireValueCode(
-  customTypeMapping: CustomTypeMapping,
-  schema: schema.MessageField,
-): GetFieldCodeFn {
+interface GetGetTsValueToWireValueCodeConfig {
+  customTypeMapping: CustomTypeMapping;
+  schema: schema.MessageField;
+  messages: GenMessagesConfig;
+}
+function getGetTsValueToWireValueCode({
+  customTypeMapping,
+  schema,
+  messages,
+}: GetGetTsValueToWireValueCodeConfig): GetFieldCodeFn {
+  const customTypeMappingItem = customTypeMapping[
+    (schema as NonMapMessageField).typePath!
+  ];
   return (
-    customTypeMapping[(schema as NonMapMessageField).typePath!]
-      ?.getTsValueToWireValueCode ?? getDefaultTsValueToWireValueCode
+    customTypeMappingItem?.getTsValueToWireValueCode ??
+      ((config) => getDefaultTsValueToWireValueCode({ ...config, messages }))
   );
 }
 
-export function getDefaultTsValueToWireValueCode(
-  filePath: string,
-  importBuffer: ImportBuffer,
-  field: Field,
-): string | undefined {
+export interface GetDefaultTsValueToWireValueCodeConfig {
+  filePath: string;
+  importBuffer: ImportBuffer;
+  field: Field;
+  messages: GenMessagesConfig;
+}
+export function getDefaultTsValueToWireValueCode({
+  filePath,
+  importBuffer,
+  field,
+  messages,
+}: GetDefaultTsValueToWireValueCodeConfig): string | undefined {
   const { schema } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
@@ -574,34 +616,50 @@ export function getDefaultTsValueToWireValueCode(
       );
       const name2num = importBuffer.addInternalImport(
         filePath,
-        getFilePath(typePath),
+        getFilePath(typePath, messages),
         "name2num",
       );
       return `{ type: ${WireType}.Varint as const, value: new ${Long}(${name2num}[${tsValue}]) }`;
     }
     const encodeBinary = importBuffer.addInternalImport(
       filePath,
-      getFilePath(typePath),
+      getFilePath(typePath, messages),
       "encodeBinary",
     );
     return `{ type: ${WireType}.LengthDelimited as const, value: ${encodeBinary}(${tsValue}) }`;
   }
 }
 
-function getGetWireValueToTsValueCode(
-  customTypeMapping: CustomTypeMapping,
-  schema: schema.MessageField,
-): GetFieldCodeFn {
+interface GetGetWireValueToTsValueCodeConfig {
+  customTypeMapping: CustomTypeMapping;
+  schema: schema.MessageField;
+  messages: GenMessagesConfig;
+}
+function getGetWireValueToTsValueCode({
+  customTypeMapping,
+  schema,
+  messages,
+}: GetGetWireValueToTsValueCodeConfig): GetFieldCodeFn {
+  const customTypeMappingItem = customTypeMapping[
+    (schema as NonMapMessageField).typePath!
+  ];
   return (
-    customTypeMapping[(schema as NonMapMessageField).typePath!]
-      ?.getWireValueToTsValueCode ?? getDefaultWireValueToTsValueCode
+    customTypeMappingItem?.getWireValueToTsValueCode ??
+      ((config) => getDefaultWireValueToTsValueCode({ ...config, messages }))
   );
 }
-export function getDefaultWireValueToTsValueCode(
-  filePath: string,
-  importBuffer: ImportBuffer,
-  field: Field,
-): string | undefined {
+export interface GetDefaultWireValueToTsValueCodeConfig {
+  filePath: string;
+  importBuffer: ImportBuffer;
+  field: Field;
+  messages: GenMessagesConfig;
+}
+export function getDefaultWireValueToTsValueCode({
+  filePath,
+  importBuffer,
+  field,
+  messages,
+}: GetDefaultWireValueToTsValueCodeConfig): string | undefined {
   const { schema } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
@@ -648,34 +706,42 @@ export function getDefaultWireValueToTsValueCode(
     if (field.isEnum) {
       const num2name = importBuffer.addInternalImport(
         filePath,
-        getFilePath(typePath),
+        getFilePath(typePath, messages),
         "num2name",
       );
       return `${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0]] : undefined`;
     }
     const decodeBinary = importBuffer.addInternalImport(
       filePath,
-      getFilePath(typePath),
+      getFilePath(typePath, messages),
       "decodeBinary",
     );
     return `${wireValue}.type === ${WireType}.LengthDelimited ? ${decodeBinary}(${wireValue}.value) : undefined`;
   }
 }
 
-export function pbTypeToTsType(
-  customTypeMapping: CustomTypeMapping,
-  addInternalImport: AddInternalImport,
-  here: string,
-  typePath?: string,
-): string {
+export interface PbTypeToTsTypeConfig {
+  customTypeMapping: CustomTypeMapping;
+  addInternalImport: AddInternalImport;
+  messages: GenMessagesConfig;
+  here: string;
+  typePath?: string;
+}
+export function pbTypeToTsType({
+  customTypeMapping,
+  addInternalImport,
+  messages,
+  here,
+  typePath,
+}: PbTypeToTsTypeConfig): string {
   if (!typePath) return "unknown";
   if (typePath in scalarTypeMapping) {
     return scalarTypeMapping[typePath as keyof typeof scalarTypeMapping];
   }
-  if (typePath in wellKnownTypeMapping) {
+  if (typePath in customTypeMapping) {
     return customTypeMapping[typePath].tsType;
   }
-  const from = getFilePath(typePath);
+  const from = getFilePath(typePath, messages);
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return addInternalImport(here, from, "Type", as);
 }
@@ -714,147 +780,133 @@ const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
   ".string": '""',
   ".bytes": "new Uint8Array()",
 };
-export const wellKnownTypeMapping: CustomTypeMapping = {
-  ".google.protobuf.BoolValue": {
-    tsType: "boolean",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+
+export interface GetWellKnownTypeMappingConfig {
+  messages: GenMessagesConfig;
+}
+export function getWellKnownTypeMapping({
+  messages,
+}: GetWellKnownTypeMappingConfig): CustomTypeMapping {
+  return {
+    ".google.protobuf.BoolValue": {
+      tsType: "boolean",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
+    ".google.protobuf.BytesValue": {
+      tsType: "Uint8Array",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-  },
-  ".google.protobuf.BytesValue": {
-    tsType: "Uint8Array",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    ".google.protobuf.DoubleValue": {
+      tsType: "number",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
+    ".google.protobuf.FloatValue": {
+      tsType: "number",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-  },
-  ".google.protobuf.DoubleValue": {
-    tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    ".google.protobuf.Int32Value": {
+      tsType: "number",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
+    ".google.protobuf.Int64Value": {
+      tsType: "string",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-  },
-  ".google.protobuf.FloatValue": {
-    tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    ".google.protobuf.NullValue": {
+      tsType: "null",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        }) === 0 ? null : undefined`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))("NULL_VALUE")`;
+      },
     },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
+    ".google.protobuf.StringValue": {
+      tsType: "string",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-  },
-  ".google.protobuf.Int32Value": {
-    tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
+    ".google.protobuf.UInt32Value": {
+      tsType: "number",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
+    ".google.protobuf.UInt64Value": {
+      tsType: "string",
+      getWireValueToTsValueCode(config) {
+        return `(${
+          getDefaultWireValueToTsValueCode({ ...config, messages })
+        })?.value`;
+      },
+      getTsValueToWireValueCode(config) {
+        const value = getDefaultTsValueToWireValueCode({ ...config, messages });
+        return `((tsValue) => (${value}))({ value: tsValue })`;
+      },
     },
-  },
-  ".google.protobuf.Int64Value": {
-    tsType: "string",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
-    },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
-    },
-  },
-  ".google.protobuf.NullValue": {
-    tsType: "null",
-    getWireValueToTsValueCode(...args) {
-      return `(${
-        getDefaultWireValueToTsValueCode(...args)
-      }) === 0 ? null : undefined`;
-    },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))("NULL_VALUE")`;
-    },
-  },
-  ".google.protobuf.StringValue": {
-    tsType: "string",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
-    },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
-    },
-  },
-  ".google.protobuf.UInt32Value": {
-    tsType: "number",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
-    },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
-    },
-  },
-  ".google.protobuf.UInt64Value": {
-    tsType: "string",
-    getWireValueToTsValueCode(...args) {
-      return `(${getDefaultWireValueToTsValueCode(...args)})?.value`;
-    },
-    getTsValueToWireValueCode(filePath, importBuffer, field) {
-      const value = getDefaultTsValueToWireValueCode(
-        filePath,
-        importBuffer,
-        field,
-      );
-      return `((tsValue) => (${value}))({ value: tsValue })`;
-    },
-  },
-};
+  };
+}

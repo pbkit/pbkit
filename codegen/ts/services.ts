@@ -4,7 +4,11 @@ import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
-import { CustomTypeMapping } from "./index.ts";
+import {
+  CustomTypeMapping,
+  GenMessagesConfig,
+  GenServicesConfig,
+} from "./index.ts";
 import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
 import genIndex from "./genIndex.ts";
 import {
@@ -15,17 +19,19 @@ import {
 export interface GenConfig {
   createImportBuffer: CreateImportBufferFn;
   customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
+  services: GenServicesConfig;
 }
 export default function* gen(
   schema: Schema,
   config: GenConfig,
 ): Generator<CodeEntry> {
-  const { createImportBuffer, customTypeMapping } = config;
+  const { createImportBuffer, customTypeMapping, messages, services } = config;
   yield* genIndex({
     typePathTree: createTypePathTree(Object.keys(schema.services)),
     exists: (typePath) => typePath in schema.services,
-    getIndexFilePath,
-    getFilePath,
+    getIndexFilePath: (typePath) => getIndexFilePath(typePath, services),
+    getFilePath: (typePath) => getFilePath(typePath, services),
     itemIsExportedAs: "Service",
   });
   for (const [typePath, type] of Object.entries(schema.services)) {
@@ -34,16 +40,31 @@ export default function* gen(
       type,
       createImportBuffer,
       customTypeMapping,
+      messages,
+      services,
     });
   }
 }
 
-export function getIndexFilePath(typePath: string): string {
-  return join("services", typePath.replaceAll(".", "/"), "index.ts");
+export function getIndexFilePath(
+  typePath: string,
+  services: GenServicesConfig,
+): string {
+  return join(
+    services.outDir,
+    typePath.replace(/^\./, "").replaceAll(".", "/"),
+    "index.ts",
+  );
 }
 
-export function getFilePath(typePath: string): string {
-  return join("services", typePath.replaceAll(".", "/") + ".ts");
+export function getFilePath(
+  typePath: string,
+  services: GenServicesConfig,
+): string {
+  return join(
+    services.outDir,
+    typePath.replace(/^\./, "").replaceAll(".", "/") + ".ts",
+  );
 }
 
 const reservedNames = ["Service", "Uint8Array"];
@@ -53,27 +74,33 @@ interface GenServiceConfig {
   type: Service;
   createImportBuffer: CreateImportBufferFn;
   customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
+  services: GenServicesConfig;
 }
 function* genService({
   typePath,
   type,
   customTypeMapping,
   createImportBuffer,
+  messages,
+  services,
 }: GenServiceConfig): Generator<CodeEntry> {
-  const filePath = getFilePath(typePath);
+  const filePath = getFilePath(typePath, services);
   const importBuffer = createImportBuffer({ reservedNames });
-  const serviceTypeDefCode = getServiceTypeDefCode(
+  const serviceTypeDefCode = getServiceTypeDefCode({
     customTypeMapping,
     filePath,
     importBuffer,
-    type,
-  );
-  const methodDescriptorsCode = getMethodDescriptorsCode(
+    service: type,
+    messages,
+  });
+  const methodDescriptorsCode = getMethodDescriptorsCode({
     filePath,
     typePath,
     importBuffer,
-    type,
-  );
+    service: type,
+    messages,
+  });
   const RpcClientImpl = importBuffer.addRuntimeImport(
     filePath,
     "rpc.ts",
@@ -105,19 +132,28 @@ function* genService({
   ];
 }
 
-function getServiceTypeDefCode(
-  customTypeMapping: CustomTypeMapping,
-  filePath: string,
-  importBuffer: ImportBuffer,
-  service: Service,
-) {
+interface GetServiceTypeDefCodeConfig {
+  customTypeMapping: CustomTypeMapping;
+  filePath: string;
+  importBuffer: ImportBuffer;
+  messages: GenMessagesConfig;
+  service: Service;
+}
+function getServiceTypeDefCode({
+  customTypeMapping,
+  filePath,
+  importBuffer,
+  messages,
+  service,
+}: GetServiceTypeDefCodeConfig) {
   function getTsType(typePath?: string) {
-    return pbTypeToTsType(
+    return pbTypeToTsType({
       customTypeMapping,
-      importBuffer.addInternalImport,
-      filePath,
+      addInternalImport: importBuffer.addInternalImport,
+      messages,
+      here: filePath,
       typePath,
-    );
+    });
   }
   function getTsRpcType(rpcType: RpcType, isRes?: boolean): string {
     const typeName = getTsType(rpcType.typePath);
@@ -141,12 +177,20 @@ function getServiceTypeDefCode(
   }
 }
 
-function getMethodDescriptorsCode(
-  filePath: string,
-  typePath: string,
-  importBuffer: ImportBuffer,
-  service: Service,
-) {
+interface GetMethodDescriptorsCodeConfig {
+  filePath: string;
+  typePath: string;
+  importBuffer: ImportBuffer;
+  service: Service;
+  messages: GenMessagesConfig;
+}
+function getMethodDescriptorsCode({
+  filePath,
+  typePath,
+  importBuffer,
+  service,
+  messages,
+}: GetMethodDescriptorsCodeConfig) {
   return [
     "export type MethodDescriptors = typeof methodDescriptors;\n",
     "export const methodDescriptors = {\n",
@@ -154,22 +198,22 @@ function getMethodDescriptorsCode(
       const camelRpcName = pascalToCamel(rpcName);
       const encodeRequestBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.reqType.typePath!),
+        getMessageFilePath(rpc.reqType.typePath!, messages),
         "encodeBinary",
       );
       const decodeRequestBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.reqType.typePath!),
+        getMessageFilePath(rpc.reqType.typePath!, messages),
         "decodeBinary",
       );
       const encodeResponseBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.resType.typePath!),
+        getMessageFilePath(rpc.resType.typePath!, messages),
         "encodeBinary",
       );
       const decodeResponseBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.resType.typePath!),
+        getMessageFilePath(rpc.resType.typePath!, messages),
         "decodeBinary",
       );
       return [
