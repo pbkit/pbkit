@@ -12,6 +12,8 @@ interface Options {
   protoPath?: string[];
   runtimeDir: string;
   runtimePackage?: string;
+  messagesDir: string;
+  servicesDir: string;
   outDir: string;
   extInImport: string;
 }
@@ -36,6 +38,16 @@ export default new Command()
   .option(
     "--runtime-package <package:string>",
     "External runtimes you want to rely on instead of codegen.",
+  )
+  .option(
+    "--messages-dir <dir:string>",
+    "Out directory for messages.",
+    { default: "messages" },
+  )
+  .option(
+    "--services-dir <dir:string>",
+    "Out directory for services.",
+    { default: "services" },
   )
   .option(
     "-o, --out-dir <value:string>",
@@ -66,6 +78,8 @@ export default new Command()
         runtime: options.runtimePackage
           ? { packageName: options.runtimePackage.trim() }
           : { iterRuntimeFiles, outDir: options.runtimeDir.trim() },
+        messages: { outDir: options.messagesDir.trim() },
+        services: { outDir: options.servicesDir.trim() },
       }),
     );
   });
