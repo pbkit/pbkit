@@ -9,15 +9,20 @@ import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping, GetFieldCodeFn } from "./index.ts";
 import {
   AddInternalImport,
-  createImportBuffer,
+  CreateImportBufferFn,
   ImportBuffer,
 } from "./import-buffer.ts";
 import genIndex from "./genIndex.ts";
 
+export interface GenConfig {
+  createImportBuffer: CreateImportBufferFn;
+  customTypeMapping: CustomTypeMapping;
+}
 export default function* gen(
   schema: schema.Schema,
-  customTypeMapping: CustomTypeMapping,
+  config: GenConfig,
 ): Generator<CodeEntry> {
+  const { createImportBuffer, customTypeMapping } = config;
   yield* genIndex({
     typePathTree: createTypePathTree(Object.keys(schema.types)),
     exists: (typePath) => typePath in schema.types,
@@ -28,10 +33,16 @@ export default function* gen(
   for (const [typePath, type] of Object.entries(schema.types)) {
     switch (type.kind) {
       case "enum":
-        yield* genEnum(typePath, type);
+        yield* genEnum({ typePath, type });
         continue;
       case "message":
-        yield* genMessage(schema, typePath, type, customTypeMapping);
+        yield* genMessage({
+          schema,
+          typePath,
+          type,
+          createImportBuffer,
+          customTypeMapping,
+        });
         continue;
     }
   }
@@ -45,7 +56,11 @@ export function getFilePath(typePath: string): string {
   return join("messages", typePath.replaceAll(".", "/") + ".ts");
 }
 
-function* genEnum(typePath: string, type: schema.Enum): Generator<CodeEntry> {
+interface GenEnumConfig {
+  typePath: string;
+  type: schema.Enum;
+}
+function* genEnum({ typePath, type }: GenEnumConfig): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
   const fields = Object.entries<schema.EnumField>({
     "0": { description: "", name: "UNSPECIFIED", options: {} },
@@ -92,14 +107,20 @@ interface OneofField {
 }
 
 const reservedNames = ["Type", "Uint8Array", "encodeBinary", "decodeBinary"];
+
+interface GenMessageConfig {
+  schema: schema.Schema;
+  typePath: string;
+  type: schema.Message;
+  createImportBuffer: CreateImportBufferFn;
+  customTypeMapping: CustomTypeMapping;
+}
 function* genMessage(
-  schema: schema.Schema,
-  typePath: string,
-  type: schema.Message,
-  customTypeMapping: CustomTypeMapping,
+  { schema, typePath, type, createImportBuffer, customTypeMapping }:
+    GenMessageConfig,
 ): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
-  const importBuffer = createImportBuffer(reservedNames);
+  const importBuffer = createImportBuffer({ reservedNames });
   type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
   const schemaFields = Object.entries(type.fields);
   const schemaOneofFields = schemaFields.filter(
@@ -254,14 +275,14 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
 const getEncodeBinaryCode: GetCodeFn = (
   { filePath, importBuffer, message, customTypeMapping },
 ) => {
-  const WireMessage = importBuffer.addInternalImport(
+  const WireMessage = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/wire/index.ts",
+    "wire/index.ts",
     "WireMessage",
   );
-  const serialize = importBuffer.addInternalImport(
+  const serialize = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/wire/serialize.ts",
+    "wire/serialize.ts",
     "default",
     "serialize",
   );
@@ -352,9 +373,9 @@ const getEncodeBinaryCode: GetCodeFn = (
 const getDecodeBinaryCode: GetCodeFn = (
   { filePath, importBuffer, message, customTypeMapping },
 ) => {
-  const deserialize = importBuffer.addInternalImport(
+  const deserialize = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/wire/deserialize.ts",
+    "wire/deserialize.ts",
     "default",
     "deserialize",
   );
@@ -420,18 +441,16 @@ const getDecodeBinaryCode: GetCodeFn = (
         const type = (schema as schema.RepeatedField).typePath?.substr(1);
         let wireValuesToTsValuesCode: string;
         if (type as keyof typeof unpackFns in unpackFns) {
-          const unpackFns = importBuffer.addInternalImport(
+          const unpackFns = importBuffer.addRuntimeImport(
             filePath,
-            "runtime/wire/scalar.ts",
+            "wire/scalar.ts",
             "unpackFns",
           );
-          wireValuesToTsValuesCode = (
-            `Array.from(${unpackFns}.${type}(wireValues))`
-          );
+          wireValuesToTsValuesCode =
+            `Array.from(${unpackFns}.${type}(wireValues))`;
         } else {
-          wireValuesToTsValuesCode = (
-            `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`
-          );
+          wireValuesToTsValuesCode =
+            `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`;
         }
         const value = schema.kind === "map" ? "new Map(value)" : "value";
         return [
@@ -511,15 +530,15 @@ export function getDefaultTsValueToWireValueCode(
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
-    const serialize = importBuffer.addInternalImport(
+    const serialize = importBuffer.addRuntimeImport(
       filePath,
-      "runtime/wire/serialize.ts",
+      "wire/serialize.ts",
       "default",
       "serialize",
     );
-    const WireType = importBuffer.addInternalImport(
+    const WireType = importBuffer.addRuntimeImport(
       filePath,
-      "runtime/wire/index.ts",
+      "wire/index.ts",
       "WireType",
     );
     const keyTypePathCode = typePathToCode("key", keyTypePath);
@@ -534,22 +553,22 @@ export function getDefaultTsValueToWireValueCode(
   function typePathToCode(tsValue: string, typePath?: string) {
     if (!typePath) return;
     if (typePath in scalarTypeMapping) {
-      const tsValueToWireValueFns = importBuffer.addInternalImport(
+      const tsValueToWireValueFns = importBuffer.addRuntimeImport(
         filePath,
-        "runtime/wire/scalar.ts",
+        "wire/scalar.ts",
         "tsValueToWireValueFns",
       );
       return `${tsValueToWireValueFns}.${typePath.substr(1)}(${tsValue})`;
     }
-    const WireType = importBuffer.addInternalImport(
+    const WireType = importBuffer.addRuntimeImport(
       filePath,
-      "runtime/wire/index.ts",
+      "wire/index.ts",
       "WireType",
     );
     if (field.isEnum) {
-      const Long = importBuffer.addInternalImport(
+      const Long = importBuffer.addRuntimeImport(
         filePath,
-        "runtime/Long.ts",
+        "Long.ts",
         "default",
         "Long",
       );
@@ -587,15 +606,15 @@ export function getDefaultWireValueToTsValueCode(
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
-    const deserialize = importBuffer.addInternalImport(
+    const deserialize = importBuffer.addRuntimeImport(
       filePath,
-      "runtime/wire/deserialize.ts",
+      "wire/deserialize.ts",
       "default",
       "deserialize",
     );
-    const WireType = importBuffer.addInternalImport(
+    const WireType = importBuffer.addRuntimeImport(
       filePath,
-      "runtime/wire/index.ts",
+      "wire/index.ts",
       "WireType",
     );
     const keyTypePathCode = typePathToCode("key", keyTypePath);
@@ -614,16 +633,16 @@ export function getDefaultWireValueToTsValueCode(
   function typePathToCode(wireValue: string, typePath?: string) {
     if (!typePath) return;
     if (typePath in scalarTypeMapping) {
-      const wireValueToTsValueFns = importBuffer.addInternalImport(
+      const wireValueToTsValueFns = importBuffer.addRuntimeImport(
         filePath,
-        "runtime/wire/scalar.ts",
+        "wire/scalar.ts",
         "wireValueToTsValueFns",
       );
       return `${wireValueToTsValueFns}.${typePath.substr(1)}(${wireValue})`;
     }
-    const WireType = importBuffer.addInternalImport(
+    const WireType = importBuffer.addRuntimeImport(
       filePath,
-      "runtime/wire/index.ts",
+      "wire/index.ts",
       "WireType",
     );
     if (field.isEnum) {

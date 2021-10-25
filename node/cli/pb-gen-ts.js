@@ -15,6 +15,8 @@ async function run() {
     entryPaths,
     protoPaths,
     protoFiles,
+    runtimeDir,
+    runtimePackage,
     outDir,
     extInImport,
   } = getCliArgs();
@@ -26,7 +28,15 @@ async function run() {
     ...protoFiles,
   ];
   const schema = await build({ loader, files });
-  await save(outDir, gen(schema, { extInImport, iterRuntimeFiles }));
+  await save(
+    outDir,
+    gen(schema, {
+      extInImport,
+      runtime: runtimePackage
+        ? { packageName: runtimePackage.trim() }
+        : { iterRuntimeFiles, outDir: runtimeDir.trim() },
+    }),
+  );
 }
 
 async function getGen() {
@@ -50,6 +60,8 @@ function getCliArgs() {
     entryPaths: wraparr(argv["entry-path"]),
     protoPaths: wraparr(argv["proto-path"]),
     protoFiles: wraparr(argv._),
+    runtimeDir: argv["runtime-dir"],
+    runtimePackage: argv["runtime-package"],
     outDir: argv["out-dir"],
     extInImport: argv["ext-in-import"],
   };

@@ -3,12 +3,15 @@ import { createLoader } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import save from "../../../../../codegen/save.ts";
 import gen from "../../../../../codegen/ts/index.ts";
+import iterRuntimeFiles from "../../../../../codegen/ts/iterRuntimeFiles.ts";
 import { getVendorDir } from "../../../config.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
 
 interface Options {
   entryPath?: string[];
   protoPath?: string[];
+  runtimeDir: string;
+  runtimePackage?: string;
   outDir: string;
   extInImport: string;
 }
@@ -24,6 +27,15 @@ export default new Command()
     "--proto-path <dir:string>",
     "Specify the directory in which to search for imports.",
     { collect: true },
+  )
+  .option(
+    "--runtime-dir <dir:string>",
+    "Out directory for runtime.",
+    { default: "runtime" },
+  )
+  .option(
+    "--runtime-package <package:string>",
+    "External runtimes you want to rely on instead of codegen.",
   )
   .option(
     "-o, --out-dir <value:string>",
@@ -49,6 +61,11 @@ export default new Command()
     const extInImport = options.extInImport;
     await save(
       options.outDir,
-      gen(schema, { extInImport }),
+      gen(schema, {
+        extInImport,
+        runtime: options.runtimePackage
+          ? { packageName: options.runtimePackage.trim() }
+          : { iterRuntimeFiles, outDir: options.runtimeDir.trim() },
+      }),
     );
   });

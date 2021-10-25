@@ -1,9 +1,5 @@
 import { walk } from "https://deno.land/std@0.107.0/fs/walk.ts";
-import {
-  join,
-  relative,
-  resolve,
-} from "https://deno.land/std@0.107.0/path/mod.ts";
+import { relative, resolve } from "https://deno.land/std@0.107.0/path/mod.ts";
 import { getAutoClosingFileReader } from "../../misc/file.ts";
 import { CodeEntry } from "../index.ts";
 
@@ -13,6 +9,6 @@ export default async function* iterRuntimeFiles(): AsyncGenerator<CodeEntry> {
   for await (const { path: filePath } of walk(runtimePath, { exts: [".ts"] })) {
     if (filePath.endsWith(".test.ts")) continue;
     const file = await getAutoClosingFileReader(filePath);
-    yield [join("runtime", relative(runtimePath, filePath)), file];
+    yield [relative(runtimePath, filePath), file];
   }
 }
