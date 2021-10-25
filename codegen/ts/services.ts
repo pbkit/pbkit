@@ -5,17 +5,22 @@ import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
 import { CustomTypeMapping } from "./index.ts";
-import { createImportBuffer, ImportBuffer } from "./import-buffer.ts";
+import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
 import genIndex from "./genIndex.ts";
 import {
   getFilePath as getMessageFilePath,
   pbTypeToTsType,
 } from "./messages.ts";
 
+export interface GenConfig {
+  createImportBuffer: CreateImportBufferFn;
+  customTypeMapping: CustomTypeMapping;
+}
 export default function* gen(
   schema: Schema,
-  customTypeMapping: CustomTypeMapping,
+  config: GenConfig,
 ): Generator<CodeEntry> {
+  const { createImportBuffer, customTypeMapping } = config;
   yield* genIndex({
     typePathTree: createTypePathTree(Object.keys(schema.services)),
     exists: (typePath) => typePath in schema.services,
@@ -24,7 +29,12 @@ export default function* gen(
     itemIsExportedAs: "Service",
   });
   for (const [typePath, type] of Object.entries(schema.services)) {
-    yield* genService(customTypeMapping, typePath, type);
+    yield* genService({
+      typePath,
+      type,
+      createImportBuffer,
+      customTypeMapping,
+    });
   }
 }
 
@@ -37,13 +47,21 @@ export function getFilePath(typePath: string): string {
 }
 
 const reservedNames = ["Service", "Uint8Array"];
-function* genService(
-  customTypeMapping: CustomTypeMapping,
-  typePath: string,
-  type: Service,
-): Generator<CodeEntry> {
+
+interface GenServiceConfig {
+  typePath: string;
+  type: Service;
+  createImportBuffer: CreateImportBufferFn;
+  customTypeMapping: CustomTypeMapping;
+}
+function* genService({
+  typePath,
+  type,
+  customTypeMapping,
+  createImportBuffer,
+}: GenServiceConfig): Generator<CodeEntry> {
   const filePath = getFilePath(typePath);
-  const importBuffer = createImportBuffer(reservedNames);
+  const importBuffer = createImportBuffer({ reservedNames });
   const serviceTypeDefCode = getServiceTypeDefCode(
     customTypeMapping,
     filePath,
@@ -56,19 +74,19 @@ function* genService(
     importBuffer,
     type,
   );
-  const RpcClientImpl = importBuffer.addInternalImport(
+  const RpcClientImpl = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/rpc.ts",
+    "rpc.ts",
     "RpcClientImpl",
   );
-  const fromSingle = importBuffer.addInternalImport(
+  const fromSingle = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/async/async-generator.ts",
+    "async/async-generator.ts",
     "fromSingle",
   );
-  const first = importBuffer.addInternalImport(
+  const first = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/async/async-generator.ts",
+    "async/async-generator.ts",
     "first",
   );
   const createServiceClientCode = getCreateServiceClientCode(
@@ -106,9 +124,9 @@ function getServiceTypeDefCode(
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
-  const RpcReturnType = importBuffer.addInternalImport(
+  const RpcReturnType = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/rpc.ts",
+    "rpc.ts",
     "RpcReturnType",
   );
   return `export interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
