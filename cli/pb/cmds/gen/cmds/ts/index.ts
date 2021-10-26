@@ -1,11 +1,12 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { createLoader } from "../../../../../core/loader/deno-fs.ts";
-import { build } from "../../../../../core/schema/builder.ts";
-import save from "../../../../../codegen/save.ts";
-import gen from "../../../../../codegen/ts/index.ts";
-import iterRuntimeFiles from "../../../../../codegen/ts/iterRuntimeFiles.ts";
-import { getVendorDir } from "../../../config.ts";
-import expandEntryPaths from "../expandEntryPaths.ts";
+import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
+import { build } from "../../../../../../core/schema/builder.ts";
+import save from "../../../../../../codegen/save.ts";
+import gen from "../../../../../../codegen/ts/index.ts";
+import iterRuntimeFiles from "../../../../../../codegen/ts/iterRuntimeFiles.ts";
+import { getVendorDir } from "../../../../config.ts";
+import expandEntryPaths from "../../expandEntryPaths.ts";
+import bundle from "./cmds/bundle.ts";
 
 interface Options {
   entryPath?: string[];
@@ -82,4 +83,5 @@ export default new Command()
         services: { outDir: options.servicesDir.trim() },
       }),
     );
-  });
+  })
+  .command("bundle", bundle);
