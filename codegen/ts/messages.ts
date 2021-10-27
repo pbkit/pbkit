@@ -1,7 +1,6 @@
 import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
-import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { join } from "../path.ts";
@@ -16,10 +15,11 @@ import {
   CreateImportBufferFn,
   ImportBuffer,
 } from "./import-buffer.ts";
-import genIndex from "./genIndex.ts";
+import { IndexBuffer } from "./index-buffer.ts";
 
 export interface GenConfig {
   createImportBuffer: CreateImportBufferFn;
+  indexBuffer: IndexBuffer;
   customTypeMapping: CustomTypeMapping;
   messages: GenMessagesConfig;
 }
@@ -27,15 +27,18 @@ export default function* gen(
   schema: schema.Schema,
   config: GenConfig,
 ): Generator<CodeEntry> {
-  const { createImportBuffer, customTypeMapping, messages } = config;
-  yield* genIndex({
-    typePathTree: createTypePathTree(Object.keys(schema.types)),
-    exists: (typePath) => typePath in schema.types,
-    getIndexFilePath: (typePath) => getIndexFilePath(typePath, messages),
-    getFilePath: (typePath) => getFilePath(typePath, messages),
-    itemIsExportedAs: "Type",
-  });
+  const {
+    createImportBuffer,
+    indexBuffer,
+    customTypeMapping,
+    messages,
+  } = config;
   for (const [typePath, type] of Object.entries(schema.types)) {
+    indexBuffer.reExport(
+      getFilePath(typePath, messages, ""),
+      "Type",
+      typePath.split(".").pop()!,
+    );
     switch (type.kind) {
       case "enum":
         yield* genEnum({ typePath, type, messages });
@@ -54,24 +57,14 @@ export default function* gen(
   }
 }
 
-export function getIndexFilePath(
-  typePath: string,
-  messages: GenMessagesConfig,
-): string {
-  return join(
-    messages.outDir,
-    typePath.replace(/^\./, "").replaceAll(".", "/"),
-    "index.ts",
-  );
-}
-
 export function getFilePath(
   typePath: string,
   messages: GenMessagesConfig,
+  ext = ".ts",
 ): string {
   return join(
     messages.outDir,
-    typePath.replace(/^\./, "").replaceAll(".", "/") + ".ts",
+    typePath.replace(/^\./, "").replaceAll(".", "/") + ext,
   );
 }
 

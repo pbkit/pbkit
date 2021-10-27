@@ -10,6 +10,7 @@ import {
   CreateImportBufferFn,
   ImportBuffer,
 } from "./import-buffer.ts";
+import { createIndexBuffer, IndexBuffer } from "./index-buffer.ts";
 
 export interface GenConfig {
   extInImport?: string;
@@ -18,44 +19,19 @@ export interface GenConfig {
   messages?: GenMessagesConfig;
   services?: GenServicesConfig;
 }
-export default async function* gen(
+export default function gen(
   schema: Schema,
   config: GenConfig = {},
 ): AsyncGenerator<CodeEntry> {
-  const ext = (config.extInImport ?? ".ts").trim();
-  const replace = ext !== ".ts";
-  const replaceExt = replaceTsFileExtensionInImportStatementFromReader;
-  const runtime = config.runtime ?? { packageName: "@pbkit/runtime" };
-  const messages = config.messages ?? { outDir: "messages" };
-  const services = config.services ?? { outDir: "services" };
-  const createImportBuffer: CreateImportBufferFn = (config) => (
-    createImportBufferFn({ ...config, runtime })
+  const { messages, services } = config;
+  return replaceExts(
+    filterDuplicates(genAll(
+      [{ schema, messages, services }],
+      config.runtime,
+      config.customTypeMapping,
+    )),
+    config.extInImport,
   );
-  const customTypeMapping: CustomTypeMapping = {
-    ...getWellKnownTypeMapping({ messages }),
-    ...config.customTypeMapping,
-  };
-  async function* iterGeneratedFiles(): AsyncGenerator<CodeEntry> {
-    if (runtime.packageName == null) {
-      for await (const [filePath, data] of runtime.iterRuntimeFiles()) {
-        yield [join(runtime.outDir, filePath), data];
-      }
-    }
-    yield* genMessages(schema, {
-      createImportBuffer,
-      customTypeMapping,
-      messages,
-    });
-    yield* genServices(schema, {
-      createImportBuffer,
-      customTypeMapping,
-      messages,
-      services,
-    });
-  }
-  for await (const [filePath, data] of iterGeneratedFiles()) {
-    yield [filePath, replace ? await replaceExt(data, ext) : data];
-  }
 }
 
 export interface BundleConfig {
@@ -69,49 +45,90 @@ export interface GenUnit {
   messages?: GenMessagesConfig;
   services?: GenServicesConfig;
 }
-export async function* bundle(config: BundleConfig): AsyncGenerator<CodeEntry> {
-  const ext = (config.extInImport ?? ".ts").trim();
-  const replace = ext !== ".ts";
-  const replaceExt = replaceTsFileExtensionInImportStatementFromReader;
-  const runtime = config.runtime ?? { packageName: "@pbkit/runtime" };
+export function bundle(config: BundleConfig): AsyncGenerator<CodeEntry> {
+  return replaceExts(
+    filterDuplicates(genAll(
+      config.units,
+      config.runtime,
+      config.customTypeMapping,
+    )),
+    config.extInImport,
+  );
+}
+
+async function* genAll(
+  units: GenUnit[],
+  _runtime?: GenRuntimeConfig,
+  customTypeMapping?: CustomTypeMapping,
+): AsyncGenerator<CodeEntry> {
+  const runtime = _runtime ?? { packageName: "@pbkit/runtime" };
+  if (runtime.packageName == null) {
+    for await (const [filePath, data] of runtime.iterRuntimeFiles()) {
+      yield [join(runtime.outDir, filePath), data];
+    }
+  }
   const createImportBuffer: CreateImportBufferFn = (config) => (
     createImportBufferFn({ ...config, runtime })
   );
-  async function* iterGeneratedFiles(unit: GenUnit): AsyncGenerator<CodeEntry> {
-    const { schema } = unit;
-    const messages = unit.messages ?? { outDir: "messages" };
-    const services = unit.services ?? { outDir: "services" };
-    const customTypeMapping: CustomTypeMapping = {
-      ...getWellKnownTypeMapping({ messages }),
-      ...config.customTypeMapping,
-    };
-    yield* genMessages(schema, {
+  const indexBuffer = createIndexBuffer();
+  for await (const unit of units) {
+    yield* genBuildUnit(
+      unit,
       createImportBuffer,
+      indexBuffer,
       customTypeMapping,
-      messages,
-    });
-    yield* genServices(schema, {
-      createImportBuffer,
-      customTypeMapping,
-      messages,
-      services,
-    });
+    );
   }
-  if (runtime.packageName == null) {
-    for await (const [filePath, data] of runtime.iterRuntimeFiles()) {
-      yield [
-        join(runtime.outDir, filePath),
-        replace ? await replaceExt(data, ext) : data,
-      ];
-    }
-  }
+  yield* indexBuffer;
+}
+
+async function* genBuildUnit(
+  unit: GenUnit,
+  createImportBuffer: CreateImportBufferFn,
+  indexBuffer: IndexBuffer,
+  _customTypeMapping?: CustomTypeMapping,
+): AsyncGenerator<CodeEntry> {
+  const { schema } = unit;
+  const messages = unit.messages ?? { outDir: "messages" };
+  const services = unit.services ?? { outDir: "services" };
+  const customTypeMapping: CustomTypeMapping = {
+    ...getWellKnownTypeMapping({ messages }),
+    ..._customTypeMapping,
+  };
+  yield* genMessages(schema, {
+    createImportBuffer,
+    indexBuffer,
+    customTypeMapping,
+    messages,
+  });
+  yield* genServices(schema, {
+    createImportBuffer,
+    indexBuffer,
+    customTypeMapping,
+    messages,
+    services,
+  });
+}
+
+async function* filterDuplicates(
+  codes: AsyncGenerator<CodeEntry>,
+): AsyncGenerator<CodeEntry> {
   const filter = new Set<string>();
-  for (const unit of config.units) {
-    for await (const [filePath, data] of iterGeneratedFiles(unit)) {
-      if (filter.has(filePath)) continue;
-      filter.add(filePath);
-      yield [filePath, replace ? await replaceExt(data, ext) : data];
-    }
+  for await (const [filePath, data] of codes) {
+    if (filter.has(filePath)) continue;
+    filter.add(filePath);
+    yield [filePath, data];
+  }
+}
+
+async function* replaceExts(
+  codes: AsyncGenerator<CodeEntry>,
+  extInImport: string = ".ts",
+): AsyncGenerator<CodeEntry> {
+  const ext = extInImport.trim();
+  const replaceExt = replaceTsFileExtensionInImportStatementFromReader;
+  for await (const [filePath, data] of codes) {
+    yield [filePath, ext !== ".ts" ? await replaceExt(data, ext) : data];
   }
 }
 
