@@ -1,11 +1,9 @@
-import { parse as parseYaml } from "https://deno.land/std@0.107.0/encoding/yaml.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import { createLoader } from "../../../../../../../core/loader/deno-fs.ts";
 import save from "../../../../../../../codegen/save.ts";
 import {
   bundle,
-  BundleConfigYaml,
-  yamlToBundleConfig,
+  yamlTextToBundleConfig,
 } from "../../../../../../../codegen/ts/index.ts";
 import iterRuntimeFiles from "../../../../../../../codegen/ts/iterRuntimeFiles.ts";
 import { getVendorDir } from "../../../../../config.ts";
@@ -18,10 +16,8 @@ export default new Command()
   .description("Bundle multiple build unit.")
   .action(async (_: Options, configYaml: string) => {
     const configYamlText = await Deno.readTextFile(configYaml);
-    const yaml = parseYaml(configYamlText) as BundleConfigYaml;
-    const outDir = yaml["out-dir"] ?? "out";
-    const bundleConfig = await yamlToBundleConfig(
-      yaml,
+    const [outDir, bundleConfig] = await yamlTextToBundleConfig(
+      configYamlText,
       async (protoPaths, entryPaths, protoFiles) => {
         const roots = [
           ...entryPaths,

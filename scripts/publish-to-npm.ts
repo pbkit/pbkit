@@ -28,7 +28,10 @@ const packageJson = {
     type: "git",
     url: "git+https://github.com/pbkit/pbkit.git",
   },
-  bin: { "pb-gen-ts": "node/cli/pb-gen-ts.js" },
+  bin: {
+    "pb-gen-ts": "node/cli/pb-gen-ts.js",
+    "pb-gen-ts-bundle": "node/cli/pb-gen-ts-bundle.js",
+  },
   preferUnplugged: true,
   dependencies: {
     "@yarnpkg/fslib": "^2.6.0-rc.8",
