@@ -1,7 +1,6 @@
 import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
-import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
 import {
@@ -10,7 +9,7 @@ import {
   GenServicesConfig,
 } from "./index.ts";
 import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
-import genIndex from "./genIndex.ts";
+import { IndexBuffer } from "./index-buffer.ts";
 import {
   getFilePath as getMessageFilePath,
   pbTypeToTsType,
@@ -18,6 +17,7 @@ import {
 
 export interface GenConfig {
   createImportBuffer: CreateImportBufferFn;
+  indexBuffer: IndexBuffer;
   customTypeMapping: CustomTypeMapping;
   messages: GenMessagesConfig;
   services: GenServicesConfig;
@@ -26,15 +26,19 @@ export default function* gen(
   schema: Schema,
   config: GenConfig,
 ): Generator<CodeEntry> {
-  const { createImportBuffer, customTypeMapping, messages, services } = config;
-  yield* genIndex({
-    typePathTree: createTypePathTree(Object.keys(schema.services)),
-    exists: (typePath) => typePath in schema.services,
-    getIndexFilePath: (typePath) => getIndexFilePath(typePath, services),
-    getFilePath: (typePath) => getFilePath(typePath, services),
-    itemIsExportedAs: "Service",
-  });
+  const {
+    createImportBuffer,
+    indexBuffer,
+    customTypeMapping,
+    messages,
+    services,
+  } = config;
   for (const [typePath, type] of Object.entries(schema.services)) {
+    indexBuffer.reExport(
+      getFilePath(typePath, services, ""),
+      "Service",
+      typePath.split(".").pop()!,
+    );
     yield* genService({
       typePath,
       type,
@@ -46,24 +50,14 @@ export default function* gen(
   }
 }
 
-export function getIndexFilePath(
-  typePath: string,
-  services: GenServicesConfig,
-): string {
-  return join(
-    services.outDir,
-    typePath.replace(/^\./, "").replaceAll(".", "/"),
-    "index.ts",
-  );
-}
-
 export function getFilePath(
   typePath: string,
   services: GenServicesConfig,
+  ext = ".ts",
 ): string {
   return join(
     services.outDir,
-    typePath.replace(/^\./, "").replaceAll(".", "/") + ".ts",
+    typePath.replace(/^\./, "").replaceAll(".", "/") + ext,
   );
 }
 
