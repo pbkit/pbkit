@@ -2,6 +2,7 @@ name: Publish to NPM
 on:
   release:
     types: [released]
+  workflow_dispatch:
 
 jobs:
   publish-to-npm:
