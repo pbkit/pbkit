@@ -17,6 +17,8 @@ async function run() {
     protoFiles,
     runtimeDir,
     runtimePackage,
+    messagesDir,
+    servicesDir,
     outDir,
     extInImport,
   } = getCliArgs();
@@ -35,8 +37,8 @@ async function run() {
       runtime: runtimePackage
         ? { packageName: runtimePackage.trim() }
         : { iterRuntimeFiles, outDir: runtimeDir.trim() },
-      messages: { outDir: options.messagesDir.trim() },
-      services: { outDir: options.servicesDir.trim() },
+      messages: { outDir: messagesDir.trim() },
+      services: { outDir: servicesDir.trim() },
     }),
   );
 }
