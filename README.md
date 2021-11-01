@@ -30,6 +30,7 @@ web browser) because it does not use platform APIs inside the `core` directory.
   - `protoc` has native binary dependencies, but `pb` command is written in pure
     TypeScript, so it can be used comfortably in Node.js projects, etc., and can
     even easily be run in a web browser.
+  - [How to install and how to use](./cli/pb/README.md)
 - `pollapo` - A package manager for the protobuf schema.
   - A GitHub repository of `.proto` files is treated as a single pollapo
     package.
