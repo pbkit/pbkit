@@ -257,22 +257,32 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: CreateServiceClientConfig
 ): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> {
+  const responseOnly = config?.responseOnly ?? false;
   return Object.fromEntries(Object.entries(methodDescriptors).map(
-    ([camelRpcName, methodDescriptor]) => [
-      camelRpcName,
-      async (request: any, metadata?: any) => {
-        const reqAsyncGenerator = methodDescriptor.requestStream ? request : ${fromSingle}(request);
-        const [resAsyncGenerator, headerPromise, trailerPromise] = rpcClientImpl(methodDescriptor)(reqAsyncGenerator, metadata);
-        const response = methodDescriptor.responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator);
-        const header = await Promise.race([
-          headerPromise,
-          trailerPromise.then(trailer => { throw new RpcError(trailer); }),
-        ]);
-        const result = [await response, header, trailerPromise];
-        if (config?.responseOnly) return result[0];
-        return result;
-      },
-    ]
+    ([camelRpcName, methodDescriptor]) => {
+      const { requestStream, responseStream } = methodDescriptor;
+      const rpcMethodImpl = rpcClientImpl(methodDescriptor);
+      const rpcMethodHandler = async (request: any, metadata?: any) => {
+        const reqAsyncGenerator = requestStream ? request : ${fromSingle}(request);
+        const rpcMethodResult = rpcMethodImpl(reqAsyncGenerator, metadata);
+        const resAsyncGenerator = rpcMethodResult[0];
+        const headerPromise = rpcMethodResult[1];
+        const trailerPromise = rpcMethodResult[2];
+        const response = responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator);
+        const header = await getHeaderBeforeTrailer(headerPromise, trailerPromise);
+        return responseOnly ? await response : [await response, header, trailerPromise];
+      };
+      return [camelRpcName, rpcMethodHandler];
+    }
   )) as unknown as Service;
+}
+function getHeaderBeforeTrailer<THeader, TTrailer>(
+  headerPromise: Promise<THeader>,
+  trailerPromise: Promise<TTrailer>
+): Promise<THeader> {
+  return Promise.race([
+    headerPromise,
+    trailerPromise.then(trailer => { throw new RpcError(trailer); }),
+  ]);
 }
 `);
