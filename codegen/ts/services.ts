@@ -247,17 +247,17 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
 ): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly?: false | undefined }
+  config: CreateServiceClientConfig & { responseOnly?: false }
 ): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly: true }
+  config: CreateServiceClientConfig & { responseOnly: true | undefined }
 ): Service<[] | [TMetadata], []>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: CreateServiceClientConfig
 ): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> {
-  const responseOnly = config?.responseOnly ?? false;
+  const responseOnly = config?.responseOnly ?? true;
   return Object.fromEntries(Object.entries(methodDescriptors).map(
     ([camelRpcName, methodDescriptor]) => {
       const { requestStream, responseStream } = methodDescriptor;
