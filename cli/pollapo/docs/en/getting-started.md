@@ -10,7 +10,7 @@
 
 ```sh
 brew tap riiid/riiid
-brew install pbkit
+brew install pollapo
 ```
 
 ### Install from source
