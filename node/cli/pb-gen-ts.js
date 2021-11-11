@@ -20,6 +20,7 @@ async function run() {
     messagesDir,
     servicesDir,
     outDir,
+    indexFilename,
     extInImport,
   } = getCliArgs();
   const gen = await getGen();
@@ -33,6 +34,7 @@ async function run() {
   await save(
     outDir,
     gen(schema, {
+      indexFilename,
       extInImport,
       runtime: runtimePackage
         ? { packageName: runtimePackage.trim() }
@@ -51,7 +53,13 @@ async function getGen() {
 function getCliArgs() {
   const argv = mri(process.argv.slice(2), {
     alias: { "out-dir": "o" },
-    string: ["entry-path", "proto-path", "out-dir", "ext-in-import"],
+    string: [
+      "entry-path",
+      "proto-path",
+      "out-dir",
+      "index-filename",
+      "ext-in-import",
+    ],
     default: {
       "runtime-dir": "runtime",
       "messages-dir": "messages",
@@ -72,6 +80,7 @@ function getCliArgs() {
     messagesDir: argv["messages-dir"],
     servicesDir: argv["services-dir"],
     outDir: argv["out-dir"],
+    indexFilename: argv["index-filename"],
     extInImport: argv["ext-in-import"],
   };
 }

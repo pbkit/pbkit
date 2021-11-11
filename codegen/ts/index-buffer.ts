@@ -6,11 +6,20 @@ export interface IndexBuffer {
   reExport(from: string, item: string, as: string): void;
   [Symbol.iterator](): Generator<CodeEntry>;
 }
-export function createIndexBuffer(): IndexBuffer {
+export interface CreateIndexBufferConfig {
+  indexFilename?: string;
+}
+export function createIndexBuffer(
+  config?: CreateIndexBufferConfig,
+): IndexBuffer {
   interface Items {
     [as: string]: string;
   }
   let root: directory.Folder<Items> = directory.empty;
+  const indexFilename = config?.indexFilename || "index";
+  const folderEntryToImportStmt = ([name]: [string, unknown]) => {
+    return `import * as ${name} from "./${name}/${indexFilename}.ts";\n`;
+  };
   return {
     reExport(from, item, as) {
       const path = directory.textToPath(from);
@@ -23,9 +32,7 @@ export function createIndexBuffer(): IndexBuffer {
         const folders = entries.filter(([, node]) => !node.value);
         const files = entries.filter(([, node]) => node.value);
         const codes = [
-          ...folders.map(
-            ([name]) => `import * as ${name} from "./${name}/index.ts";\n`,
-          ),
+          ...folders.map(folderEntryToImportStmt),
           folders.length
             ? `export type {\n${
               folders.map(([name]) => `  ${name},\n`).join("")
@@ -47,7 +54,7 @@ export function createIndexBuffer(): IndexBuffer {
           codes.push("export default _;\n");
         }
         yield [
-          [...path, "index.ts"].join("/"),
+          [...path, `${indexFilename}.ts`].join("/"),
           new StringReader(codes.join("")),
         ];
       }
