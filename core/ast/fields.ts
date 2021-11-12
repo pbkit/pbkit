@@ -19,6 +19,7 @@ export type Node =
   | Oneof
   | OneofBody
   | OneofField
+  | OneofGroup
   | MapField;
 
 export interface Field extends StatementBase {
@@ -73,6 +74,7 @@ export interface OneofBody extends Span {
 export type OneofBodyStatement =
   | Option
   | OneofField
+  | OneofGroup
   | Empty;
 
 export interface OneofField extends StatementBase {
@@ -83,6 +85,15 @@ export interface OneofField extends StatementBase {
   fieldNumber: IntLit;
   fieldOptions?: FieldOptions;
   semi: Semi;
+}
+
+export interface OneofGroup extends StatementBase {
+  type: "oneof-group";
+  keyword: Keyword;
+  groupName: Token;
+  eq: Token;
+  fieldNumber: IntLit;
+  messageBody: MessageBody;
 }
 
 export interface MapField extends StatementBase {

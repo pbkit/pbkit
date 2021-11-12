@@ -770,6 +770,7 @@ function acceptMapField(
 function expectOneofBody(parser: RecursiveDescentParser): ast.OneofBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.OneofBodyStatement>(parser, [
+    acceptOneofGroup,
     acceptOption,
     acceptOneofField,
     acceptEmpty,
@@ -998,6 +999,35 @@ function acceptGroup(
     leadingDetachedComments: [], // TODO
     type: "group",
     groupLabel,
+    keyword,
+    groupName,
+    eq,
+    fieldNumber,
+    messageBody,
+  };
+}
+
+function acceptOneofGroup(
+  parser: RecursiveDescentParser,
+  leadingComments: ast.Comment[],
+): ast.OneofGroup | undefined {
+  const keyword = acceptKeyword(parser, "group");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const groupName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const fieldNumber = expectIntLit(parser);
+  skipWsAndComments(parser);
+  const messageBody = expectMessageBody(parser);
+  return {
+    start: keyword.start,
+    end: messageBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "oneof-group",
     keyword,
     groupName,
     eq,

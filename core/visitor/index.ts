@@ -37,6 +37,7 @@ export interface Visitor {
   visitOneofBody: VisitFn<ast.OneofBody>;
   visitOneofBodyStatement: VisitFn<ast.OneofBodyStatement>;
   visitOneofField: VisitFn<ast.OneofField>;
+  visitOneofGroup: VisitFn<ast.OneofGroup>;
   visitMapField: VisitFn<ast.MapField>;
   visitExtensions: VisitFn<ast.Extensions>;
   visitRanges: VisitFn<ast.Ranges>;
@@ -395,6 +396,15 @@ export const visitor: Visitor = {
       node.fieldOptions &&
         visitor.visitFieldOptions(visitor, node.fieldOptions);
       visitor.visitSemi(visitor, node.semi);
+    });
+  },
+  visitOneofGroup(visitor, node) {
+    visitStatementBase(visitor, node, () => {
+      visitor.visitKeyword(visitor, node.keyword);
+      visitor.visitToken(visitor, node.groupName);
+      visitor.visitToken(visitor, node.eq);
+      visitor.visitIntLit(visitor, node.fieldNumber);
+      visitor.visitMessageBody(visitor, node.messageBody);
     });
   },
   visitMapField(visitor, node) {
