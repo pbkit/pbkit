@@ -2,9 +2,9 @@ import { walk } from "https://deno.land/std@0.107.0/fs/walk.ts";
 import { getVendorDir } from "../../cli/pb/config.ts";
 import { parse } from "./proto.ts";
 
-let vendorDir = "";
+const vendorDir = getVendorDir();
 try {
-  vendorDir = getVendorDir();
+  await Deno.lstat(vendorDir);
 } catch {
   console.error("Please try `pb vendor install` first.");
   Deno.exit(0);
