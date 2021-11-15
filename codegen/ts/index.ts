@@ -13,33 +13,28 @@ import {
 } from "./import-buffer.ts";
 import { createIndexBuffer, IndexBuffer } from "./index-buffer.ts";
 
-export interface GenConfig {
-  extInImport?: string;
-  customTypeMapping?: CustomTypeMapping;
-  runtime?: GenRuntimeConfig;
+export type GenConfig = Omit<BundleConfig, "units"> & {
   messages?: GenMessagesConfig;
   services?: GenServicesConfig;
-}
+};
 export default function gen(
   schema: Schema,
   config: GenConfig = {},
 ): AsyncGenerator<CodeEntry> {
   const { messages, services } = config;
+  const units = [{ schema, messages, services }];
   return replaceExts(
-    filterDuplicates(genAll(
-      [{ schema, messages, services }],
-      config.runtime,
-      config.customTypeMapping,
-    )),
+    filterDuplicates(genAll({ ...config, units })),
     config.extInImport,
   );
 }
 
 export interface BundleConfig {
-  extInImport?: string;
+  units: GenUnit[];
   customTypeMapping?: CustomTypeMapping;
   runtime?: GenRuntimeConfig;
-  units: GenUnit[];
+  indexFilename?: string;
+  extInImport?: string;
 }
 export interface GenUnit {
   schema: Schema;
@@ -47,31 +42,22 @@ export interface GenUnit {
   services?: GenServicesConfig;
 }
 export function bundle(config: BundleConfig): AsyncGenerator<CodeEntry> {
-  return replaceExts(
-    filterDuplicates(genAll(
-      config.units,
-      config.runtime,
-      config.customTypeMapping,
-    )),
-    config.extInImport,
-  );
+  return replaceExts(filterDuplicates(genAll(config)), config.extInImport);
 }
 
-async function* genAll(
-  units: GenUnit[],
-  _runtime?: GenRuntimeConfig,
-  customTypeMapping?: CustomTypeMapping,
-): AsyncGenerator<CodeEntry> {
-  const runtime = _runtime ?? { packageName: "@pbkit/runtime" };
-  if (runtime.packageName == null) {
-    for await (const [filePath, data] of runtime.iterRuntimeFiles()) {
-      yield [join(runtime.outDir, filePath), data];
+type GenAllConfig = Omit<BundleConfig, "extInImport">;
+async function* genAll(config: GenAllConfig): AsyncGenerator<CodeEntry> {
+  const { units, customTypeMapping, runtime, indexFilename } = config;
+  const _runtime = runtime ?? { packageName: "@pbkit/runtime" };
+  if (_runtime.packageName == null) {
+    for await (const [filePath, data] of _runtime.iterRuntimeFiles()) {
+      yield [join(_runtime.outDir, filePath), data];
     }
   }
   const createImportBuffer: CreateImportBufferFn = (config) => (
-    createImportBufferFn({ ...config, runtime })
+    createImportBufferFn({ ...config, runtime: _runtime })
   );
-  const indexBuffer = createIndexBuffer();
+  const indexBuffer = createIndexBuffer({ indexFilename });
   for await (const unit of units) {
     yield* genBuildUnit(
       unit,
@@ -135,6 +121,7 @@ async function* replaceExts(
 
 export interface BundleConfigYaml {
   ["out-dir"]?: string;
+  ["index-filename"]?: string;
   ["ext-in-import"]?: string;
   ["runtime-dir"]?: string;
   ["runtime-package"]?: string;
@@ -159,6 +146,7 @@ export async function yamlToBundleConfig(
   iterRuntimeFiles: () => AsyncGenerator<CodeEntry>,
 ): Promise<BundleConfig> {
   return {
+    indexFilename: yaml["index-filename"],
     extInImport: yaml["ext-in-import"],
     runtime: yaml["runtime-package"]
       ? { packageName: yaml["runtime-package"].trim() }

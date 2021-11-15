@@ -16,6 +16,7 @@ interface Options {
   messagesDir: string;
   servicesDir: string;
   outDir: string;
+  indexFilename: string;
   extInImport: string;
 }
 
@@ -56,6 +57,11 @@ export default new Command()
     { default: "out" },
   )
   .option(
+    "--index-filename <filename:string>",
+    "Specify the filename for re-exporting module.",
+    { default: "index" },
+  )
+  .option(
     "--ext-in-import <extension:string>",
     "Specify the file extension in import statement.",
     { default: ".ts" },
@@ -71,10 +77,12 @@ export default new Command()
       ...protoFiles,
     ];
     const schema = await build({ loader, files });
+    const indexFilename = options.indexFilename;
     const extInImport = options.extInImport;
     await save(
       options.outDir,
       gen(schema, {
+        indexFilename,
         extInImport,
         runtime: options.runtimePackage
           ? { packageName: options.runtimePackage.trim() }
