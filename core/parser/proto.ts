@@ -100,7 +100,7 @@ const floatLitPattern =
   /^\d+\.\d*(?:e[-+]?\d+)?|^\d+e[-+]?\d+|^\.\d+(?:e[-+]?\d+)?|^inf|^nan/i;
 const boolLitPattern = /^true|^false/;
 const strLitPattern =
-  /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\'"]|[^"\0\n\\])*"/i;
+  /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\\?'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\\?'"]|[^"\0\n\\])*"/i;
 const identPattern = /^[a-z_][a-z0-9_]*/i;
 
 const acceptDot = acceptPatternAndThen<ast.Dot>(
@@ -770,6 +770,7 @@ function acceptMapField(
 function expectOneofBody(parser: RecursiveDescentParser): ast.OneofBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.OneofBodyStatement>(parser, [
+    acceptOneofGroup,
     acceptOption,
     acceptOneofField,
     acceptEmpty,
@@ -998,6 +999,35 @@ function acceptGroup(
     leadingDetachedComments: [], // TODO
     type: "group",
     groupLabel,
+    keyword,
+    groupName,
+    eq,
+    fieldNumber,
+    messageBody,
+  };
+}
+
+function acceptOneofGroup(
+  parser: RecursiveDescentParser,
+  leadingComments: ast.Comment[],
+): ast.OneofGroup | undefined {
+  const keyword = acceptKeyword(parser, "group");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const groupName = parser.expect(identPattern);
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const fieldNumber = expectIntLit(parser);
+  skipWsAndComments(parser);
+  const messageBody = expectMessageBody(parser);
+  return {
+    start: keyword.start,
+    end: messageBody.end,
+    leadingComments,
+    trailingComments: [], // TODO
+    leadingDetachedComments: [], // TODO
+    type: "oneof-group",
     keyword,
     groupName,
     eq,

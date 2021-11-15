@@ -1,4 +1,5 @@
-import { dirname, relative } from "../path.ts";
+import { dirname, join, relative } from "../path.ts";
+import { GenRuntimeConfig } from "./index.ts";
 
 export interface AddImport {
   (from: string, item: string, as?: string): string;
@@ -10,15 +11,27 @@ export interface AddInternalImport {
 export interface ImportBuffer {
   addInternalImport: AddInternalImport;
   addImport: AddImport;
+  addRuntimeImport: AddInternalImport;
   getCode(): string;
 }
-export function createImportBuffer(reservedNames: string[] = []): ImportBuffer {
+
+export type CreateImportBufferFn = typeof createImportBuffer;
+
+export interface CreateImportBufferConfig {
+  reservedNames?: string[];
+  runtime?: GenRuntimeConfig;
+}
+export function createImportBuffer(
+  config: CreateImportBufferConfig,
+): ImportBuffer {
   type Froms = { [from: string]: Items };
   type Items = { [as: string]: string };
   type ConflictTable = { [as: string]: ConflictCountTable };
   type ConflictCountTable = { [fromAndItem: string]: number };
   const froms: Froms = {};
   const conflictTable: ConflictTable = {};
+  const reservedNames = config.reservedNames ?? [];
+  const runtime = config.runtime ?? { packageName: "@pbkit/runtime" };
   for (const reservedName of reservedNames) {
     conflictTable[reservedName] = { "": 0 };
   }
@@ -43,6 +56,15 @@ export function createImportBuffer(reservedNames: string[] = []): ImportBuffer {
       const __as = conflictCount ? `${_as}_${conflictCount}` : _as;
       items[__as] = item;
       return __as;
+    },
+    addRuntimeImport(here, from, item, as) {
+      if (runtime.packageName == null) {
+        const _from = join(runtime.outDir, from);
+        return importBuffer.addInternalImport(here, _from, item, as);
+      } else {
+        const _from = join(runtime.packageName, from);
+        return importBuffer.addImport(_from, item, as);
+      }
     },
     getCode() {
       return Object.entries(froms).map(([from, items]) => {

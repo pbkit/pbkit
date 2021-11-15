@@ -1,80 +1,119 @@
 import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
-import { createTypePathTree } from "../../core/schema/type-path-tree.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
-import { CustomTypeMapping } from "./index.ts";
-import { createImportBuffer, ImportBuffer } from "./import-buffer.ts";
-import genIndex from "./genIndex.ts";
+import {
+  CustomTypeMapping,
+  GenMessagesConfig,
+  GenServicesConfig,
+} from "./index.ts";
+import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
+import { IndexBuffer } from "./index-buffer.ts";
 import {
   getFilePath as getMessageFilePath,
   pbTypeToTsType,
 } from "./messages.ts";
 
+export interface GenConfig {
+  createImportBuffer: CreateImportBufferFn;
+  indexBuffer: IndexBuffer;
+  customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
+  services: GenServicesConfig;
+}
 export default function* gen(
   schema: Schema,
-  customTypeMapping: CustomTypeMapping,
+  config: GenConfig,
 ): Generator<CodeEntry> {
-  yield* genIndex({
-    typePathTree: createTypePathTree(Object.keys(schema.services)),
-    exists: (typePath) => typePath in schema.services,
-    getIndexFilePath,
-    getFilePath,
-    itemIsExportedAs: "Service",
-  });
+  const {
+    createImportBuffer,
+    indexBuffer,
+    customTypeMapping,
+    messages,
+    services,
+  } = config;
   for (const [typePath, type] of Object.entries(schema.services)) {
-    yield* genService(customTypeMapping, typePath, type);
+    indexBuffer.reExport(
+      getFilePath(typePath, services, ""),
+      "Service",
+      typePath.split(".").pop()!,
+    );
+    yield* genService({
+      typePath,
+      type,
+      createImportBuffer,
+      customTypeMapping,
+      messages,
+      services,
+    });
   }
 }
 
-export function getIndexFilePath(typePath: string): string {
-  return join("services", typePath.replaceAll(".", "/"), "index.ts");
-}
-
-export function getFilePath(typePath: string): string {
-  return join("services", typePath.replaceAll(".", "/") + ".ts");
+export function getFilePath(
+  typePath: string,
+  services: GenServicesConfig,
+  ext = ".ts",
+): string {
+  return join(
+    services.outDir,
+    typePath.replace(/^\./, "").replaceAll(".", "/") + ext,
+  );
 }
 
 const reservedNames = ["Service", "Uint8Array"];
-function* genService(
-  customTypeMapping: CustomTypeMapping,
-  typePath: string,
-  type: Service,
-): Generator<CodeEntry> {
-  const filePath = getFilePath(typePath);
-  const importBuffer = createImportBuffer(reservedNames);
-  const serviceTypeDefCode = getServiceTypeDefCode(
+
+interface GenServiceConfig {
+  typePath: string;
+  type: Service;
+  createImportBuffer: CreateImportBufferFn;
+  customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
+  services: GenServicesConfig;
+}
+function* genService({
+  typePath,
+  type,
+  customTypeMapping,
+  createImportBuffer,
+  messages,
+  services,
+}: GenServiceConfig): Generator<CodeEntry> {
+  const filePath = getFilePath(typePath, services);
+  const importBuffer = createImportBuffer({ reservedNames });
+  const serviceTypeDefCode = getServiceTypeDefCode({
     customTypeMapping,
     filePath,
     importBuffer,
-    type,
-  );
-  const methodDescriptorsCode = getMethodDescriptorsCode(
+    service: type,
+    messages,
+  });
+  const methodDescriptorsCode = getMethodDescriptorsCode({
     filePath,
     typePath,
     importBuffer,
-    type,
-  );
-  const RpcClientImpl = importBuffer.addInternalImport(
+    service: type,
+    messages,
+  });
+  const RpcClientImpl = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/rpc.ts",
+    "rpc.ts",
     "RpcClientImpl",
   );
-  const singleValueToAsyncGenerator = importBuffer.addInternalImport(
+  const fromSingle = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/rpc.ts",
-    "singleValueToAsyncGenerator",
+    "async/async-generator.ts",
+    "fromSingle",
   );
-  const getFirstValueFromAsyncGenerator = importBuffer.addInternalImport(
+  const first = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/rpc.ts",
-    "getFirstValueFromAsyncGenerator",
+    "async/async-generator.ts",
+    "first",
   );
   const createServiceClientCode = getCreateServiceClientCode(
     RpcClientImpl,
-    singleValueToAsyncGenerator,
-    getFirstValueFromAsyncGenerator,
+    fromSingle,
+    first,
   );
   yield [
     filePath,
@@ -87,28 +126,37 @@ function* genService(
   ];
 }
 
-function getServiceTypeDefCode(
-  customTypeMapping: CustomTypeMapping,
-  filePath: string,
-  importBuffer: ImportBuffer,
-  service: Service,
-) {
+interface GetServiceTypeDefCodeConfig {
+  customTypeMapping: CustomTypeMapping;
+  filePath: string;
+  importBuffer: ImportBuffer;
+  messages: GenMessagesConfig;
+  service: Service;
+}
+function getServiceTypeDefCode({
+  customTypeMapping,
+  filePath,
+  importBuffer,
+  messages,
+  service,
+}: GetServiceTypeDefCodeConfig) {
   function getTsType(typePath?: string) {
-    return pbTypeToTsType(
+    return pbTypeToTsType({
       customTypeMapping,
-      importBuffer.addInternalImport,
-      filePath,
+      addInternalImport: importBuffer.addInternalImport,
+      messages,
+      here: filePath,
       typePath,
-    );
+    });
   }
   function getTsRpcType(rpcType: RpcType, isRes?: boolean): string {
     const typeName = getTsType(rpcType.typePath);
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
-  const RpcReturnType = importBuffer.addInternalImport(
+  const RpcReturnType = importBuffer.addRuntimeImport(
     filePath,
-    "runtime/rpc.ts",
+    "rpc.ts",
     "RpcReturnType",
   );
   return `export interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
@@ -123,39 +171,43 @@ function getServiceTypeDefCode(
   }
 }
 
-function getMethodDescriptorsCode(
-  filePath: string,
-  typePath: string,
-  importBuffer: ImportBuffer,
-  service: Service,
-) {
-  const MethodDescriptor = importBuffer.addInternalImport(
-    filePath,
-    "runtime/rpc.ts",
-    "MethodDescriptor",
-  );
+interface GetMethodDescriptorsCodeConfig {
+  filePath: string;
+  typePath: string;
+  importBuffer: ImportBuffer;
+  service: Service;
+  messages: GenMessagesConfig;
+}
+function getMethodDescriptorsCode({
+  filePath,
+  typePath,
+  importBuffer,
+  service,
+  messages,
+}: GetMethodDescriptorsCodeConfig) {
   return [
-    `export const methodDescriptors: { [methodName in keyof Service]: ${MethodDescriptor}<any, any> } = {\n`,
+    "export type MethodDescriptors = typeof methodDescriptors;\n",
+    "export const methodDescriptors = {\n",
     Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const camelRpcName = pascalToCamel(rpcName);
       const encodeRequestBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.reqType.typePath!),
+        getMessageFilePath(rpc.reqType.typePath!, messages),
         "encodeBinary",
       );
       const decodeRequestBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.reqType.typePath!),
+        getMessageFilePath(rpc.reqType.typePath!, messages),
         "decodeBinary",
       );
       const encodeResponseBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.resType.typePath!),
+        getMessageFilePath(rpc.resType.typePath!, messages),
         "encodeBinary",
       );
       const decodeResponseBinary = importBuffer.addInternalImport(
         filePath,
-        getMessageFilePath(rpc.resType.typePath!),
+        getMessageFilePath(rpc.resType.typePath!, messages),
         "decodeBinary",
       );
       return [
@@ -175,14 +227,14 @@ function getMethodDescriptorsCode(
         "  },\n",
       ].join("");
     }).join(""),
-    "};\n",
+    "} as const;\n",
   ].join("");
 }
 
 const getCreateServiceClientCode = (
   RpcClientImpl: string,
-  singleValueToAsyncGenerator: string,
-  getFirstValueFromAsyncGenerator: string,
+  fromSingle: string,
+  first: string,
 ) => (`export class RpcError<TTrailer = any> extends Error {
   constructor(public trailer: TTrailer) { super(); }
 }
@@ -195,32 +247,42 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
 ): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly?: false | undefined }
+  config: CreateServiceClientConfig & { responseOnly?: false }
 ): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly: true }
+  config: CreateServiceClientConfig & { responseOnly: true | undefined }
 ): Service<[] | [TMetadata], []>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: CreateServiceClientConfig
 ): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> {
+  const responseOnly = config?.responseOnly ?? true;
   return Object.fromEntries(Object.entries(methodDescriptors).map(
-    ([camelRpcName, methodDescriptor]) => [
-      camelRpcName,
-      async (request: any, metadata?: any) => {
-        const reqAsyncGenerator = methodDescriptor.requestStream ? request : ${singleValueToAsyncGenerator}(request);
-        const [resAsyncGenerator, headerPromise, trailerPromise] = rpcClientImpl(methodDescriptor)(reqAsyncGenerator, metadata);
-        const response = methodDescriptor.responseStream ? resAsyncGenerator : ${getFirstValueFromAsyncGenerator}(resAsyncGenerator);
-        const header = await Promise.race([
-          headerPromise,
-          trailerPromise.then(trailer => { throw new RpcError(trailer); }),
-        ]);
-        const result = [await response, header, trailerPromise];
-        if (config?.responseOnly) return result[0];
-        return result;
-      },
-    ]
+    ([camelRpcName, methodDescriptor]) => {
+      const { requestStream, responseStream } = methodDescriptor;
+      const rpcMethodImpl = rpcClientImpl(methodDescriptor);
+      const rpcMethodHandler = async (request: any, metadata?: any) => {
+        const reqAsyncGenerator = requestStream ? request : ${fromSingle}(request);
+        const rpcMethodResult = rpcMethodImpl(reqAsyncGenerator, metadata);
+        const resAsyncGenerator = rpcMethodResult[0];
+        const headerPromise = rpcMethodResult[1];
+        const trailerPromise = rpcMethodResult[2];
+        const response = responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator);
+        const header = await getHeaderBeforeTrailer(headerPromise, trailerPromise);
+        return responseOnly ? await response : [await response, header, trailerPromise];
+      };
+      return [camelRpcName, rpcMethodHandler];
+    }
   )) as unknown as Service;
+}
+function getHeaderBeforeTrailer<THeader, TTrailer>(
+  headerPromise: Promise<THeader>,
+  trailerPromise: Promise<TTrailer>
+): Promise<THeader> {
+  return Promise.race([
+    headerPromise,
+    trailerPromise.then(trailer => { throw new RpcError(trailer); }),
+  ]);
 }
 `);

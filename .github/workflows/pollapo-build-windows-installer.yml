@@ -24,7 +24,7 @@ jobs:
           name: pollapo.exe
           path: cli/pollapo/pollapo.exe
       - name: Rename pollapo.exe to pollapo-windows.exe
-        run: Move-Item -Path .\\cli\\pollapo\\pollapo.exe -Destination .\\cli\\pollapo\\pollapo-windows.exe
+        run: Move-Item -Path pollapo.exe -Destination pollapo-windows.exe
       - name: Upload binary
         uses: shogo82148/actions-upload-release-asset@v1
         with:

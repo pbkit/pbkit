@@ -3,7 +3,7 @@ import {
   defer,
   Observer,
   SubscribeFn,
-} from "../core/misc/async/observer.ts";
+} from "../core/runtime/async/observer.ts";
 
 export interface ProgressResult {
   originalResponse: Response;

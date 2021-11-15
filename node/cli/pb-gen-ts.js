@@ -15,7 +15,12 @@ async function run() {
     entryPaths,
     protoPaths,
     protoFiles,
+    runtimeDir,
+    runtimePackage,
+    messagesDir,
+    servicesDir,
     outDir,
+    indexFilename,
     extInImport,
   } = getCliArgs();
   const gen = await getGen();
@@ -26,7 +31,18 @@ async function run() {
     ...protoFiles,
   ];
   const schema = await build({ loader, files });
-  await save(outDir, gen(schema, { extInImport, iterRuntimeFiles }));
+  await save(
+    outDir,
+    gen(schema, {
+      indexFilename,
+      extInImport,
+      runtime: runtimePackage
+        ? { packageName: runtimePackage.trim() }
+        : { iterRuntimeFiles, outDir: runtimeDir.trim() },
+      messages: { outDir: messagesDir.trim() },
+      services: { outDir: servicesDir.trim() },
+    }),
+  );
 }
 
 async function getGen() {
@@ -37,8 +53,17 @@ async function getGen() {
 function getCliArgs() {
   const argv = mri(process.argv.slice(2), {
     alias: { "out-dir": "o" },
-    string: ["entry-path", "proto-path", "out-dir", "ext-in-import"],
+    string: [
+      "entry-path",
+      "proto-path",
+      "out-dir",
+      "index-filename",
+      "ext-in-import",
+    ],
     default: {
+      "runtime-dir": "runtime",
+      "messages-dir": "messages",
+      "services-dir": "services",
       "out-dir": "out",
       "ext-in-import": "",
     },
@@ -50,7 +75,12 @@ function getCliArgs() {
     entryPaths: wraparr(argv["entry-path"]),
     protoPaths: wraparr(argv["proto-path"]),
     protoFiles: wraparr(argv._),
+    runtimeDir: argv["runtime-dir"],
+    runtimePackage: argv["runtime-package"],
+    messagesDir: argv["messages-dir"],
+    servicesDir: argv["services-dir"],
     outDir: argv["out-dir"],
+    indexFilename: argv["index-filename"],
     extInImport: argv["ext-in-import"],
   };
 }

@@ -7,6 +7,7 @@ import {
 } from "https://deno.land/std@0.107.0/path/mod.ts";
 import { replaceTsFileExtensionInImportStatement } from "../misc/compat/tsc.ts";
 import { zip } from "../misc/archive/zip.ts";
+import { getVendorDir } from "../cli/pb/config.ts";
 
 await emptyDir("tmp/npm");
 
@@ -27,7 +28,10 @@ const packageJson = {
     type: "git",
     url: "git+https://github.com/pbkit/pbkit.git",
   },
-  bin: { "pb-gen-ts": "node/cli/pb-gen-ts.js" },
+  bin: {
+    "pb-gen-ts": "node/cli/pb-gen-ts.js",
+    "pb-gen-ts-bundle": "node/cli/pb-gen-ts-bundle.js",
+  },
   preferUnplugged: true,
   dependencies: {
     "@yarnpkg/fslib": "^2.6.0-rc.8",
@@ -112,10 +116,39 @@ await Deno.writeFile(
 console.log("writing 'vendor.zip'. it takes few minutes...");
 await Deno.writeFile(
   "tmp/npm/dist/vendor.zip",
-  await zip(filesInDir("vendor", ".proto")),
+  await zip(filesInDir(getVendorDir(), ".proto")),
 );
 
-await Deno.run({ cwd: "tmp/npm/dist", cmd: ["npm", "publish"] }).status();
+await Deno.run({
+  cwd: "tmp/npm/dist",
+  cmd: ["npm", "publish"],
+}).status();
+
+const runtimePackageJson = {
+  name: "@pbkit/runtime",
+  version,
+  author: "JongChan Choi <jong@chan.moe>",
+  license: "(MIT OR Apache-2.0)",
+  repository: {
+    type: "git",
+    url: "git+https://github.com/pbkit/pbkit.git",
+  },
+};
+
+await ensureDir("tmp/npm/dist-runtime");
+await Deno.writeTextFile(
+  "tmp/npm/dist-runtime/package.json",
+  JSON.stringify(runtimePackageJson, null, 2) + "\n",
+);
+
+await Deno.run({
+  cwd: "tmp/npm",
+  cmd: ["cp", "-R", "dist/core/runtime/", "dist-runtime"],
+}).status();
+await Deno.run({
+  cwd: "tmp/npm/dist-runtime",
+  cmd: ["npm", "publish"],
+}).status();
 
 async function* filesInDir(
   dir: string,

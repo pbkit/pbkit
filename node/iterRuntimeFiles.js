@@ -1,4 +1,4 @@
-const { join, relative } = require("path");
+const { relative } = require("path");
 const { runtimeZipPath } = require("./zip-path");
 const { createReader, walk } = require("./zipfs");
 
@@ -7,7 +7,7 @@ async function* iterRuntimeFiles() {
     if (!filePath.endsWith(".ts")) continue;
     if (filePath.endsWith(".test.ts")) continue;
     const file = await createReader(filePath);
-    yield [join("runtime", relative(runtimeZipPath, filePath)), file];
+    yield [relative(runtimeZipPath, filePath), file];
   }
 }
 exports.default = iterRuntimeFiles;

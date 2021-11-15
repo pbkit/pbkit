@@ -1,0 +1,17 @@
+name: Publish to NPM
+on:
+  release:
+    types: [released]
+
+jobs:
+  publish-to-npm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - run: deno run --unstable -A cli/pb/entrypoint.ts vendor install
+      - run: deno run --unstable -A scripts/publish-to-npm.ts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

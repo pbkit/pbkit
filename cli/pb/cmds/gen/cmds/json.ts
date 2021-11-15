@@ -1,10 +1,8 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import {
-  createLoader,
-  vendorPath,
-} from "../../../../../core/loader/deno-fs.ts";
+import { createLoader } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import gen from "../../../../../codegen/json/index.ts";
+import { getVendorDir } from "../../../config.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
 
 interface Options {
@@ -35,7 +33,7 @@ export default new Command()
   .action(async (options: Options, protoFiles: string[] = []) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
-    const roots = [...entryPaths, ...protoPaths, Deno.cwd(), vendorPath];
+    const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];
     const loader = createLoader({ roots });
     const files = [
       ...await expandEntryPaths(entryPaths),
