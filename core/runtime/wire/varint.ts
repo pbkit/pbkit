@@ -14,6 +14,7 @@ export function encode(value: number | Long): Uint8Array {
     const resultChunk = !(long[0] || long[1]) ? chunk : chunk | head;
     result.push(resultChunk);
   }
+  if (result.length < 1) return new Uint8Array(1);
   return Uint8Array.from(result);
 }
 
