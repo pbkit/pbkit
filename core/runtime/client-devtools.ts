@@ -1,62 +1,106 @@
-import type { MethodDescriptor } from "./rpc.ts";
-
-export interface DevtoolsConfig {
-  services: Set<Service>;
-  subscribe: () => AsyncGenerator<Request>;
-  emit: (request: Request) => void;
-}
-
-export interface Service {
-  tags: string[];
-  methodDescriptors: MethodDescriptors;
-}
-
-export interface Request {
-  service: Service;
-  methodName: string;
-  // TODO
-}
-
-export interface MethodDescriptors {
-  [methodName: string]: MethodDescriptor<any, any>;
-}
+import type { RpcClientImpl } from "./rpc.ts";
+import { map } from "./async/async-generator.ts";
+import { createEventEmitter, EventEmitter } from "./async/event-emitter.ts";
 
 export const devtoolsKey = "@pbkit/devtools";
 
 export function getDevtoolsConfig(): DevtoolsConfig {
-  const global = globalThis as any;
-  return global[devtoolsKey] = global[devtoolsKey] || createDevtoolsConfig();
+  return (globalThis as any)[devtoolsKey] ||= createDevtoolsConfig();
 }
 
+export interface DevtoolsConfig extends EventEmitter<Events> {
+  requestIdCounter: number;
+}
 function createDevtoolsConfig(): DevtoolsConfig {
-  interface Listener<T> {
-    (value: T): void;
-  }
-  const listeners = new Set<Listener<Request>>();
-  const services = new Set<Service>();
-  function subscribe(): AsyncGenerator<Request> {
-    const asyncIterator: AsyncGenerator<Request> = {
-      [Symbol.asyncIterator]: () => asyncIterator,
-      next() {
-        return new Promise((resolve) => {
-          const listener: Listener<Request> = (value) => {
-            listeners.delete(listener);
-            resolve({ done: false, value });
-          };
-          listeners.add(listener);
+  const devtoolsConfig: DevtoolsConfig = {
+    requestIdCounter: 0,
+    ...createEventEmitter(),
+  };
+  return devtoolsConfig;
+}
+
+export interface WrapRpcClientImplConfig {
+  rpcClientImpl: RpcClientImpl;
+  devtoolsConfig: DevtoolsConfig;
+  tags: string[];
+}
+export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
+  config: WrapRpcClientImplConfig,
+): RpcClientImpl<TMetadata, THeader, TTrailer> {
+  return function devtoolsRpcClientImpl(methodDescriptor) {
+    const { rpcClientImpl, devtoolsConfig, tags } = config;
+    const rpcMethodImpl = rpcClientImpl(methodDescriptor);
+    return function devtoolsRpcMethodImpl(req, metadata) {
+      const requestId = devtoolsConfig.requestIdCounter++;
+      devtoolsConfig.emit("request", {
+        requestId,
+        servicePath: methodDescriptor.service.serviceName,
+        rpcName: methodDescriptor.methodName,
+        metadataJson: JSON.stringify(metadata),
+        tags,
+      });
+      const rpcMethodResult = rpcMethodImpl(
+        map(req, (payload) => {
+          devtoolsConfig.emit("request-payload", {
+            requestId,
+            payloadJson: JSON.stringify(payload), // TODO: encode as json
+            payloadProto: methodDescriptor.requestType.serializeBinary(payload),
+          });
+          return payload;
+        }),
+        metadata,
+      );
+      const resAsyncGenerator = map(rpcMethodResult[0], (payload) => {
+        devtoolsConfig.emit("response-payload", {
+          requestId,
+          payloadJson: JSON.stringify(payload), // TODO: encode as json
+          payloadProto: methodDescriptor.responseType.serializeBinary(payload),
         });
-      },
-      return(value) {
-        return Promise.resolve({ done: true, value });
-      },
-      throw(error) {
-        return Promise.reject(error);
-      },
+        return payload;
+      });
+      const headerPromise = rpcMethodResult[1].then((header) => {
+        devtoolsConfig.emit("response", {
+          requestId,
+          headerJson: JSON.stringify(header),
+        });
+        return header;
+      });
+      const trailerPromise = rpcMethodResult[2].then((trailer) => {
+        devtoolsConfig.emit("response-trailer", {
+          requestId,
+          trailerJson: JSON.stringify(trailer),
+        });
+        return trailer;
+      });
+      return [resAsyncGenerator, headerPromise, trailerPromise];
     };
-    return asyncIterator;
-  }
-  function emit(request: Request) {
-    for (const listener of listeners) listener(request);
-  }
-  return { services, subscribe, emit };
+  };
+}
+
+interface Events {
+  "request": {
+    requestId: number;
+    servicePath: string;
+    rpcName: string;
+    metadataJson: string;
+    tags: string[];
+  };
+  "request-payload": {
+    requestId: number;
+    payloadJson: string;
+    payloadProto: Uint8Array;
+  };
+  "response": {
+    requestId: number;
+    headerJson: string;
+  };
+  "response-payload": {
+    requestId: number;
+    payloadJson: string;
+    payloadProto: Uint8Array;
+  };
+  "response-trailer": {
+    requestId: number;
+    trailerJson: string;
+  };
 }
