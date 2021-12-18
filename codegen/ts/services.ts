@@ -95,26 +95,10 @@ function* genService({
     service: type,
     messages,
   });
-  const RpcClientImpl = importBuffer.addRuntimeImport(
+  const createServiceClientCode = getCreateServiceClientCode({
     filePath,
-    "rpc.ts",
-    "RpcClientImpl",
-  );
-  const fromSingle = importBuffer.addRuntimeImport(
-    filePath,
-    "async/async-generator.ts",
-    "fromSingle",
-  );
-  const first = importBuffer.addRuntimeImport(
-    filePath,
-    "async/async-generator.ts",
-    "first",
-  );
-  const createServiceClientCode = getCreateServiceClientCode(
-    RpcClientImpl,
-    fromSingle,
-    first,
-  );
+    importBuffer,
+  });
   yield [
     filePath,
     new StringReader([
@@ -231,15 +215,45 @@ function getMethodDescriptorsCode({
   ].join("");
 }
 
-const getCreateServiceClientCode = (
-  RpcClientImpl: string,
-  fromSingle: string,
-  first: string,
-) => (`export class RpcError<TTrailer = any> extends Error {
+interface GetCreateServiceClientCodeConfig {
+  filePath: string;
+  importBuffer: ImportBuffer;
+}
+function getCreateServiceClientCode({
+  filePath,
+  importBuffer,
+}: GetCreateServiceClientCodeConfig) {
+  const RpcClientImpl = importBuffer.addRuntimeImport(
+    filePath,
+    "rpc.ts",
+    "RpcClientImpl",
+  );
+  const fromSingle = importBuffer.addRuntimeImport(
+    filePath,
+    "async/async-generator.ts",
+    "fromSingle",
+  );
+  const first = importBuffer.addRuntimeImport(
+    filePath,
+    "async/async-generator.ts",
+    "first",
+  );
+  const wrapRpcClientImpl = importBuffer.addRuntimeImport(
+    filePath,
+    "client-devtools.ts",
+    "wrapRpcClientImpl",
+  );
+  const getDevtoolsConfig = importBuffer.addRuntimeImport(
+    filePath,
+    "client-devtools.ts",
+    "getDevtoolsConfig",
+  );
+  return `export class RpcError<TTrailer = any> extends Error {
   constructor(public trailer: TTrailer) { super(); }
 }
 export interface CreateServiceClientConfig {
   responseOnly?: boolean;
+  devtools?: true | { tags: string[] };
 }
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
@@ -257,11 +271,18 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: CreateServiceClientConfig
 ): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> {
+  let _rpcClientImpl = rpcClientImpl;
   const responseOnly = config?.responseOnly ?? true;
+  const devtools = config?.devtools ?? false;
+  if (devtools) {
+    const tags = devtools === true ? [] : devtools.tags;
+    const devtoolsConfig = ${getDevtoolsConfig}();
+    _rpcClientImpl = ${wrapRpcClientImpl}({ rpcClientImpl, devtoolsConfig, tags });
+  }
   return Object.fromEntries(Object.entries(methodDescriptors).map(
     ([camelRpcName, methodDescriptor]) => {
       const { requestStream, responseStream } = methodDescriptor;
-      const rpcMethodImpl = rpcClientImpl(methodDescriptor);
+      const rpcMethodImpl = _rpcClientImpl(methodDescriptor);
       const rpcMethodHandler = async (request: any, metadata?: any) => {
         const reqAsyncGenerator = requestStream ? request : ${fromSingle}(request);
         const rpcMethodResult = rpcMethodImpl(reqAsyncGenerator, metadata);
@@ -285,4 +306,5 @@ function getHeaderBeforeTrailer<THeader, TTrailer>(
     trailerPromise.then(trailer => { throw new RpcError(trailer); }),
   ]);
 }
-`);
+`;
+}

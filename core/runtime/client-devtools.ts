@@ -36,14 +36,14 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
         requestId,
         servicePath: methodDescriptor.service.serviceName,
         rpcName: methodDescriptor.methodName,
-        metadataJson: JSON.stringify(metadata),
+        metadataJson: toJson(metadata),
         tags,
       });
       const rpcMethodResult = rpcMethodImpl(
         map(req, (payload) => {
           devtoolsConfig.emit("request-payload", {
             requestId,
-            payloadJson: JSON.stringify(payload), // TODO: encode as json
+            payloadJson: toJson(payload), // TODO: encode as json
             payloadProto: methodDescriptor.requestType.serializeBinary(payload),
           });
           return payload;
@@ -53,7 +53,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
       const resAsyncGenerator = map(rpcMethodResult[0], (payload) => {
         devtoolsConfig.emit("response-payload", {
           requestId,
-          payloadJson: JSON.stringify(payload), // TODO: encode as json
+          payloadJson: toJson(payload), // TODO: encode as json
           payloadProto: methodDescriptor.responseType.serializeBinary(payload),
         });
         return payload;
@@ -61,20 +61,25 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
       const headerPromise = rpcMethodResult[1].then((header) => {
         devtoolsConfig.emit("response", {
           requestId,
-          headerJson: JSON.stringify(header),
+          headerJson: toJson(header),
         });
         return header;
       });
       const trailerPromise = rpcMethodResult[2].then((trailer) => {
         devtoolsConfig.emit("response-trailer", {
           requestId,
-          trailerJson: JSON.stringify(trailer),
+          trailerJson: toJson(trailer),
         });
         return trailer;
       });
       return [resAsyncGenerator, headerPromise, trailerPromise];
     };
   };
+}
+
+function toJson(value: any): string {
+  if ((!value) || (typeof value !== "object")) return "{}";
+  return JSON.stringify(value);
 }
 
 interface Events {
