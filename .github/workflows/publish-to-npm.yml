@@ -12,6 +12,6 @@ jobs:
         with:
           deno-version: v1.x
       - run: deno run --unstable -A cli/pb/entrypoint.ts vendor install
-      - run: deno run --unstable -A scripts/publish-to-npm.ts
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: |-
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+          deno run --unstable -A scripts/publish-to-npm.ts
