@@ -5,7 +5,20 @@ import { createEventEmitter, EventEmitter } from "./async/event-emitter.ts";
 export const devtoolsKey = "@pbkit/devtools";
 
 export function getDevtoolsConfig(): DevtoolsConfig {
-  return (globalThis as any)[devtoolsKey] ||= createDevtoolsConfig();
+  const global = globalThis as any;
+  if (!global[devtoolsKey]) {
+    const devtoolsConfig = createDevtoolsConfig();
+    return global[devtoolsKey] = devtoolsConfig;
+  } else if (Array.isArray(global[devtoolsKey])) {
+    const devtoolsConfig = createDevtoolsConfig();
+    for (const fn of global[devtoolsKey]) {
+      if (typeof fn !== "function") continue;
+      fn(devtoolsConfig);
+    }
+    return global[devtoolsKey] = devtoolsConfig;
+  } else {
+    return global[devtoolsKey];
+  }
 }
 
 export interface DevtoolsConfig extends EventEmitter<Events> {
