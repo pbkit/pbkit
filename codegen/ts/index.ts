@@ -49,7 +49,7 @@ type GenAllConfig = Omit<BundleConfig, "extInImport">;
 async function* genAll(config: GenAllConfig): AsyncGenerator<CodeEntry> {
   const { units, customTypeMapping, runtime, indexFilename } = config;
   const _runtime = runtime ?? { packageName: "@pbkit/runtime" };
-  if (_runtime.packageName == null) {
+  if (_runtime.packageName == null && !_runtime.outDir.startsWith("../")) {
     for await (const [filePath, data] of _runtime.iterRuntimeFiles()) {
       yield [join(_runtime.outDir, filePath), data];
     }
