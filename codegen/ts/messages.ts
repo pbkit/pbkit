@@ -474,7 +474,9 @@ const getDecodeBinaryCode: GetCodeFn = ({
           wireValuesToTsValuesCode =
             `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`;
         }
-        const value = schema.kind === "map" ? "new Map(value)" : "value";
+        const value = schema.kind === "map"
+          ? "new Map(value as any)"
+          : "value as any";
         return [
           "  collection: {\n",
           `    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === ${fieldNumber}).map(([, wireValue]) => wireValue);\n`,
@@ -702,7 +704,7 @@ export function getDefaultWireValueToTsValueCode({
         getFilePath(typePath, messages),
         "num2name",
       );
-      return `${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0]] : undefined`;
+      return `${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0] as keyof typeof num2name] : undefined`;
     }
     const decodeBinary = importBuffer.addInternalImport(
       filePath,
