@@ -258,14 +258,14 @@ export interface CreateServiceClientConfig {
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: undefined
+): Service<[] | [TMetadata], []>;
+export function createServiceClient<TMetadata, THeader, TTrailer>(
+  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
+  config: CreateServiceClientConfig & { responseOnly: false }
 ): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly?: false }
-): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
-export function createServiceClient<TMetadata, THeader, TTrailer>(
-  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly: true | undefined }
+  config: CreateServiceClientConfig & { responseOnly?: true }
 ): Service<[] | [TMetadata], []>;
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
