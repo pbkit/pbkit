@@ -866,7 +866,7 @@ export function getWellKnownTypeMapping({
       getWireValueToTsValueCode(config) {
         return `(${
           getDefaultWireValueToTsValueCode({ ...config, messages })
-        }) === 0 ? null : undefined`;
+        }) === "NULL_VALUE" ? null : undefined`;
       },
       getTsValueToWireValueCode(config) {
         const value = getDefaultTsValueToWireValueCode({ ...config, messages });
