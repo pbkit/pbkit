@@ -499,7 +499,12 @@ const getDecodeBinaryCode: GetCodeFn = ({
     }).join(""),
     message.oneofFields.map((field) => {
       const { tsName, fields } = field;
-      const wireValueToTsValueCode = [
+      const Field = importBuffer.addRuntimeImport(
+        filePath,
+        "wire/index.ts",
+        "Field",
+      );
+      const wireValueToTsValueMapCode = [
         "{\n",
         fields.map((field) => {
           const { fieldNumber, schema } = field;
@@ -508,9 +513,9 @@ const getDecodeBinaryCode: GetCodeFn = ({
             schema,
             messages,
           })({ filePath, importBuffer, field }) || "undefined";
-          return `      ${fieldNumber}(wireValue) { return ${wireValueToTsValueCode}; },\n`;
+          return `      [${fieldNumber}](wireValue: ${Field}) { return ${wireValueToTsValueCode}; },\n`;
         }).join(""),
-        "    }[fieldNumber]?.(wireValue)",
+        "    }",
       ].join("");
       return [
         "  oneof: {\n",
@@ -519,9 +524,10 @@ const getDecodeBinaryCode: GetCodeFn = ({
         "    const fieldNumber = wireFieldNumbers.find(v => oneofFieldNumbers.has(v));\n",
         "    if (fieldNumber == null) break oneof;\n",
         "    const wireValue = wireFields.get(fieldNumber);\n",
-        `    const value = ${wireValueToTsValueCode};\n`,
+        `    const wireValueToTsValueMap = ${wireValueToTsValueMapCode};\n`,
+        `    const value = wireValueToTsValueMap[fieldNumber as keyof typeof wireValueToTsValueMap]?.(wireValue!);\n`,
         "    if (value === undefined) break oneof;\n",
-        `    result.${tsName} = { field: oneofFieldNames.get(fieldNumber), value };\n`,
+        `    result.${tsName} = { field: oneofFieldNames.get(fieldNumber)!, value: value as any };\n`,
         "  }\n",
       ].join("");
     }).join(""),
