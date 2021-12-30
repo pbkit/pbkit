@@ -620,7 +620,7 @@ export function getDefaultTsValueToWireValueCode({
         getFilePath(typePath, messages),
         "name2num",
       );
-      return `{ type: ${WireType}.Varint as const, value: new ${Long}(${name2num}[${tsValue}]) }`;
+      return `{ type: ${WireType}.Varint as const, value: new ${Long}(${name2num}[${tsValue} as keyof typeof ${name2num}]) }`;
     }
     const encodeBinary = importBuffer.addInternalImport(
       filePath,
