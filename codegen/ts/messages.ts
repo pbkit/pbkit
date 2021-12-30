@@ -704,7 +704,7 @@ export function getDefaultWireValueToTsValueCode({
         getFilePath(typePath, messages),
         "num2name",
       );
-      return `${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0] as keyof typeof num2name] : undefined`;
+      return `${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0] as keyof typeof ${num2name}] : undefined`;
     }
     const decodeBinary = importBuffer.addInternalImport(
       filePath,

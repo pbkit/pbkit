@@ -167,7 +167,7 @@ export function decodeBinary(binary: Uint8Array): Type {
   field: {
     const wireValue = wireFields.get(5);
     if (wireValue === undefined) break field;
-    const value = wireValue.type === WireType.Varint ? num2name_1[wireValue.value[0] as keyof typeof num2name] : undefined;
+    const value = wireValue.type === WireType.Varint ? num2name_1[wireValue.value[0] as keyof typeof num2name_1] : undefined;
     if (value === undefined) break field;
     result.type = value;
   }
