@@ -228,6 +228,11 @@ function getCreateServiceClientCode({
     "rpc.ts",
     "RpcClientImpl",
   );
+  const MethodDescriptor = importBuffer.addRuntimeImport(
+    filePath,
+    "rpc.ts",
+    "MethodDescriptor",
+  );
   const fromSingle = importBuffer.addRuntimeImport(
     filePath,
     "async/async-generator.ts",
@@ -282,7 +287,7 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
   return Object.fromEntries(Object.entries(methodDescriptors).map(
     ([camelRpcName, methodDescriptor]) => {
       const { requestStream, responseStream } = methodDescriptor;
-      const rpcMethodImpl = _rpcClientImpl(methodDescriptor);
+      const rpcMethodImpl = _rpcClientImpl(methodDescriptor as ${MethodDescriptor}<any, any>);
       const rpcMethodHandler = async (request: any, metadata?: any) => {
         const reqAsyncGenerator = requestStream ? request : ${fromSingle}(request);
         const rpcMethodResult = rpcMethodImpl(reqAsyncGenerator, metadata);
