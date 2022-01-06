@@ -95,7 +95,7 @@ function toJson(value: any): string {
   return JSON.stringify(value);
 }
 
-interface Events {
+export interface Events {
   "request": {
     requestId: number;
     servicePath: string;
