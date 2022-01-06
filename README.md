@@ -3,9 +3,10 @@
   <img src="https://avatars.githubusercontent.com/u/90100959">
   <p>TypeScript implementation of protobuf.</p>
   <p>Supports Deno and Node.js.</p>
+  <a href="https://discord.gg/UKsvFsehhK">
+    <img src="https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square" />
+  </a>
 </div>
-
-[![Discord](https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square)](https://discord.gg/UKsvFsehhK)
 
 ## What is Protobuf?
 
