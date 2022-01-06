@@ -29,7 +29,9 @@ export function createIndexBuffer(
     *[Symbol.iterator]() {
       for (const [path, folder] of directory.walkFolders(root)) {
         const entries = Object.entries(folder.children);
-        const folders = entries.filter(([, node]) => !node.value);
+        const folders = entries.filter(
+          ([name, node]) => !name.startsWith("(") && !node.value,
+        );
         const files = entries.filter(([, node]) => node.value);
         const codes = [
           ...folders.map(folderEntryToImportStmt),
