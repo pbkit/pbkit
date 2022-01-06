@@ -5,6 +5,8 @@
   <p>Supports Deno and Node.js.</p>
 </div>
 
+[![Discord](https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square)](https://discord.gg/UKsvFsehhK)
+
 ## What is Protobuf?
 
 <https://developers.google.com/protocol-buffers>
