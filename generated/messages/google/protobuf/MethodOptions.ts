@@ -2,7 +2,7 @@ import {
   Type as IdempotencyLevel,
   name2num,
   num2name,
-} from "./MethodOptions/IdempotencyLevel.ts";
+} from "./(MethodOptions)/IdempotencyLevel.ts";
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
@@ -51,7 +51,7 @@ export function encodeBinary(value: Type): Uint8Array {
   if (value.idempotencyLevel !== undefined) {
     const tsValue = value.idempotencyLevel;
     result.push(
-      [34, { type: WireType.Varint as const, value: new Long(name2num[tsValue]) }],
+      [34, { type: WireType.Varint as const, value: new Long(name2num[tsValue as keyof typeof name2num]) }],
     );
   }
   for (const tsValue of value.uninterpretedOption) {

@@ -2,12 +2,12 @@ import {
   Type as Label,
   name2num,
   num2name,
-} from "./FieldDescriptorProto/Label.ts";
+} from "./(FieldDescriptorProto)/Label.ts";
 import {
   Type as Type_1,
   name2num as name2num_1,
   num2name as num2name_1,
-} from "./FieldDescriptorProto/Type.ts";
+} from "./(FieldDescriptorProto)/Type.ts";
 import {
   Type as FieldOptions,
   encodeBinary as encodeBinary_1,
@@ -84,13 +84,13 @@ export function encodeBinary(value: Type): Uint8Array {
   if (value.label !== undefined) {
     const tsValue = value.label;
     result.push(
-      [4, { type: WireType.Varint as const, value: new Long(name2num[tsValue]) }],
+      [4, { type: WireType.Varint as const, value: new Long(name2num[tsValue as keyof typeof name2num]) }],
     );
   }
   if (value.type !== undefined) {
     const tsValue = value.type;
     result.push(
-      [5, { type: WireType.Varint as const, value: new Long(name2num_1[tsValue]) }],
+      [5, { type: WireType.Varint as const, value: new Long(name2num_1[tsValue as keyof typeof name2num_1]) }],
     );
   }
   if (value.typeName !== undefined) {

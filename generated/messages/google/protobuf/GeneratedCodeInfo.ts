@@ -2,7 +2,7 @@ import {
   Type as Annotation,
   encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
-} from "./GeneratedCodeInfo/Annotation.ts";
+} from "./(GeneratedCodeInfo)/Annotation.ts";
 import {
   WireMessage,
   WireType,

@@ -2,7 +2,7 @@ import {
   Type as NamePart,
   encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
-} from "./UninterpretedOption/NamePart.ts";
+} from "./(UninterpretedOption)/NamePart.ts";
 import {
   WireMessage,
   WireType,

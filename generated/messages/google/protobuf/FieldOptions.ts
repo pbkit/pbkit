@@ -2,12 +2,12 @@ import {
   Type as CType,
   name2num,
   num2name,
-} from "./FieldOptions/CType.ts";
+} from "./(FieldOptions)/CType.ts";
 import {
   Type as JSType,
   name2num as name2num_1,
   num2name as num2name_1,
-} from "./FieldOptions/JSType.ts";
+} from "./(FieldOptions)/JSType.ts";
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
@@ -58,7 +58,7 @@ export function encodeBinary(value: Type): Uint8Array {
   if (value.ctype !== undefined) {
     const tsValue = value.ctype;
     result.push(
-      [1, { type: WireType.Varint as const, value: new Long(name2num[tsValue]) }],
+      [1, { type: WireType.Varint as const, value: new Long(name2num[tsValue as keyof typeof name2num]) }],
     );
   }
   if (value.packed !== undefined) {
@@ -82,7 +82,7 @@ export function encodeBinary(value: Type): Uint8Array {
   if (value.jstype !== undefined) {
     const tsValue = value.jstype;
     result.push(
-      [6, { type: WireType.Varint as const, value: new Long(name2num_1[tsValue]) }],
+      [6, { type: WireType.Varint as const, value: new Long(name2num_1[tsValue as keyof typeof name2num_1]) }],
     );
   }
   if (value.weak !== undefined) {

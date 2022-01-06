@@ -17,7 +17,7 @@ import {
   Type as ExtensionRange,
   encodeBinary as encodeBinary_4,
   decodeBinary as decodeBinary_4,
-} from "./DescriptorProto/ExtensionRange.ts";
+} from "./(DescriptorProto)/ExtensionRange.ts";
 import {
   Type as MessageOptions,
   encodeBinary as encodeBinary_5,
@@ -32,7 +32,7 @@ import {
   Type as ReservedRange,
   encodeBinary as encodeBinary_7,
   decodeBinary as decodeBinary_7,
-} from "./DescriptorProto/ReservedRange.ts";
+} from "./(DescriptorProto)/ReservedRange.ts";
 import {
   WireMessage,
   WireType,

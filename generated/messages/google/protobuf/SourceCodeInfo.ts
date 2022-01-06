@@ -2,7 +2,7 @@ import {
   Type as Location,
   encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
-} from "./SourceCodeInfo/Location.ts";
+} from "./(SourceCodeInfo)/Location.ts";
 import {
   WireMessage,
   WireType,

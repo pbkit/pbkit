@@ -12,7 +12,7 @@ import {
   Type as EnumReservedRange,
   encodeBinary as encodeBinary_3,
   decodeBinary as decodeBinary_3,
-} from "./EnumDescriptorProto/EnumReservedRange.ts";
+} from "./(EnumDescriptorProto)/EnumReservedRange.ts";
 import {
   WireMessage,
   WireType,

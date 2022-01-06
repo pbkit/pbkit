@@ -2,7 +2,7 @@ import {
   Type as OptimizeMode,
   name2num,
   num2name,
-} from "./FileOptions/OptimizeMode.ts";
+} from "./(FileOptions)/OptimizeMode.ts";
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
@@ -93,7 +93,7 @@ export function encodeBinary(value: Type): Uint8Array {
   if (value.optimizeFor !== undefined) {
     const tsValue = value.optimizeFor;
     result.push(
-      [9, { type: WireType.Varint as const, value: new Long(name2num[tsValue]) }],
+      [9, { type: WireType.Varint as const, value: new Long(name2num[tsValue as keyof typeof name2num]) }],
     );
   }
   if (value.javaMultipleFiles !== undefined) {
