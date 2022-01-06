@@ -64,7 +64,10 @@ export function getFilePath(
 ): string {
   return join(
     messages.outDir,
-    typePath.replace(/^\./, "").replaceAll(".", "/") + ext,
+    typePath
+      .replace(/^\./, "")
+      .replaceAll(".", "/")
+      .replaceAll(/\b([A-Z][^/]*)\//g, "($1)/") + ext,
   );
 }
 
