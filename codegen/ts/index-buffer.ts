@@ -49,12 +49,6 @@ export function createIndexBuffer(
               ),
           ),
         ];
-        if (folder.value) {
-          const [[item, as]] = Object.entries(folder.value);
-          codes.push("\n");
-          codes.push(`import { ${item} as _ } from "../${as}.ts";\n`);
-          codes.push("export default _;\n");
-        }
         yield [
           [...path, `${indexFilename}.ts`].join("/"),
           new StringReader(codes.join("")),
