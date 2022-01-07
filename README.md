@@ -6,6 +6,12 @@
   <a href="https://discord.gg/UKsvFsehhK">
     <img src="https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square" />
   </a>
+  <a href="https://github.com/pbkit/pbkit/releases">
+    <img src="https://img.shields.io/github/release/pbkit/pbkit/all.svg" />
+  </a>
+  <a href="https://github.com/pbkit/pbkit">
+    <img src="https://tokei.rs/b1/github/pbkit/pbkit" />
+  </a>
 </div>
 
 ## What is Protobuf?
