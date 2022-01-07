@@ -22,12 +22,12 @@ export function getDevtoolsConfig(): DevtoolsConfig {
 }
 
 export interface DevtoolsConfig extends EventEmitter<Events> {
-  configId: number;
+  configId: string;
   requestIdCounter: number;
 }
 function createDevtoolsConfig(): DevtoolsConfig {
   const devtoolsConfig: DevtoolsConfig = {
-    configId: new Date().getTime(),
+    configId: String(Date.now()),
     requestIdCounter: 0,
     ...createEventEmitter(),
   };
@@ -105,33 +105,33 @@ function toJson(value: any): string {
 
 export interface Events {
   "request": {
+    configId: string;
     requestId: number;
-    configId: number;
     servicePath: string;
     rpcName: string;
     metadataJson: string;
     tags: string[];
   };
   "request-payload": {
+    configId: string;
     requestId: number;
-    configId: number;
     payloadJson: string;
     payloadProto: Uint8Array;
   };
   "response": {
+    configId: string;
     requestId: number;
-    configId: number;
     headerJson: string;
   };
   "response-payload": {
+    configId: string;
     requestId: number;
-    configId: number;
     payloadJson: string;
     payloadProto: Uint8Array;
   };
   "response-trailer": {
+    configId: string;
     requestId: number;
-    configId: number;
     trailerJson: string;
   };
 }
