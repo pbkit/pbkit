@@ -22,10 +22,12 @@ export function getDevtoolsConfig(): DevtoolsConfig {
 }
 
 export interface DevtoolsConfig extends EventEmitter<Events> {
+  configId: string;
   requestIdCounter: number;
 }
 function createDevtoolsConfig(): DevtoolsConfig {
   const devtoolsConfig: DevtoolsConfig = {
+    configId: String(Date.now()),
     requestIdCounter: 0,
     ...createEventEmitter(),
   };
@@ -44,9 +46,11 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
     const { rpcClientImpl, devtoolsConfig, tags } = config;
     const rpcMethodImpl = rpcClientImpl(methodDescriptor);
     return function devtoolsRpcMethodImpl(req, metadata) {
+      const configId = devtoolsConfig.configId;
       const requestId = devtoolsConfig.requestIdCounter++;
       devtoolsConfig.emit("request", {
         requestId,
+        configId,
         servicePath: methodDescriptor.service.serviceName,
         rpcName: methodDescriptor.methodName,
         metadataJson: toJson(metadata),
@@ -56,6 +60,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
         map(req, (payload) => {
           devtoolsConfig.emit("request-payload", {
             requestId,
+            configId,
             payloadJson: toJson(payload), // TODO: encode as json
             payloadProto: methodDescriptor.requestType.serializeBinary(payload),
           });
@@ -66,6 +71,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
       const resAsyncGenerator = map(rpcMethodResult[0], (payload) => {
         devtoolsConfig.emit("response-payload", {
           requestId,
+          configId,
           payloadJson: toJson(payload), // TODO: encode as json
           payloadProto: methodDescriptor.responseType.serializeBinary(payload),
         });
@@ -74,6 +80,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
       const headerPromise = rpcMethodResult[1].then((header) => {
         devtoolsConfig.emit("response", {
           requestId,
+          configId,
           headerJson: toJson(header),
         });
         return header;
@@ -81,6 +88,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
       const trailerPromise = rpcMethodResult[2].then((trailer) => {
         devtoolsConfig.emit("response-trailer", {
           requestId,
+          configId,
           trailerJson: toJson(trailer),
         });
         return trailer;
@@ -97,6 +105,7 @@ function toJson(value: any): string {
 
 export interface Events {
   "request": {
+    configId: string;
     requestId: number;
     servicePath: string;
     rpcName: string;
@@ -104,20 +113,24 @@ export interface Events {
     tags: string[];
   };
   "request-payload": {
+    configId: string;
     requestId: number;
     payloadJson: string;
     payloadProto: Uint8Array;
   };
   "response": {
+    configId: string;
     requestId: number;
     headerJson: string;
   };
   "response-payload": {
+    configId: string;
     requestId: number;
     payloadJson: string;
     payloadProto: Uint8Array;
   };
   "response-trailer": {
+    configId: string;
     requestId: number;
     trailerJson: string;
   };
