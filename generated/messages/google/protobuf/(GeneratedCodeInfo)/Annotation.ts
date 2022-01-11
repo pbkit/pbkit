@@ -13,14 +13,17 @@ import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  path: number[];
-  sourceFile?: string;
-  begin?: number;
-  end?: number;
+declare namespace $.google.protobuf.GeneratedCodeInfo {
+  export interface Annotation {
+    path: number[];
+    sourceFile?: string;
+    begin?: number;
+    end?: number;
+  }
 }
+export type Type = $.google.protobuf.GeneratedCodeInfo.Annotation;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.GeneratedCodeInfo.Annotation {
   return {
     path: [],
     sourceFile: "",
@@ -29,7 +32,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.GeneratedCodeInfo.Annotation): Uint8Array {
   const result: WireMessage = [];
   for (const tsValue of value.path) {
     result.push(
@@ -57,7 +60,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.GeneratedCodeInfo.Annotation {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

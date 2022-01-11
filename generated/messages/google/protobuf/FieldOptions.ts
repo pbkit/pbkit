@@ -31,17 +31,20 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  ctype?: CType;
-  packed?: boolean;
-  deprecated?: boolean;
-  lazy?: boolean;
-  jstype?: JSType;
-  weak?: boolean;
-  uninterpretedOption: UninterpretedOption[];
+declare namespace $.google.protobuf {
+  export interface FieldOptions {
+    ctype?: CType;
+    packed?: boolean;
+    deprecated?: boolean;
+    lazy?: boolean;
+    jstype?: JSType;
+    weak?: boolean;
+    uninterpretedOption: UninterpretedOption[];
+  }
 }
+export type Type = $.google.protobuf.FieldOptions;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.FieldOptions {
   return {
     ctype: "STRING",
     packed: false,
@@ -53,7 +56,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.FieldOptions): Uint8Array {
   const result: WireMessage = [];
   if (value.ctype !== undefined) {
     const tsValue = value.ctype;
@@ -99,7 +102,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.FieldOptions {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

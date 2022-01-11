@@ -26,31 +26,34 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  javaPackage?: string;
-  javaOuterClassname?: string;
-  optimizeFor?: OptimizeMode;
-  javaMultipleFiles?: boolean;
-  goPackage?: string;
-  ccGenericServices?: boolean;
-  javaGenericServices?: boolean;
-  pyGenericServices?: boolean;
-  javaGenerateEqualsAndHash?: boolean;
-  deprecated?: boolean;
-  javaStringCheckUtf8?: boolean;
-  ccEnableArenas?: boolean;
-  objcClassPrefix?: string;
-  csharpNamespace?: string;
-  swiftPrefix?: string;
-  phpClassPrefix?: string;
-  phpNamespace?: string;
-  phpGenericServices?: boolean;
-  phpMetadataNamespace?: string;
-  rubyPackage?: string;
-  uninterpretedOption: UninterpretedOption[];
+declare namespace $.google.protobuf {
+  export interface FileOptions {
+    javaPackage?: string;
+    javaOuterClassname?: string;
+    optimizeFor?: OptimizeMode;
+    javaMultipleFiles?: boolean;
+    goPackage?: string;
+    ccGenericServices?: boolean;
+    javaGenericServices?: boolean;
+    pyGenericServices?: boolean;
+    javaGenerateEqualsAndHash?: boolean;
+    deprecated?: boolean;
+    javaStringCheckUtf8?: boolean;
+    ccEnableArenas?: boolean;
+    objcClassPrefix?: string;
+    csharpNamespace?: string;
+    swiftPrefix?: string;
+    phpClassPrefix?: string;
+    phpNamespace?: string;
+    phpGenericServices?: boolean;
+    phpMetadataNamespace?: string;
+    rubyPackage?: string;
+    uninterpretedOption: UninterpretedOption[];
+  }
 }
+export type Type = $.google.protobuf.FileOptions;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.FileOptions {
   return {
     javaPackage: "",
     javaOuterClassname: "",
@@ -76,7 +79,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.FileOptions): Uint8Array {
   const result: WireMessage = [];
   if (value.javaPackage !== undefined) {
     const tsValue = value.javaPackage;
@@ -206,7 +209,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.FileOptions {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

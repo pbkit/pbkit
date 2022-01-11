@@ -1,8 +1,11 @@
-export type Type =
-  | "UNSPECIFIED"
-  | "LABEL_OPTIONAL"
-  | "LABEL_REQUIRED"
-  | "LABEL_REPEATED";
+declare namespace $.google.protobuf.FieldDescriptorProto {
+  export type Label =
+    | "UNSPECIFIED"
+    | "LABEL_OPTIONAL"
+    | "LABEL_REQUIRED"
+    | "LABEL_REPEATED";
+}
+export type Type = $.google.protobuf.FieldDescriptorProto.Label;
 
 export const num2name = {
   0: "UNSPECIFIED",

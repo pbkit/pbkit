@@ -23,13 +23,16 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  name?: string;
-  method: MethodDescriptorProto[];
-  options?: ServiceOptions;
+declare namespace $.google.protobuf {
+  export interface ServiceDescriptorProto {
+    name?: string;
+    method: MethodDescriptorProto[];
+    options?: ServiceOptions;
+  }
 }
+export type Type = $.google.protobuf.ServiceDescriptorProto;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.ServiceDescriptorProto {
   return {
     name: "",
     method: [],
@@ -37,7 +40,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.ServiceDescriptorProto): Uint8Array {
   const result: WireMessage = [];
   if (value.name !== undefined) {
     const tsValue = value.name;
@@ -59,7 +62,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.ServiceDescriptorProto {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

@@ -12,19 +12,22 @@ import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  start?: number;
-  end?: number;
+declare namespace $.google.protobuf.DescriptorProto {
+  export interface ReservedRange {
+    start?: number;
+    end?: number;
+  }
 }
+export type Type = $.google.protobuf.DescriptorProto.ReservedRange;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.DescriptorProto.ReservedRange {
   return {
     start: 0,
     end: 0,
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.DescriptorProto.ReservedRange): Uint8Array {
   const result: WireMessage = [];
   if (value.start !== undefined) {
     const tsValue = value.start;
@@ -41,7 +44,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.DescriptorProto.ReservedRange {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

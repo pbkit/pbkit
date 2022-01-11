@@ -1,23 +1,26 @@
-export type Type =
-  | "UNSPECIFIED"
-  | "TYPE_DOUBLE"
-  | "TYPE_FLOAT"
-  | "TYPE_INT64"
-  | "TYPE_UINT64"
-  | "TYPE_INT32"
-  | "TYPE_FIXED64"
-  | "TYPE_FIXED32"
-  | "TYPE_BOOL"
-  | "TYPE_STRING"
-  | "TYPE_GROUP"
-  | "TYPE_MESSAGE"
-  | "TYPE_BYTES"
-  | "TYPE_UINT32"
-  | "TYPE_ENUM"
-  | "TYPE_SFIXED32"
-  | "TYPE_SFIXED64"
-  | "TYPE_SINT32"
-  | "TYPE_SINT64";
+declare namespace $.google.protobuf.FieldDescriptorProto {
+  export type Type =
+    | "UNSPECIFIED"
+    | "TYPE_DOUBLE"
+    | "TYPE_FLOAT"
+    | "TYPE_INT64"
+    | "TYPE_UINT64"
+    | "TYPE_INT32"
+    | "TYPE_FIXED64"
+    | "TYPE_FIXED32"
+    | "TYPE_BOOL"
+    | "TYPE_STRING"
+    | "TYPE_GROUP"
+    | "TYPE_MESSAGE"
+    | "TYPE_BYTES"
+    | "TYPE_UINT32"
+    | "TYPE_ENUM"
+    | "TYPE_SFIXED32"
+    | "TYPE_SFIXED64"
+    | "TYPE_SINT32"
+    | "TYPE_SINT64";
+}
+export type Type = $.google.protobuf.FieldDescriptorProto.Type;
 
 export const num2name = {
   0: "UNSPECIFIED",

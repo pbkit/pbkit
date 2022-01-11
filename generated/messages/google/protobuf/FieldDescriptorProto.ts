@@ -31,21 +31,24 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  name?: string;
-  extendee?: string;
-  number?: number;
-  label?: Label;
-  type?: Type_1;
-  typeName?: string;
-  defaultValue?: string;
-  options?: FieldOptions;
-  oneofIndex?: number;
-  jsonName?: string;
-  proto3Optional?: boolean;
+declare namespace $.google.protobuf {
+  export interface FieldDescriptorProto {
+    name?: string;
+    extendee?: string;
+    number?: number;
+    label?: Label;
+    type?: Type_1;
+    typeName?: string;
+    defaultValue?: string;
+    options?: FieldOptions;
+    oneofIndex?: number;
+    jsonName?: string;
+    proto3Optional?: boolean;
+  }
 }
+export type Type = $.google.protobuf.FieldDescriptorProto;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.FieldDescriptorProto {
   return {
     name: "",
     extendee: "",
@@ -61,7 +64,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.FieldDescriptorProto): Uint8Array {
   const result: WireMessage = [];
   if (value.name !== undefined) {
     const tsValue = value.name;
@@ -132,7 +135,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.FieldDescriptorProto {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

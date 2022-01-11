@@ -18,15 +18,18 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  messageSetWireFormat?: boolean;
-  noStandardDescriptorAccessor?: boolean;
-  deprecated?: boolean;
-  mapEntry?: boolean;
-  uninterpretedOption: UninterpretedOption[];
+declare namespace $.google.protobuf {
+  export interface MessageOptions {
+    messageSetWireFormat?: boolean;
+    noStandardDescriptorAccessor?: boolean;
+    deprecated?: boolean;
+    mapEntry?: boolean;
+    uninterpretedOption: UninterpretedOption[];
+  }
 }
+export type Type = $.google.protobuf.MessageOptions;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.MessageOptions {
   return {
     messageSetWireFormat: false,
     noStandardDescriptorAccessor: false,
@@ -36,7 +39,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.MessageOptions): Uint8Array {
   const result: WireMessage = [];
   if (value.messageSetWireFormat !== undefined) {
     const tsValue = value.messageSetWireFormat;
@@ -70,7 +73,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.MessageOptions {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

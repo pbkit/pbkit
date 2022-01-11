@@ -18,17 +18,20 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  name: NamePart[];
-  identifierValue?: string;
-  positiveIntValue?: string;
-  negativeIntValue?: string;
-  doubleValue?: number;
-  stringValue?: Uint8Array;
-  aggregateValue?: string;
+declare namespace $.google.protobuf {
+  export interface UninterpretedOption {
+    name: NamePart[];
+    identifierValue?: string;
+    positiveIntValue?: string;
+    negativeIntValue?: string;
+    doubleValue?: number;
+    stringValue?: Uint8Array;
+    aggregateValue?: string;
+  }
 }
+export type Type = $.google.protobuf.UninterpretedOption;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.UninterpretedOption {
   return {
     name: [],
     identifierValue: "",
@@ -40,7 +43,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.UninterpretedOption): Uint8Array {
   const result: WireMessage = [];
   for (const tsValue of value.name) {
     result.push(
@@ -86,7 +89,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.UninterpretedOption {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

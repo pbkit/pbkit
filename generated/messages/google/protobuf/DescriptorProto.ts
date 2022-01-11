@@ -4,7 +4,7 @@ import {
   decodeBinary as decodeBinary_1,
 } from "./FieldDescriptorProto.ts";
 import {
-  Type as DescriptorProto,
+  Type as DescriptorProto_1,
   encodeBinary as encodeBinary_2,
   decodeBinary as decodeBinary_2,
 } from "./DescriptorProto.ts";
@@ -48,20 +48,23 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  name?: string;
-  field: FieldDescriptorProto[];
-  nestedType: DescriptorProto[];
-  enumType: EnumDescriptorProto[];
-  extensionRange: ExtensionRange[];
-  extension: FieldDescriptorProto[];
-  options?: MessageOptions;
-  oneofDecl: OneofDescriptorProto[];
-  reservedRange: ReservedRange[];
-  reservedName: string[];
+declare namespace $.google.protobuf {
+  export interface DescriptorProto {
+    name?: string;
+    field: FieldDescriptorProto[];
+    nestedType: DescriptorProto_1[];
+    enumType: EnumDescriptorProto[];
+    extensionRange: ExtensionRange[];
+    extension: FieldDescriptorProto[];
+    options?: MessageOptions;
+    oneofDecl: OneofDescriptorProto[];
+    reservedRange: ReservedRange[];
+    reservedName: string[];
+  }
 }
+export type Type = $.google.protobuf.DescriptorProto;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.DescriptorProto {
   return {
     name: "",
     field: [],
@@ -76,7 +79,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.DescriptorProto): Uint8Array {
   const result: WireMessage = [];
   if (value.name !== undefined) {
     const tsValue = value.name;
@@ -133,7 +136,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.DescriptorProto {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

@@ -1,7 +1,10 @@
-export type Type =
-  | "IDEMPOTENCY_UNKNOWN"
-  | "NO_SIDE_EFFECTS"
-  | "IDEMPOTENT";
+declare namespace $.google.protobuf.MethodOptions {
+  export type IdempotencyLevel =
+    | "IDEMPOTENCY_UNKNOWN"
+    | "NO_SIDE_EFFECTS"
+    | "IDEMPOTENT";
+}
+export type Type = $.google.protobuf.MethodOptions.IdempotencyLevel;
 
 export const num2name = {
   0: "IDEMPOTENCY_UNKNOWN",

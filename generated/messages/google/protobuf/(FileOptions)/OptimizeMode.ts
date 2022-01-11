@@ -1,8 +1,11 @@
-export type Type =
-  | "UNSPECIFIED"
-  | "SPEED"
-  | "CODE_SIZE"
-  | "LITE_RUNTIME";
+declare namespace $.google.protobuf.FileOptions {
+  export type OptimizeMode =
+    | "UNSPECIFIED"
+    | "SPEED"
+    | "CODE_SIZE"
+    | "LITE_RUNTIME";
+}
+export type Type = $.google.protobuf.FileOptions.OptimizeMode;
 
 export const num2name = {
   0: "UNSPECIFIED",

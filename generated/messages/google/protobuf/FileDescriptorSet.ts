@@ -14,17 +14,20 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  file: FileDescriptorProto[];
+declare namespace $.google.protobuf {
+  export interface FileDescriptorSet {
+    file: FileDescriptorProto[];
+  }
 }
+export type Type = $.google.protobuf.FileDescriptorSet;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.FileDescriptorSet {
   return {
     file: [],
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.FileDescriptorSet): Uint8Array {
   const result: WireMessage = [];
   for (const tsValue of value.file) {
     result.push(
@@ -34,7 +37,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.FileDescriptorSet {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

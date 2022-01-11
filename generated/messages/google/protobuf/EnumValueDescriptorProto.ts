@@ -18,13 +18,16 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  name?: string;
-  number?: number;
-  options?: EnumValueOptions;
+declare namespace $.google.protobuf {
+  export interface EnumValueDescriptorProto {
+    name?: string;
+    number?: number;
+    options?: EnumValueOptions;
+  }
 }
+export type Type = $.google.protobuf.EnumValueDescriptorProto;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.EnumValueDescriptorProto {
   return {
     name: "",
     number: 0,
@@ -32,7 +35,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.EnumValueDescriptorProto): Uint8Array {
   const result: WireMessage = [];
   if (value.name !== undefined) {
     const tsValue = value.name;
@@ -55,7 +58,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.EnumValueDescriptorProto {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

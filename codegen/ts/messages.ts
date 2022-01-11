@@ -71,6 +71,20 @@ export function getFilePath(
   );
 }
 
+const getTypeDefCodeBase = (
+  { typePath }: { typePath: string },
+  getTypeDefCodeFn: (typeName: string) => string,
+): string => {
+  const fragments = typePath.split(".");
+  const typeName = fragments.pop()!;
+  return [
+    `declare namespace $${fragments.join(".")} {\n`,
+    getTypeDefCodeFn(typeName),
+    `}\n`,
+    `export type Type = $${typePath};\n`,
+  ].join("");
+};
+
 interface GenEnumConfig {
   typePath: string;
   type: schema.Enum;
@@ -87,9 +101,12 @@ function* genEnum(
   yield [
     filePath,
     new StringReader([
-      `export type Type =\n${
-        fields.map(([, { name }]) => `  | "${name}"`).join("\n")
-      };\n\n`,
+      getTypeDefCodeBase({ typePath }, (typeName) => {
+        return `  export type ${typeName} =\n${
+          fields.map(([, { name }]) => `    | "${name}"`).join("\n")
+        };\n`;
+      }),
+      "\n",
       `export const num2name = {\n${
         fields.map(
           ([fieldNumber, { name }]) => `  ${fieldNumber}: "${name}",`,
@@ -143,7 +160,9 @@ function* genMessage({
   messages,
 }: GenMessageConfig): Generator<CodeEntry> {
   const filePath = getFilePath(typePath, messages);
-  const importBuffer = createImportBuffer({ reservedNames });
+  const importBuffer = createImportBuffer({
+    reservedNames: [...reservedNames, typePath.split(".").pop()!],
+  });
   type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
   const schemaFields = Object.entries(type.fields);
   const schemaOneofFields = schemaFields.filter(
@@ -180,6 +199,7 @@ function* genMessage({
     oneofFields: Object.values(oneofFieldTable),
   };
   const getCodeConfig: GetCodeConfig = {
+    typePath,
     filePath,
     importBuffer,
     message,
@@ -245,6 +265,7 @@ function* genMessage({
 }
 
 interface GetCodeConfig {
+  typePath: string;
   filePath: string;
   importBuffer: ImportBuffer;
   message: Message;
@@ -253,12 +274,15 @@ interface GetCodeConfig {
 }
 type GetCodeFn = (config: GetCodeConfig) => string;
 
-const getMessageTypeDefCode: GetCodeFn = ({ message }) => {
+const getMessageTypeDefCode: GetCodeFn = (config) => {
+  const { message } = config;
   const typeBodyCodes: string[] = [];
   if (message.fields.length) typeBodyCodes.push(getFieldsCode());
   if (message.oneofFields.length) typeBodyCodes.push(getOneofsCode());
-  if (!typeBodyCodes.length) return `export interface Type {}\n`;
-  return `export interface Type {\n${typeBodyCodes.join("")}}\n`;
+  return getTypeDefCodeBase(config, (typeName) => {
+    if (!typeBodyCodes.length) return `  export interface ${typeName} {}\n`;
+    return `  export interface ${typeName} {\n${typeBodyCodes.join("")}  }\n`;
+  });
   function getFieldsCode() {
     return message.fields.map((field) => {
       const nullable = (
@@ -267,24 +291,24 @@ const getMessageTypeDefCode: GetCodeFn = ({ message }) => {
       );
       const opt = nullable ? "?" : "";
       const arr = (field.schema.kind === "repeated") ? "[]" : "";
-      return `  ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
+      return `    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
     }).join("");
   }
   function getOneofsCode() {
     return message.oneofFields.map((oneofField) => {
-      return `  ${oneofField.tsName}?: (\n${
+      return `    ${oneofField.tsName}?: (\n${
         oneofField.fields.map(
           (field) =>
-            `    | { field: "${field.tsName}", value: ${field.tsType} }\n`,
+            `      | { field: "${field.tsName}", value: ${field.tsType} }\n`,
         ).join("")
       }  );\n`;
     }).join("");
   }
 };
 
-const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
+const getGetDefaultValueCode: GetCodeFn = ({ typePath, message }) => {
   return [
-    "export function getDefaultValue(): Type {\n",
+    `export function getDefaultValue(): $${typePath} {\n`,
     "  return {\n",
     message.fields.map((field) => {
       if (!field.default) return `    ${field.tsName}: undefined,\n`;
@@ -299,6 +323,7 @@ const getGetDefaultValueCode: GetCodeFn = ({ message }) => {
 };
 
 const getEncodeBinaryCode: GetCodeFn = ({
+  typePath,
   filePath,
   importBuffer,
   message,
@@ -317,7 +342,7 @@ const getEncodeBinaryCode: GetCodeFn = ({
     "serialize",
   );
   return [
-    "export function encodeBinary(value: Type): Uint8Array {\n",
+    `export function encodeBinary(value: $${typePath}): Uint8Array {\n`,
     `  const result: ${WireMessage} = [];\n`,
     message.fields.map((field) => {
       const { fieldNumber, tsName, schema } = field;
@@ -395,6 +420,7 @@ const getEncodeBinaryCode: GetCodeFn = ({
 };
 
 const getDecodeBinaryCode: GetCodeFn = ({
+  typePath,
   filePath,
   importBuffer,
   message,
@@ -445,7 +471,7 @@ const getDecodeBinaryCode: GetCodeFn = ({
         "};\n",
       ].join("")
       : "",
-    "export function decodeBinary(binary: Uint8Array): Type {\n",
+    `export function decodeBinary(binary: Uint8Array): $${typePath} {\n`,
     "  const result = getDefaultValue();\n",
     `  const wireMessage = ${deserialize}(binary);\n`,
     // TODO: "For embedded message fields, the parser merges multiple instances of the same field"

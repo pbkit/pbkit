@@ -14,17 +14,20 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  location: Location[];
+declare namespace $.google.protobuf {
+  export interface SourceCodeInfo {
+    location: Location[];
+  }
 }
+export type Type = $.google.protobuf.SourceCodeInfo;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.SourceCodeInfo {
   return {
     location: [],
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.SourceCodeInfo): Uint8Array {
   const result: WireMessage = [];
   for (const tsValue of value.location) {
     result.push(
@@ -34,7 +37,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.SourceCodeInfo {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);

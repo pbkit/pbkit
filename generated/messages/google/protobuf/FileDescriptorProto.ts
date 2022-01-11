@@ -44,22 +44,25 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-export interface Type {
-  name?: string;
-  package?: string;
-  dependency: string[];
-  messageType: DescriptorProto[];
-  enumType: EnumDescriptorProto[];
-  service: ServiceDescriptorProto[];
-  extension: FieldDescriptorProto[];
-  options?: FileOptions;
-  sourceCodeInfo?: SourceCodeInfo;
-  publicDependency: number[];
-  weakDependency: number[];
-  syntax?: string;
+declare namespace $.google.protobuf {
+  export interface FileDescriptorProto {
+    name?: string;
+    package?: string;
+    dependency: string[];
+    messageType: DescriptorProto[];
+    enumType: EnumDescriptorProto[];
+    service: ServiceDescriptorProto[];
+    extension: FieldDescriptorProto[];
+    options?: FileOptions;
+    sourceCodeInfo?: SourceCodeInfo;
+    publicDependency: number[];
+    weakDependency: number[];
+    syntax?: string;
+  }
 }
+export type Type = $.google.protobuf.FileDescriptorProto;
 
-export function getDefaultValue(): Type {
+export function getDefaultValue(): $.google.protobuf.FileDescriptorProto {
   return {
     name: "",
     package: "",
@@ -76,7 +79,7 @@ export function getDefaultValue(): Type {
   };
 }
 
-export function encodeBinary(value: Type): Uint8Array {
+export function encodeBinary(value: $.google.protobuf.FileDescriptorProto): Uint8Array {
   const result: WireMessage = [];
   if (value.name !== undefined) {
     const tsValue = value.name;
@@ -146,7 +149,7 @@ export function encodeBinary(value: Type): Uint8Array {
   return serialize(result);
 }
 
-export function decodeBinary(binary: Uint8Array): Type {
+export function decodeBinary(binary: Uint8Array): $.google.protobuf.FileDescriptorProto {
   const result = getDefaultValue();
   const wireMessage = deserialize(binary);
   const wireFields = new Map(wireMessage);
