@@ -554,7 +554,7 @@ const getDecodeBinaryCode: GetCodeFn = ({
         "    if (fieldNumber == null) break oneof;\n",
         "    const wireValue = wireFields.get(fieldNumber);\n",
         `    const wireValueToTsValueMap = ${wireValueToTsValueMapCode};\n`,
-        `    const value = wireValueToTsValueMap[fieldNumber as keyof typeof wireValueToTsValueMap]?.(wireValue!);\n`,
+        `    const value = (wireValueToTsValueMap[fieldNumber as keyof typeof wireValueToTsValueMap] as any)?.(wireValue!);\n`,
         "    if (value === undefined) break oneof;\n",
         `    result.${tsName} = { field: oneofFieldNames.get(fieldNumber)!, value: value as any };\n`,
         "  }\n",
