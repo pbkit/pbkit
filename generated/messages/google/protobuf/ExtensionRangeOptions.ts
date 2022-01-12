@@ -30,7 +30,7 @@ export function getDefaultValue(): $.google.protobuf.ExtensionRangeOptions {
 
 export function encodeJson(value: $.google.protobuf.ExtensionRangeOptions): unknown {
   const result: any = {};
-  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
 

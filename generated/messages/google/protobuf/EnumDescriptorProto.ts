@@ -58,10 +58,10 @@ export function getDefaultValue(): $.google.protobuf.EnumDescriptorProto {
 export function encodeJson(value: $.google.protobuf.EnumDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
-  result.value = value.value.map(encodeJson_1);
+  result.value = value.value.map(value => encodeJson_1(value));
   if (value.options !== undefined) result.options = encodeJson_2(value.options);
-  result.reservedRange = value.reservedRange.map(encodeJson_3);
-  result.reservedName = value.reservedName.map(tsValueToJsonValueFns.string);
+  result.reservedRange = value.reservedRange.map(value => encodeJson_3(value));
+  result.reservedName = value.reservedName.map(value => tsValueToJsonValueFns.string(value));
   return result;
 }
 

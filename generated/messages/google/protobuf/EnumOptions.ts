@@ -43,7 +43,7 @@ export function encodeJson(value: $.google.protobuf.EnumOptions): unknown {
   const result: any = {};
   if (value.allowAlias !== undefined) result.allowAlias = tsValueToJsonValueFns.bool(value.allowAlias);
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
-  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
 

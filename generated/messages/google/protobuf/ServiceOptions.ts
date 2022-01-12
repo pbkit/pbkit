@@ -40,7 +40,7 @@ export function getDefaultValue(): $.google.protobuf.ServiceOptions {
 export function encodeJson(value: $.google.protobuf.ServiceOptions): unknown {
   const result: any = {};
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
-  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
 

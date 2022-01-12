@@ -92,15 +92,15 @@ export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknow
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
   if (value.package !== undefined) result.package = tsValueToJsonValueFns.string(value.package);
-  result.dependency = value.dependency.map(tsValueToJsonValueFns.string);
-  result.messageType = value.messageType.map(encodeJson_1);
-  result.enumType = value.enumType.map(encodeJson_2);
-  result.service = value.service.map(encodeJson_3);
-  result.extension = value.extension.map(encodeJson_4);
+  result.dependency = value.dependency.map(value => tsValueToJsonValueFns.string(value));
+  result.messageType = value.messageType.map(value => encodeJson_1(value));
+  result.enumType = value.enumType.map(value => encodeJson_2(value));
+  result.service = value.service.map(value => encodeJson_3(value));
+  result.extension = value.extension.map(value => encodeJson_4(value));
   if (value.options !== undefined) result.options = encodeJson_5(value.options);
   if (value.sourceCodeInfo !== undefined) result.sourceCodeInfo = encodeJson_6(value.sourceCodeInfo);
-  result.publicDependency = value.publicDependency.map(tsValueToJsonValueFns.int32);
-  result.weakDependency = value.weakDependency.map(tsValueToJsonValueFns.int32);
+  result.publicDependency = value.publicDependency.map(value => tsValueToJsonValueFns.int32(value));
+  result.weakDependency = value.weakDependency.map(value => tsValueToJsonValueFns.int32(value));
   if (value.syntax !== undefined) result.syntax = tsValueToJsonValueFns.string(value.syntax);
   return result;
 }

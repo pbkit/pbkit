@@ -105,7 +105,7 @@ export function encodeJson(value: $.google.protobuf.FileOptions): unknown {
   if (value.phpGenericServices !== undefined) result.phpGenericServices = tsValueToJsonValueFns.bool(value.phpGenericServices);
   if (value.phpMetadataNamespace !== undefined) result.phpMetadataNamespace = tsValueToJsonValueFns.string(value.phpMetadataNamespace);
   if (value.rubyPackage !== undefined) result.rubyPackage = tsValueToJsonValueFns.string(value.rubyPackage);
-  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
 

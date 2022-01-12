@@ -68,7 +68,7 @@ export function encodeJson(value: $.google.protobuf.FieldOptions): unknown {
   if (value.lazy !== undefined) result.lazy = tsValueToJsonValueFns.bool(value.lazy);
   if (value.jstype !== undefined) result.jstype = tsValueToJsonValueFns.enum(value.jstype);
   if (value.weak !== undefined) result.weak = tsValueToJsonValueFns.bool(value.weak);
-  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
 
