@@ -15,6 +15,8 @@ brew install pbkit
 
 ### Windows
 
+**You should add pollapo installed location to PATH environment variable manually.**
+
 #### Using msi installer
 
 You can find msi installer in release assets.
