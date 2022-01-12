@@ -32,6 +32,7 @@ winget install Riiid.pollapo
 #### Pre-built binary
 
 You can find pre-built binary in release assets.
+
 Download it and copy it to somewhere in PATH.
 
 ### Install from source
