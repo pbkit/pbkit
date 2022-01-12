@@ -17,7 +17,13 @@ brew install pbkit
 
 **You should add pollapo installed location to PATH environment variable manually.**
 
-#### Using msi installer
+#### Using pre-built binary
+
+You can find pre-built binary in release assets.
+
+Download it and copy it to somewhere in PATH.
+
+#### Using installer
 
 You can find msi installer in release assets.
 
@@ -29,7 +35,7 @@ winget install Riiid.pollapo
 
 ### Linux
 
-#### Pre-built binary
+#### Using pre-built binary
 
 You can find pre-built binary in release assets.
 
