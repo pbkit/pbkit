@@ -331,6 +331,7 @@ const getGetDefaultValueCode: GetCodeFn = ({ typePath, message }) => {
 };
 
 const getEncodeJsonCode: GetCodeFn = ({
+  typePath,
   filePath,
   importBuffer,
   message,
@@ -338,7 +339,7 @@ const getEncodeJsonCode: GetCodeFn = ({
   customTypeMapping,
 }) => {
   return [
-    "export function encodeJson(value: Type): unknown {\n",
+    `export function encodeJson(value: $${typePath}): unknown {\n`,
     "  const result: any = {};\n",
     message.fields.map((field) => {
       const { tsName, schema } = field;
