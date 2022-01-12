@@ -9,6 +9,9 @@ import {
   wireValueToTsValueFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
 import {
+  tsValueToJsonValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
+import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
@@ -25,6 +28,13 @@ export function getDefaultValue(): $.google.protobuf.UninterpretedOption.NamePar
     namePart: "",
     isExtension: false,
   };
+}
+
+export function encodeJson(value: $.google.protobuf.UninterpretedOption.NamePart): unknown {
+  const result: any = {};
+  if (value.namePart !== undefined) result.namePart = tsValueToJsonValueFns.string(value.namePart);
+  if (value.isExtension !== undefined) result.isExtension = tsValueToJsonValueFns.bool(value.isExtension);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.UninterpretedOption.NamePart): Uint8Array {

@@ -1,6 +1,7 @@
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
 import {
@@ -14,6 +15,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -33,6 +37,14 @@ export function getDefaultValue(): $.google.protobuf.EnumOptions {
     deprecated: false,
     uninterpretedOption: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.EnumOptions): unknown {
+  const result: any = {};
+  if (value.allowAlias !== undefined) result.allowAlias = tsValueToJsonValueFns.bool(value.allowAlias);
+  if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.EnumOptions): Uint8Array {

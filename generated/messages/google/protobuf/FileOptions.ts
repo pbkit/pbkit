@@ -6,6 +6,7 @@ import {
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
 import {
@@ -22,6 +23,9 @@ import {
 import {
   default as Long,
 } from "../../../../core/runtime/Long.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -77,6 +81,32 @@ export function getDefaultValue(): $.google.protobuf.FileOptions {
     rubyPackage: "",
     uninterpretedOption: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.FileOptions): unknown {
+  const result: any = {};
+  if (value.javaPackage !== undefined) result.javaPackage = tsValueToJsonValueFns.string(value.javaPackage);
+  if (value.javaOuterClassname !== undefined) result.javaOuterClassname = tsValueToJsonValueFns.string(value.javaOuterClassname);
+  if (value.optimizeFor !== undefined) result.optimizeFor = tsValueToJsonValueFns.enum(value.optimizeFor);
+  if (value.javaMultipleFiles !== undefined) result.javaMultipleFiles = tsValueToJsonValueFns.bool(value.javaMultipleFiles);
+  if (value.goPackage !== undefined) result.goPackage = tsValueToJsonValueFns.string(value.goPackage);
+  if (value.ccGenericServices !== undefined) result.ccGenericServices = tsValueToJsonValueFns.bool(value.ccGenericServices);
+  if (value.javaGenericServices !== undefined) result.javaGenericServices = tsValueToJsonValueFns.bool(value.javaGenericServices);
+  if (value.pyGenericServices !== undefined) result.pyGenericServices = tsValueToJsonValueFns.bool(value.pyGenericServices);
+  if (value.javaGenerateEqualsAndHash !== undefined) result.javaGenerateEqualsAndHash = tsValueToJsonValueFns.bool(value.javaGenerateEqualsAndHash);
+  if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
+  if (value.javaStringCheckUtf8 !== undefined) result.javaStringCheckUtf8 = tsValueToJsonValueFns.bool(value.javaStringCheckUtf8);
+  if (value.ccEnableArenas !== undefined) result.ccEnableArenas = tsValueToJsonValueFns.bool(value.ccEnableArenas);
+  if (value.objcClassPrefix !== undefined) result.objcClassPrefix = tsValueToJsonValueFns.string(value.objcClassPrefix);
+  if (value.csharpNamespace !== undefined) result.csharpNamespace = tsValueToJsonValueFns.string(value.csharpNamespace);
+  if (value.swiftPrefix !== undefined) result.swiftPrefix = tsValueToJsonValueFns.string(value.swiftPrefix);
+  if (value.phpClassPrefix !== undefined) result.phpClassPrefix = tsValueToJsonValueFns.string(value.phpClassPrefix);
+  if (value.phpNamespace !== undefined) result.phpNamespace = tsValueToJsonValueFns.string(value.phpNamespace);
+  if (value.phpGenericServices !== undefined) result.phpGenericServices = tsValueToJsonValueFns.bool(value.phpGenericServices);
+  if (value.phpMetadataNamespace !== undefined) result.phpMetadataNamespace = tsValueToJsonValueFns.string(value.phpMetadataNamespace);
+  if (value.rubyPackage !== undefined) result.rubyPackage = tsValueToJsonValueFns.string(value.rubyPackage);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.FileOptions): Uint8Array {

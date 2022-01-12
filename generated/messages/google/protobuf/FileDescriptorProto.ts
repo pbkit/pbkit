@@ -1,31 +1,37 @@
 import {
   Type as DescriptorProto,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./DescriptorProto.ts";
 import {
   Type as EnumDescriptorProto,
   encodeBinary as encodeBinary_2,
+  encodeJson as encodeJson_2,
   decodeBinary as decodeBinary_2,
 } from "./EnumDescriptorProto.ts";
 import {
   Type as ServiceDescriptorProto,
   encodeBinary as encodeBinary_3,
+  encodeJson as encodeJson_3,
   decodeBinary as decodeBinary_3,
 } from "./ServiceDescriptorProto.ts";
 import {
   Type as FieldDescriptorProto,
   encodeBinary as encodeBinary_4,
+  encodeJson as encodeJson_4,
   decodeBinary as decodeBinary_4,
 } from "./FieldDescriptorProto.ts";
 import {
   Type as FileOptions,
   encodeBinary as encodeBinary_5,
+  encodeJson as encodeJson_5,
   decodeBinary as decodeBinary_5,
 } from "./FileOptions.ts";
 import {
   Type as SourceCodeInfo,
   encodeBinary as encodeBinary_6,
+  encodeJson as encodeJson_6,
   decodeBinary as decodeBinary_6,
 } from "./SourceCodeInfo.ts";
 import {
@@ -40,6 +46,9 @@ import {
   wireValueToTsValueFns,
   unpackFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -77,6 +86,23 @@ export function getDefaultValue(): $.google.protobuf.FileDescriptorProto {
     weakDependency: [],
     syntax: "",
   };
+}
+
+export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknown {
+  const result: any = {};
+  if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
+  if (value.package !== undefined) result.package = tsValueToJsonValueFns.string(value.package);
+  result.dependency = value.dependency.map(value => tsValueToJsonValueFns.string(value));
+  result.messageType = value.messageType.map(value => encodeJson_1(value));
+  result.enumType = value.enumType.map(value => encodeJson_2(value));
+  result.service = value.service.map(value => encodeJson_3(value));
+  result.extension = value.extension.map(value => encodeJson_4(value));
+  if (value.options !== undefined) result.options = encodeJson_5(value.options);
+  if (value.sourceCodeInfo !== undefined) result.sourceCodeInfo = encodeJson_6(value.sourceCodeInfo);
+  result.publicDependency = value.publicDependency.map(value => tsValueToJsonValueFns.int32(value));
+  result.weakDependency = value.weakDependency.map(value => tsValueToJsonValueFns.int32(value));
+  if (value.syntax !== undefined) result.syntax = tsValueToJsonValueFns.string(value.syntax);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.FileDescriptorProto): Uint8Array {

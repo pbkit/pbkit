@@ -1,6 +1,7 @@
 import {
   Type as Annotation,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./(GeneratedCodeInfo)/Annotation.ts";
 import {
@@ -25,6 +26,12 @@ export function getDefaultValue(): $.google.protobuf.GeneratedCodeInfo {
   return {
     annotation: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.GeneratedCodeInfo): unknown {
+  const result: any = {};
+  result.annotation = value.annotation.map(value => encodeJson_1(value));
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.GeneratedCodeInfo): Uint8Array {
