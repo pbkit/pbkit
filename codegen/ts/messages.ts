@@ -759,18 +759,18 @@ export function getDefaultTsValueToJsonValueCode({
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
-    const valueTypePathCode = typePathToCode("value", valueTypePath, false);
+    const valueTypePathCode = typePathToCode("value", valueTypePath);
     return `Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
   }
   if (schema.kind === "repeated") {
     const { typePath } = schema;
     if (!typePath) return;
-    const typePathCode = typePathToCode(undefined, typePath);
-    return `value.${tsName}.map(${typePathCode})`;
+    const typePathCode = typePathToCode("value", typePath);
+    return `value.${tsName}.map(value => ${typePathCode})`;
   }
   const { typePath } = schema;
-  return typePathToCode(tsName, typePath);
-  function typePathToCode(tsName?: string, typePath?: string, prefix = true) {
+  return typePathToCode("value." + tsName, typePath);
+  function typePathToCode(tsName: string, typePath?: string) {
     if (!typePath) return;
     if (typePath in scalarTypeMapping) {
       const tsValueToJsonValueFns = importBuffer.addRuntimeImport(
@@ -778,9 +778,7 @@ export function getDefaultTsValueToJsonValueCode({
         "json/scalar.ts",
         "tsValueToJsonValueFns",
       );
-      return `${tsValueToJsonValueFns}.${typePath.substr(1)}${
-        tsName ? `(${prefix ? "value." : ""}${tsName})` : ""
-      }`;
+      return `${tsValueToJsonValueFns}.${typePath.substr(1)}(${tsName})`;
     }
     if (field.isEnum) {
       const tsValueToJsonValueFns = importBuffer.addRuntimeImport(
@@ -788,18 +786,14 @@ export function getDefaultTsValueToJsonValueCode({
         "json/scalar.ts",
         "tsValueToJsonValueFns",
       );
-      return `${tsValueToJsonValueFns}.enum${
-        tsName ? `(${prefix ? "value." : ""}${tsName})` : ""
-      }`;
+      return `${tsValueToJsonValueFns}.enum(${tsName})`;
     }
     const encodeJson = importBuffer.addInternalImport(
       filePath,
       getFilePath(typePath, messages),
       "encodeJson",
     );
-    return `${encodeJson}${
-      tsName ? `(${prefix ? "value." : ""}${tsName})` : ""
-    }`;
+    return `${encodeJson}(${tsName})`;
   }
 }
 
