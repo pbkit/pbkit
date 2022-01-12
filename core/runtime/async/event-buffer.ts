@@ -1,5 +1,8 @@
+import { defer, Deferred } from "./observer.ts";
+
 export interface EventBuffer<T> {
   push(value: T): void;
+  error(error: Error): void;
   finish(): void;
   drain(): AsyncGenerator<T>;
 }
@@ -11,20 +14,24 @@ export function createEventBuffer<T>(
   config?: CreateEventBufferConfig,
 ): EventBuffer<T> {
   const queue: T[] = [];
-  let resolve: ((v: IteratorResult<T>) => void) | undefined = undefined;
+  let deferred: Deferred<IteratorResult<T>> | undefined;
   let finished = false;
   return {
     push(value) {
       if (finished) throw new Error("can't push after finish");
-      if (resolve) {
-        resolve({ value, done: false });
-        resolve = undefined;
+      if (deferred) {
+        deferred.resolve({ value, done: false });
+        deferred = undefined;
       } else {
         queue.push(value);
       }
     },
+    error(error) {
+      deferred?.reject(error);
+      finished = true;
+    },
     finish() {
-      resolve && resolve({ value: undefined, done: true });
+      deferred?.resolve({ value: undefined, done: true });
       finished = true;
     },
     drain() {
@@ -41,7 +48,7 @@ export function createEventBuffer<T>(
             if (finished) {
               return Promise.resolve({ value: undefined, done: true });
             } else {
-              return new Promise((r) => (resolve = r));
+              return deferred = defer();
             }
           }
         },
