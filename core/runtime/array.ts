@@ -1,3 +1,4 @@
+// @ts-ignore
 export type PojoSet<T extends string | number> = { [key in T]: T };
 export function toPojoSet<T extends string | number>(
   arr: readonly T[],
