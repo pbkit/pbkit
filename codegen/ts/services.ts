@@ -98,6 +98,7 @@ function* genService({
   const createServiceClientCode = getCreateServiceClientCode({
     filePath,
     importBuffer,
+    service: type,
   });
   yield [
     filePath,
@@ -138,13 +139,16 @@ function getServiceTypeDefCode({
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
-  const RpcReturnType = importBuffer.addRuntimeImport(
-    filePath,
-    "rpc.ts",
-    "RpcReturnType",
-  );
   return `export interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
   function getRpcsCode() {
+    const isServiceEmpty = Object.keys(service.rpcs).length < 1;
+    if (isServiceEmpty) return "";
+
+    const RpcReturnType = importBuffer.addRuntimeImport(
+      filePath,
+      "rpc.ts",
+      "RpcReturnType",
+    );
     return Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const reqType = getTsRpcType(rpc.reqType);
       const resType = getTsRpcType(rpc.resType, true);
@@ -218,40 +222,17 @@ function getMethodDescriptorsCode({
 interface GetCreateServiceClientCodeConfig {
   filePath: string;
   importBuffer: ImportBuffer;
+  service: Service;
 }
 function getCreateServiceClientCode({
   filePath,
   importBuffer,
+  service,
 }: GetCreateServiceClientCodeConfig) {
   const RpcClientImpl = importBuffer.addRuntimeImport(
     filePath,
     "rpc.ts",
     "RpcClientImpl",
-  );
-  const MethodDescriptor = importBuffer.addRuntimeImport(
-    filePath,
-    "rpc.ts",
-    "MethodDescriptor",
-  );
-  const fromSingle = importBuffer.addRuntimeImport(
-    filePath,
-    "async/async-generator.ts",
-    "fromSingle",
-  );
-  const first = importBuffer.addRuntimeImport(
-    filePath,
-    "async/async-generator.ts",
-    "first",
-  );
-  const wrapRpcClientImpl = importBuffer.addRuntimeImport(
-    filePath,
-    "client-devtools.ts",
-    "wrapRpcClientImpl",
-  );
-  const getDevtoolsConfig = importBuffer.addRuntimeImport(
-    filePath,
-    "client-devtools.ts",
-    "getDevtoolsConfig",
   );
   return `export class RpcError<TTrailer = any> extends Error {
   constructor(public trailer: TTrailer) { super(); }
@@ -275,7 +256,41 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
 export function createServiceClient<TMetadata, THeader, TTrailer>(
   rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
   config?: CreateServiceClientConfig
-): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> {
+): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> ${getCreateServiceClientBody()}
+`;
+  function getCreateServiceClientBody() {
+    const isServiceEmpty = Object.keys(service.rpcs).length < 1;
+    if (isServiceEmpty) {
+      return `{
+  return {};
+}`;
+    }
+    const MethodDescriptor = importBuffer.addRuntimeImport(
+      filePath,
+      "rpc.ts",
+      "MethodDescriptor",
+    );
+    const fromSingle = importBuffer.addRuntimeImport(
+      filePath,
+      "async/async-generator.ts",
+      "fromSingle",
+    );
+    const first = importBuffer.addRuntimeImport(
+      filePath,
+      "async/async-generator.ts",
+      "first",
+    );
+    const wrapRpcClientImpl = importBuffer.addRuntimeImport(
+      filePath,
+      "client-devtools.ts",
+      "wrapRpcClientImpl",
+    );
+    const getDevtoolsConfig = importBuffer.addRuntimeImport(
+      filePath,
+      "client-devtools.ts",
+      "getDevtoolsConfig",
+    );
+    return `{
   let _rpcClientImpl = rpcClientImpl;
   const responseOnly = config?.responseOnly ?? true;
   const devtools = config?.devtools ?? false;
@@ -310,6 +325,7 @@ function getHeaderBeforeTrailer<THeader, TTrailer>(
     headerPromise,
     trailerPromise.then(trailer => { throw new RpcError(trailer); }),
   ]);
+}`;
+  }
 }
-`;
-}
+
