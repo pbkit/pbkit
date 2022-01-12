@@ -1,6 +1,7 @@
 import {
   Type as EnumValueOptions,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./EnumValueOptions.ts";
 import {
@@ -14,6 +15,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -33,6 +37,14 @@ export function getDefaultValue(): $.google.protobuf.EnumValueDescriptorProto {
     number: 0,
     options: undefined,
   };
+}
+
+export function encodeJson(value: $.google.protobuf.EnumValueDescriptorProto): unknown {
+  const result: any = {};
+  if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
+  if (value.number !== undefined) result.number = tsValueToJsonValueFns.int32(value.number);
+  if (value.options !== undefined) result.options = encodeJson_1(value.options);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.EnumValueDescriptorProto): Uint8Array {

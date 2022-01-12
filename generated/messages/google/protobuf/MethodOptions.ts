@@ -6,6 +6,7 @@ import {
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
 import {
@@ -22,6 +23,9 @@ import {
 import {
   default as Long,
 } from "../../../../core/runtime/Long.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -41,6 +45,14 @@ export function getDefaultValue(): $.google.protobuf.MethodOptions {
     idempotencyLevel: "IDEMPOTENCY_UNKNOWN",
     uninterpretedOption: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.MethodOptions): unknown {
+  const result: any = {};
+  if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
+  if (value.idempotencyLevel !== undefined) result.idempotencyLevel = tsValueToJsonValueFns.enum(value.idempotencyLevel);
+  if (value.uninterpretedOption !== undefined) result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.MethodOptions): Uint8Array {

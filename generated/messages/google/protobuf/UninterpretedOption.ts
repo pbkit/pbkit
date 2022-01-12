@@ -1,6 +1,7 @@
 import {
   Type as NamePart,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./(UninterpretedOption)/NamePart.ts";
 import {
@@ -14,6 +15,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -41,6 +45,18 @@ export function getDefaultValue(): $.google.protobuf.UninterpretedOption {
     stringValue: new Uint8Array(),
     aggregateValue: "",
   };
+}
+
+export function encodeJson(value: $.google.protobuf.UninterpretedOption): unknown {
+  const result: any = {};
+  if (value.name !== undefined) result.name = value.name.map(encodeJson_1);
+  if (value.identifierValue !== undefined) result.identifierValue = tsValueToJsonValueFns.string(value.identifierValue);
+  if (value.positiveIntValue !== undefined) result.positiveIntValue = tsValueToJsonValueFns.uint64(value.positiveIntValue);
+  if (value.negativeIntValue !== undefined) result.negativeIntValue = tsValueToJsonValueFns.int64(value.negativeIntValue);
+  if (value.doubleValue !== undefined) result.doubleValue = tsValueToJsonValueFns.double(value.doubleValue);
+  if (value.stringValue !== undefined) result.stringValue = tsValueToJsonValueFns.bytes(value.stringValue);
+  if (value.aggregateValue !== undefined) result.aggregateValue = tsValueToJsonValueFns.string(value.aggregateValue);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.UninterpretedOption): Uint8Array {

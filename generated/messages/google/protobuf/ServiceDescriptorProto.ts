@@ -1,11 +1,13 @@
 import {
   Type as MethodDescriptorProto,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./MethodDescriptorProto.ts";
 import {
   Type as ServiceOptions,
   encodeBinary as encodeBinary_2,
+  encodeJson as encodeJson_2,
   decodeBinary as decodeBinary_2,
 } from "./ServiceOptions.ts";
 import {
@@ -19,6 +21,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -38,6 +43,14 @@ export function getDefaultValue(): $.google.protobuf.ServiceDescriptorProto {
     method: [],
     options: undefined,
   };
+}
+
+export function encodeJson(value: $.google.protobuf.ServiceDescriptorProto): unknown {
+  const result: any = {};
+  if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
+  if (value.method !== undefined) result.method = value.method.map(encodeJson_1);
+  if (value.options !== undefined) result.options = encodeJson_2(value.options);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.ServiceDescriptorProto): Uint8Array {

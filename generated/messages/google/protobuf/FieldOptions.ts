@@ -11,6 +11,7 @@ import {
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
 import {
@@ -27,6 +28,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -54,6 +58,18 @@ export function getDefaultValue(): $.google.protobuf.FieldOptions {
     weak: false,
     uninterpretedOption: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.FieldOptions): unknown {
+  const result: any = {};
+  if (value.ctype !== undefined) result.ctype = tsValueToJsonValueFns.enum(value.ctype);
+  if (value.packed !== undefined) result.packed = tsValueToJsonValueFns.bool(value.packed);
+  if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
+  if (value.lazy !== undefined) result.lazy = tsValueToJsonValueFns.bool(value.lazy);
+  if (value.jstype !== undefined) result.jstype = tsValueToJsonValueFns.enum(value.jstype);
+  if (value.weak !== undefined) result.weak = tsValueToJsonValueFns.bool(value.weak);
+  if (value.uninterpretedOption !== undefined) result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.FieldOptions): Uint8Array {

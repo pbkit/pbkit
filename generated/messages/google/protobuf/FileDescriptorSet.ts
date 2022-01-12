@@ -1,6 +1,7 @@
 import {
   Type as FileDescriptorProto,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./FileDescriptorProto.ts";
 import {
@@ -25,6 +26,12 @@ export function getDefaultValue(): $.google.protobuf.FileDescriptorSet {
   return {
     file: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.FileDescriptorSet): unknown {
+  const result: any = {};
+  if (value.file !== undefined) result.file = value.file.map(encodeJson_1);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.FileDescriptorSet): Uint8Array {

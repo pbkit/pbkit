@@ -1,16 +1,19 @@
 import {
   Type as EnumValueDescriptorProto,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./EnumValueDescriptorProto.ts";
 import {
   Type as EnumOptions,
   encodeBinary as encodeBinary_2,
+  encodeJson as encodeJson_2,
   decodeBinary as decodeBinary_2,
 } from "./EnumOptions.ts";
 import {
   Type as EnumReservedRange,
   encodeBinary as encodeBinary_3,
+  encodeJson as encodeJson_3,
   decodeBinary as decodeBinary_3,
 } from "./(EnumDescriptorProto)/EnumReservedRange.ts";
 import {
@@ -24,6 +27,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -47,6 +53,16 @@ export function getDefaultValue(): $.google.protobuf.EnumDescriptorProto {
     reservedRange: [],
     reservedName: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.EnumDescriptorProto): unknown {
+  const result: any = {};
+  if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
+  if (value.value !== undefined) result.value = value.value.map(encodeJson_1);
+  if (value.options !== undefined) result.options = encodeJson_2(value.options);
+  if (value.reservedRange !== undefined) result.reservedRange = value.reservedRange.map(encodeJson_3);
+  if (value.reservedName !== undefined) result.reservedName = value.reservedName.map(tsValueToJsonValueFns.string);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.EnumDescriptorProto): Uint8Array {

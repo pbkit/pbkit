@@ -1,6 +1,7 @@
 import {
   Type as UninterpretedOption,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
 import {
@@ -25,6 +26,12 @@ export function getDefaultValue(): $.google.protobuf.ExtensionRangeOptions {
   return {
     uninterpretedOption: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.ExtensionRangeOptions): unknown {
+  const result: any = {};
+  if (value.uninterpretedOption !== undefined) result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.ExtensionRangeOptions): Uint8Array {

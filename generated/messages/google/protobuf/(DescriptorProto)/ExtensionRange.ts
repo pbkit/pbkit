@@ -1,6 +1,7 @@
 import {
   Type as ExtensionRangeOptions,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "../ExtensionRangeOptions.ts";
 import {
@@ -14,6 +15,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
@@ -33,6 +37,14 @@ export function getDefaultValue(): $.google.protobuf.DescriptorProto.ExtensionRa
     end: 0,
     options: undefined,
   };
+}
+
+export function encodeJson(value: $.google.protobuf.DescriptorProto.ExtensionRange): unknown {
+  const result: any = {};
+  if (value.start !== undefined) result.start = tsValueToJsonValueFns.int32(value.start);
+  if (value.end !== undefined) result.end = tsValueToJsonValueFns.int32(value.end);
+  if (value.options !== undefined) result.options = encodeJson_1(value.options);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.DescriptorProto.ExtensionRange): Uint8Array {

@@ -1,6 +1,7 @@
 import {
   Type as Location,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./(SourceCodeInfo)/Location.ts";
 import {
@@ -25,6 +26,12 @@ export function getDefaultValue(): $.google.protobuf.SourceCodeInfo {
   return {
     location: [],
   };
+}
+
+export function encodeJson(value: $.google.protobuf.SourceCodeInfo): unknown {
+  const result: any = {};
+  if (value.location !== undefined) result.location = value.location.map(encodeJson_1);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.SourceCodeInfo): Uint8Array {

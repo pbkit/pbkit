@@ -1,6 +1,7 @@
 import {
   Type as MethodOptions,
   encodeBinary as encodeBinary_1,
+  encodeJson as encodeJson_1,
   decodeBinary as decodeBinary_1,
 } from "./MethodOptions.ts";
 import {
@@ -14,6 +15,9 @@ import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  tsValueToJsonValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -39,6 +43,17 @@ export function getDefaultValue(): $.google.protobuf.MethodDescriptorProto {
     clientStreaming: false,
     serverStreaming: false,
   };
+}
+
+export function encodeJson(value: $.google.protobuf.MethodDescriptorProto): unknown {
+  const result: any = {};
+  if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
+  if (value.inputType !== undefined) result.inputType = tsValueToJsonValueFns.string(value.inputType);
+  if (value.outputType !== undefined) result.outputType = tsValueToJsonValueFns.string(value.outputType);
+  if (value.options !== undefined) result.options = encodeJson_1(value.options);
+  if (value.clientStreaming !== undefined) result.clientStreaming = tsValueToJsonValueFns.bool(value.clientStreaming);
+  if (value.serverStreaming !== undefined) result.serverStreaming = tsValueToJsonValueFns.bool(value.serverStreaming);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.MethodDescriptorProto): Uint8Array {

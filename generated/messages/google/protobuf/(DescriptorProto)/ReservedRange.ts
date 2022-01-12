@@ -9,6 +9,9 @@ import {
   wireValueToTsValueFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
 import {
+  tsValueToJsonValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
+import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
@@ -25,6 +28,13 @@ export function getDefaultValue(): $.google.protobuf.DescriptorProto.ReservedRan
     start: 0,
     end: 0,
   };
+}
+
+export function encodeJson(value: $.google.protobuf.DescriptorProto.ReservedRange): unknown {
+  const result: any = {};
+  if (value.start !== undefined) result.start = tsValueToJsonValueFns.int32(value.start);
+  if (value.end !== undefined) result.end = tsValueToJsonValueFns.int32(value.end);
+  return result;
 }
 
 export function encodeBinary(value: $.google.protobuf.DescriptorProto.ReservedRange): Uint8Array {
