@@ -16,6 +16,16 @@ command
     command.showHelp();
     Deno.exit(0);
   })
+  .option("-v, --version", "Show way to check version", {
+    standalone: true,
+    action: () => {
+      console.log(`HOW TO CHECK POLLAPO VERSION
+
+Pre-built binary: NOT SUPPORTED
+Homebrew: brew info pbkit
+Windows: Settings > Apps > Apps & Features, find pollapo`)
+    }
+  })
   .command("add", add)
   .command("completions", new CompletionsCommand())
   .command("help", new HelpCommand())
