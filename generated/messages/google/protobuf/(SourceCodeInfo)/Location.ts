@@ -39,11 +39,11 @@ export function getDefaultValue(): $.google.protobuf.SourceCodeInfo.Location {
 
 export function encodeJson(value: $.google.protobuf.SourceCodeInfo.Location): unknown {
   const result: any = {};
-  if (value.path !== undefined) result.path = value.path.map(tsValueToJsonValueFns.int32);
-  if (value.span !== undefined) result.span = value.span.map(tsValueToJsonValueFns.int32);
+  result.path = value.path.map(tsValueToJsonValueFns.int32);
+  result.span = value.span.map(tsValueToJsonValueFns.int32);
   if (value.leadingComments !== undefined) result.leadingComments = tsValueToJsonValueFns.string(value.leadingComments);
   if (value.trailingComments !== undefined) result.trailingComments = tsValueToJsonValueFns.string(value.trailingComments);
-  if (value.leadingDetachedComments !== undefined) result.leadingDetachedComments = value.leadingDetachedComments.map(tsValueToJsonValueFns.string);
+  result.leadingDetachedComments = value.leadingDetachedComments.map(tsValueToJsonValueFns.string);
   return result;
 }
 

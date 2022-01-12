@@ -30,7 +30,7 @@ export function getDefaultValue(): $.google.protobuf.OneofOptions {
 
 export function encodeJson(value: $.google.protobuf.OneofOptions): unknown {
   const result: any = {};
-  if (value.uninterpretedOption !== undefined) result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
   return result;
 }
 

@@ -49,7 +49,7 @@ export function getDefaultValue(): $.google.protobuf.UninterpretedOption {
 
 export function encodeJson(value: $.google.protobuf.UninterpretedOption): unknown {
   const result: any = {};
-  if (value.name !== undefined) result.name = value.name.map(encodeJson_1);
+  result.name = value.name.map(encodeJson_1);
   if (value.identifierValue !== undefined) result.identifierValue = tsValueToJsonValueFns.string(value.identifierValue);
   if (value.positiveIntValue !== undefined) result.positiveIntValue = tsValueToJsonValueFns.uint64(value.positiveIntValue);
   if (value.negativeIntValue !== undefined) result.negativeIntValue = tsValueToJsonValueFns.int64(value.negativeIntValue);

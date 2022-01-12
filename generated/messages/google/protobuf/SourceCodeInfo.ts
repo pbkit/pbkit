@@ -30,7 +30,7 @@ export function getDefaultValue(): $.google.protobuf.SourceCodeInfo {
 
 export function encodeJson(value: $.google.protobuf.SourceCodeInfo): unknown {
   const result: any = {};
-  if (value.location !== undefined) result.location = value.location.map(encodeJson_1);
+  result.location = value.location.map(encodeJson_1);
   return result;
 }
 

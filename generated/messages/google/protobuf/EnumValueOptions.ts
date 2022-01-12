@@ -40,7 +40,7 @@ export function getDefaultValue(): $.google.protobuf.EnumValueOptions {
 export function encodeJson(value: $.google.protobuf.EnumValueOptions): unknown {
   const result: any = {};
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
-  if (value.uninterpretedOption !== undefined) result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
   return result;
 }
 

@@ -48,7 +48,7 @@ export function getDefaultValue(): $.google.protobuf.ServiceDescriptorProto {
 export function encodeJson(value: $.google.protobuf.ServiceDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
-  if (value.method !== undefined) result.method = value.method.map(encodeJson_1);
+  result.method = value.method.map(encodeJson_1);
   if (value.options !== undefined) result.options = encodeJson_2(value.options);
   return result;
 }

@@ -30,7 +30,7 @@ export function getDefaultValue(): $.google.protobuf.FileDescriptorSet {
 
 export function encodeJson(value: $.google.protobuf.FileDescriptorSet): unknown {
   const result: any = {};
-  if (value.file !== undefined) result.file = value.file.map(encodeJson_1);
+  result.file = value.file.map(encodeJson_1);
   return result;
 }
 

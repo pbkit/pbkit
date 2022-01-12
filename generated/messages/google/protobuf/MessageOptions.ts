@@ -49,7 +49,7 @@ export function encodeJson(value: $.google.protobuf.MessageOptions): unknown {
   if (value.noStandardDescriptorAccessor !== undefined) result.noStandardDescriptorAccessor = tsValueToJsonValueFns.bool(value.noStandardDescriptorAccessor);
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = tsValueToJsonValueFns.bool(value.mapEntry);
-  if (value.uninterpretedOption !== undefined) result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
+  result.uninterpretedOption = value.uninterpretedOption.map(encodeJson_1);
   return result;
 }
 

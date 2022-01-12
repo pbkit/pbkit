@@ -92,15 +92,15 @@ export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknow
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
   if (value.package !== undefined) result.package = tsValueToJsonValueFns.string(value.package);
-  if (value.dependency !== undefined) result.dependency = value.dependency.map(tsValueToJsonValueFns.string);
-  if (value.messageType !== undefined) result.messageType = value.messageType.map(encodeJson_1);
-  if (value.enumType !== undefined) result.enumType = value.enumType.map(encodeJson_2);
-  if (value.service !== undefined) result.service = value.service.map(encodeJson_3);
-  if (value.extension !== undefined) result.extension = value.extension.map(encodeJson_4);
+  result.dependency = value.dependency.map(tsValueToJsonValueFns.string);
+  result.messageType = value.messageType.map(encodeJson_1);
+  result.enumType = value.enumType.map(encodeJson_2);
+  result.service = value.service.map(encodeJson_3);
+  result.extension = value.extension.map(encodeJson_4);
   if (value.options !== undefined) result.options = encodeJson_5(value.options);
   if (value.sourceCodeInfo !== undefined) result.sourceCodeInfo = encodeJson_6(value.sourceCodeInfo);
-  if (value.publicDependency !== undefined) result.publicDependency = value.publicDependency.map(tsValueToJsonValueFns.int32);
-  if (value.weakDependency !== undefined) result.weakDependency = value.weakDependency.map(tsValueToJsonValueFns.int32);
+  result.publicDependency = value.publicDependency.map(tsValueToJsonValueFns.int32);
+  result.weakDependency = value.weakDependency.map(tsValueToJsonValueFns.int32);
   if (value.syntax !== undefined) result.syntax = tsValueToJsonValueFns.string(value.syntax);
   return result;
 }

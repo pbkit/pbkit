@@ -349,6 +349,11 @@ const getEncodeJsonCode: GetCodeFn = ({
         schema,
         messages,
       })({ filePath, importBuffer, field });
+      if (schema.kind === "repeated") {
+        return [
+          `  result.${tsName} = ${tsValueToJsonValueCode};\n`,
+        ].join("");
+      }
       return [
         `  if (value.${tsName} !== undefined) result.${tsName} = ${tsValueToJsonValueCode};\n`,
       ].join("");
