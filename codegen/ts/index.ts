@@ -190,6 +190,7 @@ export interface CustomTypeMapping {
     tsType: string;
     getWireValueToTsValueCode: GetFieldCodeFn;
     getTsValueToWireValueCode: GetFieldCodeFn;
+    getTsValueToJsonValueCode: GetFieldCodeFn;
   };
 }
 export interface GetFieldCodeFnConfig {
