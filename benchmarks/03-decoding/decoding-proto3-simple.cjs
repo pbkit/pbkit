@@ -19,7 +19,7 @@ const test_protobufjs = () => JSON.stringify(protobufjs_Simple.decode(bin), null
 console.log('pbkit result:', test_pbkit());
 console.log('protobufjs result:', test_protobufjs());
 
-return new Benchmark.Suite()
+new Benchmark.Suite()
 .add('noop', noop)
 .add('pbkit decode', test_pbkit)
 .add('protobufjs decode', test_protobufjs)

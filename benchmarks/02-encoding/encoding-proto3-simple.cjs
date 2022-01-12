@@ -25,7 +25,7 @@ console.log('pbkit result:', test_pbkit());
 console.log('protobufjs_input:', JSON.stringify(protobufjs_data, null, 2));
 console.log('protobufjs result:', Uint8Array.from(test_protobufjs()));
 
-return new Benchmark.Suite()
+new Benchmark.Suite()
 .add('noop', noop)
 .add('pbkit encode', test_pbkit)
 .add('protobufjs encode', test_protobufjs)
