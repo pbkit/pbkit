@@ -143,7 +143,7 @@ await Deno.writeTextFile(
 
 await Deno.run({
   cwd: "tmp/npm",
-  cmd: ["cp", "-R", "dist/core/runtime/", "dist-runtime"],
+  cmd: ["cp", "-R", "dist/core/runtime/.", "dist-runtime"],
 }).status();
 await Deno.run({
   cwd: "tmp/npm/dist-runtime",
