@@ -13,6 +13,25 @@ brew tap riiid/riiid
 brew install pbkit
 ```
 
+### Windows
+
+#### Using msi installer
+
+You can find msi installer in release assets.
+
+#### Using [winget](https://github.com/microsoft/winget-cli)
+
+```powershell
+winget install Riiid.pollapo
+```
+
+### Linux
+
+#### Pre-built binary
+
+You can find pre-built binary in release assets.
+Download it and copy it to somewhere in PATH.
+
 ### Install from source
 
 **Prerequisites**
