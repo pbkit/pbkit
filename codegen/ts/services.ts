@@ -143,7 +143,6 @@ function getServiceTypeDefCode({
   function getRpcsCode() {
     const isServiceEmpty = Object.keys(service.rpcs).length < 1;
     if (isServiceEmpty) return "";
-
     const RpcReturnType = importBuffer.addRuntimeImport(
       filePath,
       "rpc.ts",
@@ -328,4 +327,3 @@ function getHeaderBeforeTrailer<THeader, TTrailer>(
 }`;
   }
 }
-
