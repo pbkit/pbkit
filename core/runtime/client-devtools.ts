@@ -1,5 +1,4 @@
 import type { RpcClientImpl } from "./rpc.ts";
-import { map } from "./async/async-generator.ts";
 import { createEventEmitter, EventEmitter } from "./async/event-emitter.ts";
 
 export const devtoolsKey = "@pbkit/devtools";
@@ -49,46 +48,64 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
       const configId = devtoolsConfig.configId;
       const requestId = devtoolsConfig.requestIdCounter++;
       devtoolsConfig.emit("request", {
-        requestId,
         configId,
+        requestId,
         servicePath: methodDescriptor.service.serviceName,
         rpcName: methodDescriptor.methodName,
         metadataJson: toJson(metadata),
         tags,
       });
       const rpcMethodResult = rpcMethodImpl(
-        map(req, (payload) => {
+        mapAsyncGenerator(req, (payload) => {
           devtoolsConfig.emit("request-payload", {
-            requestId,
             configId,
+            requestId,
             payloadJson: toJson(payload), // TODO: encode as json
             payloadProto: methodDescriptor.requestType.serializeBinary(payload),
           });
           return payload;
+        }, (error) => {
+          devtoolsConfig.emit("request-error", {
+            configId,
+            requestId,
+            errorMessage: getErrorMessage(error),
+          });
         }),
         metadata,
       );
-      const resAsyncGenerator = map(rpcMethodResult[0], (payload) => {
-        devtoolsConfig.emit("response-payload", {
-          requestId,
-          configId,
-          payloadJson: toJson(payload), // TODO: encode as json
-          payloadProto: methodDescriptor.responseType.serializeBinary(payload),
-        });
-        return payload;
-      });
+      const resAsyncGenerator = mapAsyncGenerator(
+        rpcMethodResult[0],
+        (payload) => {
+          devtoolsConfig.emit("response-payload", {
+            configId,
+            requestId,
+            payloadJson: toJson(payload), // TODO: encode as json
+            payloadProto: methodDescriptor.responseType.serializeBinary(
+              payload,
+            ),
+          });
+          return payload;
+        },
+        (error) => {
+          devtoolsConfig.emit("response-error", {
+            configId,
+            requestId,
+            errorMessage: getErrorMessage(error),
+          });
+        },
+      );
       const headerPromise = rpcMethodResult[1].then((header) => {
         devtoolsConfig.emit("response", {
-          requestId,
           configId,
+          requestId,
           headerJson: toJson(header),
         });
         return header;
       });
       const trailerPromise = rpcMethodResult[2].then((trailer) => {
         devtoolsConfig.emit("response-trailer", {
-          requestId,
           configId,
+          requestId,
           trailerJson: toJson(trailer),
         });
         return trailer;
@@ -101,6 +118,26 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
 function toJson(value: any): string {
   if ((!value) || (typeof value !== "object")) return "{}";
   return JSON.stringify(value);
+}
+
+async function* mapAsyncGenerator<T>(
+  asyncGenerator: AsyncGenerator<T>,
+  fn: (value: T) => T | Promise<T>,
+  catchFn: (error: any) => void,
+): AsyncGenerator<T> {
+  try {
+    for await (const value of asyncGenerator) {
+      yield await fn(value);
+    }
+  } catch (error) {
+    catchFn(error);
+    throw error;
+  }
+}
+
+function getErrorMessage(error: any): string {
+  if (error instanceof Error) return error.stack || error.message;
+  return String(error);
 }
 
 export interface Events {
@@ -118,6 +155,11 @@ export interface Events {
     payloadJson: string;
     payloadProto: Uint8Array;
   };
+  "request-error": {
+    configId: string;
+    requestId: number;
+    errorMessage: string;
+  };
   "response": {
     configId: string;
     requestId: number;
@@ -128,6 +170,11 @@ export interface Events {
     requestId: number;
     payloadJson: string;
     payloadProto: Uint8Array;
+  };
+  "response-error": {
+    configId: string;
+    requestId: number;
+    errorMessage: string;
   };
   "response-trailer": {
     configId: string;
