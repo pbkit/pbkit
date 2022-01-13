@@ -78,7 +78,7 @@ const getTypeDefCodeBase = (
   const fragments = typePath.split(".");
   const typeName = fragments.pop()!;
   return [
-    `declare namespace $${fragments.join(".")} {\n`,
+    `export declare namespace $${fragments.join(".")} {\n`,
     getTypeDefCodeFn(typeName),
     `}\n`,
     `export type Type = $${typePath};\n`,
