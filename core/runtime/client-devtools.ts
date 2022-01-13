@@ -60,7 +60,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
           devtoolsConfig.emit("request-payload", {
             configId,
             requestId,
-            payloadJson: toJson(payload), // TODO: encode as json
+            payloadJson: methodDescriptor.requestType.serializeJson(payload),
             payloadProto: methodDescriptor.requestType.serializeBinary(payload),
           });
           return payload;
@@ -79,7 +79,7 @@ export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
           devtoolsConfig.emit("response-payload", {
             configId,
             requestId,
-            payloadJson: toJson(payload), // TODO: encode as json
+            payloadJson: methodDescriptor.responseType.serializeJson(payload),
             payloadProto: methodDescriptor.responseType.serializeBinary(
               payload,
             ),

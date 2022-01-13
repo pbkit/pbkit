@@ -187,6 +187,11 @@ function getMethodDescriptorsCode({
         getMessageFilePath(rpc.reqType.typePath!, messages),
         "decodeBinary",
       );
+      const encodeRequestJson = importBuffer.addInternalImport(
+        filePath,
+        getMessageFilePath(rpc.reqType.typePath!, messages),
+        "encodeJson",
+      );
       const encodeResponseBinary = importBuffer.addInternalImport(
         filePath,
         getMessageFilePath(rpc.resType.typePath!, messages),
@@ -197,6 +202,11 @@ function getMethodDescriptorsCode({
         getMessageFilePath(rpc.resType.typePath!, messages),
         "decodeBinary",
       );
+      const encodeResponseJson = importBuffer.addInternalImport(
+        filePath,
+        getMessageFilePath(rpc.resType.typePath!, messages),
+        "encodeJson",
+      );
       return [
         `  ${camelRpcName}: {\n`,
         `    methodName: "${rpcName}",\n`,
@@ -206,10 +216,12 @@ function getMethodDescriptorsCode({
         `    requestType: {\n`,
         `      serializeBinary: ${encodeRequestBinary},\n`,
         `      deserializeBinary: ${decodeRequestBinary},\n`,
+        `      serializeJson: ${encodeRequestJson},\n`,
         `    },\n`,
         `    responseType: {\n`,
         `      serializeBinary: ${encodeResponseBinary},\n`,
         `      deserializeBinary: ${decodeResponseBinary},\n`,
+        `      serializeJson: ${encodeResponseJson},\n`,
         `    },\n`,
         "  },\n",
       ].join("");

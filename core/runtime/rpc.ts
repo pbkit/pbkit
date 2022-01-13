@@ -45,10 +45,12 @@ export interface MethodDescriptor<
   requestType: {
     serializeBinary: (value: TReq) => Uint8Array;
     deserializeBinary: (value: Uint8Array) => TReq;
+    serializeJson: (value: TReq) => string;
   };
   responseType: {
     serializeBinary: (value: TRes) => Uint8Array;
     deserializeBinary: (value: Uint8Array) => TRes;
+    serializeJson: (value: TRes) => string;
   };
 }
 
