@@ -9,6 +9,9 @@
   <a href="https://github.com/pbkit/pbkit/releases">
     <img src="https://img.shields.io/github/release/pbkit/pbkit/all.svg" />
   </a>
+  <a href="https://deno.land/x/pbkit">
+    <img src="https://img.shields.io/badge/deno.land/x/-pbkit-gray?logo=deno&labelColor=black" />
+  </a>
   <a href="https://github.com/pbkit/pbkit">
     <img src="https://tokei.rs/b1/github/pbkit/pbkit" />
   </a>
