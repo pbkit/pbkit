@@ -14,6 +14,7 @@ export function createEventBuffer<T>(
   config?: CreateEventBufferConfig,
 ): EventBuffer<T> {
   const queue: T[] = [];
+  let _error: Error | undefined;
   let deferred: Deferred<IteratorResult<T>> | undefined;
   let finished = false;
   return {
@@ -27,7 +28,8 @@ export function createEventBuffer<T>(
       }
     },
     error(error) {
-      deferred?.reject(error);
+      if (deferred) deferred.reject(error);
+      else _error = error;
       finished = true;
     },
     finish() {
@@ -45,6 +47,7 @@ export function createEventBuffer<T>(
               done: false,
             });
           } else {
+            if (_error) return Promise.reject(_error);
             if (finished) {
               return Promise.resolve({ value: undefined, done: true });
             } else {
