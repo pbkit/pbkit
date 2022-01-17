@@ -320,9 +320,11 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
         const resAsyncGenerator = rpcMethodResult[0];
         const headerPromise = rpcMethodResult[1];
         const trailerPromise = rpcMethodResult[2];
-        const response = responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator);
-        const header = await getHeaderBeforeTrailer(headerPromise, trailerPromise);
-        return responseOnly ? await response : [await response, header, trailerPromise];
+        const [header, response] = await Promise.all([
+          getHeaderBeforeTrailer(headerPromise, trailerPromise),
+          responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator),
+        ]);
+        return responseOnly ? response : [response, header, trailerPromise];
       };
       return [camelRpcName, rpcMethodHandler];
     }
