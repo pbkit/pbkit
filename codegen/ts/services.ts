@@ -89,6 +89,7 @@ function* genService({
     messages,
   });
   const methodDescriptorsCode = getMethodDescriptorsCode({
+    customTypeMapping,
     filePath,
     typePath,
     importBuffer,
@@ -159,6 +160,7 @@ function getServiceTypeDefCode({
 }
 
 interface GetMethodDescriptorsCodeConfig {
+  customTypeMapping: CustomTypeMapping;
   filePath: string;
   typePath: string;
   importBuffer: ImportBuffer;
@@ -166,12 +168,22 @@ interface GetMethodDescriptorsCodeConfig {
   messages: GenMessagesConfig;
 }
 function getMethodDescriptorsCode({
+  customTypeMapping,
   filePath,
   typePath,
   importBuffer,
   service,
   messages,
 }: GetMethodDescriptorsCodeConfig) {
+  function getTsType(typePath?: string) {
+    return pbTypeToTsType({
+      customTypeMapping,
+      addInternalImport: importBuffer.addInternalImport,
+      messages,
+      here: filePath,
+      typePath,
+    });
+  }
   return [
     "export type MethodDescriptors = typeof methodDescriptors;\n",
     "export const methodDescriptors = {\n",
@@ -216,12 +228,12 @@ function getMethodDescriptorsCode({
         `    requestType: {\n`,
         `      serializeBinary: ${encodeRequestBinary},\n`,
         `      deserializeBinary: ${decodeRequestBinary},\n`,
-        `      serializeJson: (value) => JSON.stringify(${encodeRequestJson}(value)),\n`,
+        `      serializeJson: (value: ${getTsType(rpc.reqType.typePath)}) => JSON.stringify(${encodeRequestJson}(value)),\n`,
         `    },\n`,
         `    responseType: {\n`,
         `      serializeBinary: ${encodeResponseBinary},\n`,
         `      deserializeBinary: ${decodeResponseBinary},\n`,
-        `      serializeJson: (value) => JSON.stringify(${encodeResponseJson}(value)),\n`,
+        `      serializeJson: (value: ${getTsType(rpc.resType.typePath)}) => JSON.stringify(${encodeResponseJson}(value)),\n`,
         `    },\n`,
         "  },\n",
       ].join("");
