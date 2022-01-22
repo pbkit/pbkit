@@ -147,6 +147,7 @@ const reservedNames = [
   "encodeBinary",
   "decodeBinary",
   "encodeJson",
+  "decodeJson",
 ];
 
 interface GenMessageConfig {
@@ -214,20 +215,24 @@ function* genMessage({
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   const getDefaultValueCode = getGetDefaultValueCode(getCodeConfig);
-  const encodeBinaryCode = getEncodeBinaryCode(getCodeConfig);
   const encodeJsonCode = getEncodeJsonCode(getCodeConfig);
+  const decodeJsonCode = getDecodeJsonCode(getCodeConfig);
+  const encodeBinaryCode = getEncodeBinaryCode(getCodeConfig);
   const decodeBinaryCode = getDecodeBinaryCode(getCodeConfig);
   const importCode = importBuffer.getCode();
   yield [
     filePath,
-    new StringReader([
-      importCode ? importCode + "\n" : "",
-      typeDefCode,
-      "\n" + getDefaultValueCode,
-      "\n" + encodeJsonCode,
-      "\n" + encodeBinaryCode,
-      "\n" + decodeBinaryCode,
-    ].join("")),
+    new StringReader(
+      [
+        importCode ? importCode + "\n" : "",
+        typeDefCode,
+        "\n" + getDefaultValueCode,
+        "\n" + encodeJsonCode,
+        "\n" + decodeJsonCode,
+        "\n" + encodeBinaryCode,
+        "\n" + decodeBinaryCode,
+      ].join(""),
+    ),
   ];
   function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
     return {
@@ -382,6 +387,55 @@ const getEncodeJsonCode: GetCodeFn = ({
       ].join("");
     }).join(""),
     "  return result;\n",
+    "}\n",
+  ].join("");
+};
+
+const getDecodeJsonCode: GetCodeFn = ({
+  typePath,
+  filePath,
+  importBuffer,
+  message,
+  messages,
+  customTypeMapping,
+}) => {
+  return [
+    `export function decodeJson(value: any): $${typePath} {\n`,
+    "  const result = getDefaultValue();\n",
+    message.fields
+      .map((field) => {
+        const { tsName, schema } = field;
+        if (schema.kind === "oneof") return "";
+        const jsonValueToTsValueCode = getGetJsonValueToTsValueCode({
+          customTypeMapping,
+          schema,
+          messages,
+        })({ filePath, importBuffer, field });
+        if (schema.kind === "repeated") {
+          return [
+            `  result.${tsName} = ${jsonValueToTsValueCode} ?? [];\n`,
+          ].join("");
+        }
+        return [
+          `  if (value.${tsName} !== undefined) result.${tsName} = ${jsonValueToTsValueCode};\n`,
+        ].join("");
+      })
+      .join(""),
+    message.oneofFields.map(({ tsName, fields }) => {
+      return [
+        fields.map((field) => {
+          const jsonValueToTsValueCode = getGetJsonValueToTsValueCode({
+          customTypeMapping,
+          schema: field.schema,
+          messages,
+        })({ filePath, importBuffer, field });
+          return [
+            `  if (value.${field.tsName} !== undefined) result.${tsName} = {field: "${field.tsName}", value: ${jsonValueToTsValueCode}};\n`
+          ].join("")
+        }).join("")
+      ];
+    }).join(""),
+    `  return result;\n`,
     "}\n",
   ].join("");
 };
@@ -649,26 +703,6 @@ function getGetTsValueToWireValueCode({
       ((config) => getDefaultTsValueToWireValueCode({ ...config, messages }))
   );
 }
-
-interface GetGetTsValueToJsonValueCodeConfig {
-  customTypeMapping: CustomTypeMapping;
-  schema: schema.MessageField;
-  messages: GenMessagesConfig;
-}
-function getGetTsValueToJsonValueCode({
-  customTypeMapping,
-  schema,
-  messages,
-}: GetGetTsValueToJsonValueCodeConfig): GetFieldCodeFn {
-  const customTypeMappingItem = customTypeMapping[
-    (schema as NonMapMessageField).typePath!
-  ];
-  return (
-    customTypeMappingItem?.getTsValueToJsonValueCode ??
-      ((config) => getDefaultTsValueToJsonValueCode({ ...config, messages }))
-  );
-}
-
 export interface GetDefaultTsValueToWireValueCodeConfig {
   filePath: string;
   importBuffer: ImportBuffer;
@@ -743,6 +777,24 @@ export function getDefaultTsValueToWireValueCode({
   }
 }
 
+interface GetGetTsValueToJsonValueCodeConfig {
+  customTypeMapping: CustomTypeMapping;
+  schema: schema.MessageField;
+  messages: GenMessagesConfig;
+}
+function getGetTsValueToJsonValueCode({
+  customTypeMapping,
+  schema,
+  messages,
+}: GetGetTsValueToJsonValueCodeConfig): GetFieldCodeFn {
+  const customTypeMappingItem =
+    customTypeMapping[(schema as NonMapMessageField).typePath!];
+  return (
+    customTypeMappingItem?.getTsValueToJsonValueCode ??
+      ((config) => getDefaultTsValueToJsonValueCode({ ...config, messages }))
+  );
+}
+
 export interface GetDefaultTsValueToJsonValueCodeConfig {
   filePath: string;
   importBuffer: ImportBuffer;
@@ -794,6 +846,73 @@ export function getDefaultTsValueToJsonValueCode({
       "encodeJson",
     );
     return `${encodeJson}(${tsName})`;
+  }
+}
+
+interface GetGetJsonValueToTsValueCodeConfig {
+  customTypeMapping: CustomTypeMapping;
+  schema: schema.MessageField;
+  messages: GenMessagesConfig;
+}
+function getGetJsonValueToTsValueCode({
+  customTypeMapping,
+  schema,
+  messages,
+}: GetGetJsonValueToTsValueCodeConfig): GetFieldCodeFn {
+  const customTypeMappingItem =
+    customTypeMapping[(schema as NonMapMessageField).typePath!];
+  return (
+    customTypeMappingItem?.getJsonValueToTsValueCode ??
+      ((config) => getDefaultJsonValueToTsValueCode({ ...config, messages }))
+  );
+}
+
+export interface GetDefaultJsonValueToTsValueCodeConfig {
+  filePath: string;
+  importBuffer: ImportBuffer;
+  field: Field;
+  messages: GenMessagesConfig;
+}
+export function getDefaultJsonValueToTsValueCode({
+  filePath,
+  importBuffer,
+  field,
+  messages,
+}: GetDefaultJsonValueToTsValueCodeConfig): string | undefined {
+  const { schema, tsName, tsType } = field;
+  if (schema.kind === "map") {
+    const { keyTypePath, valueTypePath } = schema;
+    if (!keyTypePath || !valueTypePath) return;
+    const valueTypePathCode = typePathToCode("value", valueTypePath);
+    return `Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
+  }
+  if (schema.kind === "repeated") {
+    const { typePath } = schema;
+    if (!typePath) return;
+    const typePathCode = typePathToCode("value", typePath);
+    return `value.${tsName}.map((value: any) => ${typePathCode})`;
+  }
+  const { typePath } = schema;
+  return typePathToCode("value." + tsName, typePath, tsType);
+  function typePathToCode(jsonValue: string, typePath?: string, tsType?: string) {
+    if (!typePath) return;
+    const jsonValueToTsValueFns = importBuffer.addRuntimeImport(
+      filePath,
+      "json/scalar.ts",
+      "jsonValueToTsValueFns",
+    );
+    if (typePath in scalarTypeMapping) {
+      return `${jsonValueToTsValueFns}.${typePath.substr(1)}(${jsonValue})`;
+    }
+    if (field.isEnum) {
+      return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${tsType}`;
+    }
+    const decodeJson = importBuffer.addInternalImport(
+      filePath,
+      getFilePath(typePath, messages),
+      "decodeJson",
+    );
+    return `${decodeJson}(${jsonValue})`;
   }
 }
 
@@ -970,6 +1089,10 @@ export function getWellKnownTypeMapping({
         const { field } = config;
         return `value.${field.tsName}`;
       },
+      getJsonValueToTsValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
     },
     ".google.protobuf.BytesValue": {
       tsType: "Uint8Array",
@@ -983,6 +1106,10 @@ export function getWellKnownTypeMapping({
         return `((tsValue) => (${value}))({ value: tsValue })`;
       },
       getTsValueToJsonValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
+      getJsonValueToTsValueCode(config) {
         const { field } = config;
         return `value.${field.tsName}`;
       },
@@ -1002,6 +1129,10 @@ export function getWellKnownTypeMapping({
         const { field } = config;
         return `value.${field.tsName}`;
       },
+      getJsonValueToTsValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
     },
     ".google.protobuf.FloatValue": {
       tsType: "number",
@@ -1015,6 +1146,10 @@ export function getWellKnownTypeMapping({
         return `((tsValue) => (${value}))({ value: tsValue })`;
       },
       getTsValueToJsonValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
+      getJsonValueToTsValueCode(config) {
         const { field } = config;
         return `value.${field.tsName}`;
       },
@@ -1034,6 +1169,10 @@ export function getWellKnownTypeMapping({
         const { field } = config;
         return `value.${field.tsName}`;
       },
+      getJsonValueToTsValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
     },
     ".google.protobuf.Int64Value": {
       tsType: "string",
@@ -1047,6 +1186,10 @@ export function getWellKnownTypeMapping({
         return `((tsValue) => (${value}))({ value: tsValue })`;
       },
       getTsValueToJsonValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
+      getJsonValueToTsValueCode(config) {
         const { field } = config;
         return `value.${field.tsName}`;
       },
@@ -1066,6 +1209,10 @@ export function getWellKnownTypeMapping({
         const { field } = config;
         return `value.${field.tsName}`;
       },
+      getJsonValueToTsValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
     },
     ".google.protobuf.StringValue": {
       tsType: "string",
@@ -1079,6 +1226,10 @@ export function getWellKnownTypeMapping({
         return `((tsValue) => (${value}))({ value: tsValue })`;
       },
       getTsValueToJsonValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
+      getJsonValueToTsValueCode(config) {
         const { field } = config;
         return `value.${field.tsName}`;
       },
@@ -1098,6 +1249,10 @@ export function getWellKnownTypeMapping({
         const { field } = config;
         return `value.${field.tsName}`;
       },
+      getJsonValueToTsValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
     },
     ".google.protobuf.UInt64Value": {
       tsType: "string",
@@ -1111,6 +1266,10 @@ export function getWellKnownTypeMapping({
         return `((tsValue) => (${value}))({ value: tsValue })`;
       },
       getTsValueToJsonValueCode(config) {
+        const { field } = config;
+        return `value.${field.tsName}`;
+      },
+      getJsonValueToTsValueCode(config) {
         const { field } = config;
         return `value.${field.tsName}`;
       },
