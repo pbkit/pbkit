@@ -1,4 +1,8 @@
 import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
+import {
   WireMessage,
 } from "../../../../../core/runtime/wire/index.ts";
 import {
@@ -10,13 +14,10 @@ import {
   unpackFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf.GeneratedCodeInfo {
+export declare namespace $.google.protobuf.GeneratedCodeInfo {
   export interface Annotation {
     path: number[];
     sourceFile?: string;
@@ -41,6 +42,15 @@ export function encodeJson(value: $.google.protobuf.GeneratedCodeInfo.Annotation
   if (value.sourceFile !== undefined) result.sourceFile = tsValueToJsonValueFns.string(value.sourceFile);
   if (value.begin !== undefined) result.begin = tsValueToJsonValueFns.int32(value.begin);
   if (value.end !== undefined) result.end = tsValueToJsonValueFns.int32(value.end);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.GeneratedCodeInfo.Annotation {
+  const result = getDefaultValue();
+  result.path = value.path.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  if (value.sourceFile !== undefined) result.sourceFile = jsonValueToTsValueFns.string(value.sourceFile);
+  if (value.begin !== undefined) result.begin = jsonValueToTsValueFns.int32(value.begin);
+  if (value.end !== undefined) result.end = jsonValueToTsValueFns.int32(value.end);
   return result;
 }
 

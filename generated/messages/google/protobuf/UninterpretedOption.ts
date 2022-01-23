@@ -1,9 +1,14 @@
 import {
   Type as NamePart,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./(UninterpretedOption)/NamePart.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -16,13 +21,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface UninterpretedOption {
     name: NamePart[];
     identifierValue?: string;
@@ -56,6 +58,18 @@ export function encodeJson(value: $.google.protobuf.UninterpretedOption): unknow
   if (value.doubleValue !== undefined) result.doubleValue = tsValueToJsonValueFns.double(value.doubleValue);
   if (value.stringValue !== undefined) result.stringValue = tsValueToJsonValueFns.bytes(value.stringValue);
   if (value.aggregateValue !== undefined) result.aggregateValue = tsValueToJsonValueFns.string(value.aggregateValue);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.UninterpretedOption {
+  const result = getDefaultValue();
+  result.name = value.name.map((value: any) => decodeJson_1(value)) ?? [];
+  if (value.identifierValue !== undefined) result.identifierValue = jsonValueToTsValueFns.string(value.identifierValue);
+  if (value.positiveIntValue !== undefined) result.positiveIntValue = jsonValueToTsValueFns.uint64(value.positiveIntValue);
+  if (value.negativeIntValue !== undefined) result.negativeIntValue = jsonValueToTsValueFns.int64(value.negativeIntValue);
+  if (value.doubleValue !== undefined) result.doubleValue = jsonValueToTsValueFns.double(value.doubleValue);
+  if (value.stringValue !== undefined) result.stringValue = jsonValueToTsValueFns.bytes(value.stringValue);
+  if (value.aggregateValue !== undefined) result.aggregateValue = jsonValueToTsValueFns.string(value.aggregateValue);
   return result;
 }
 

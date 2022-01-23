@@ -1,39 +1,49 @@
 import {
   Type as DescriptorProto,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./DescriptorProto.ts";
 import {
   Type as EnumDescriptorProto,
-  encodeBinary as encodeBinary_2,
   encodeJson as encodeJson_2,
+  decodeJson as decodeJson_2,
+  encodeBinary as encodeBinary_2,
   decodeBinary as decodeBinary_2,
 } from "./EnumDescriptorProto.ts";
 import {
   Type as ServiceDescriptorProto,
-  encodeBinary as encodeBinary_3,
   encodeJson as encodeJson_3,
+  decodeJson as decodeJson_3,
+  encodeBinary as encodeBinary_3,
   decodeBinary as decodeBinary_3,
 } from "./ServiceDescriptorProto.ts";
 import {
   Type as FieldDescriptorProto,
-  encodeBinary as encodeBinary_4,
   encodeJson as encodeJson_4,
+  decodeJson as decodeJson_4,
+  encodeBinary as encodeBinary_4,
   decodeBinary as decodeBinary_4,
 } from "./FieldDescriptorProto.ts";
 import {
   Type as FileOptions,
-  encodeBinary as encodeBinary_5,
   encodeJson as encodeJson_5,
+  decodeJson as decodeJson_5,
+  encodeBinary as encodeBinary_5,
   decodeBinary as decodeBinary_5,
 } from "./FileOptions.ts";
 import {
   Type as SourceCodeInfo,
-  encodeBinary as encodeBinary_6,
   encodeJson as encodeJson_6,
+  decodeJson as decodeJson_6,
+  encodeBinary as encodeBinary_6,
   decodeBinary as decodeBinary_6,
 } from "./SourceCodeInfo.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -47,13 +57,10 @@ import {
   unpackFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface FileDescriptorProto {
     name?: string;
     package?: string;
@@ -102,6 +109,23 @@ export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknow
   result.publicDependency = value.publicDependency.map(value => tsValueToJsonValueFns.int32(value));
   result.weakDependency = value.weakDependency.map(value => tsValueToJsonValueFns.int32(value));
   if (value.syntax !== undefined) result.syntax = tsValueToJsonValueFns.string(value.syntax);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.FileDescriptorProto {
+  const result = getDefaultValue();
+  if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
+  if (value.package !== undefined) result.package = jsonValueToTsValueFns.string(value.package);
+  result.dependency = value.dependency.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
+  result.messageType = value.messageType.map((value: any) => decodeJson_1(value)) ?? [];
+  result.enumType = value.enumType.map((value: any) => decodeJson_2(value)) ?? [];
+  result.service = value.service.map((value: any) => decodeJson_3(value)) ?? [];
+  result.extension = value.extension.map((value: any) => decodeJson_4(value)) ?? [];
+  if (value.options !== undefined) result.options = decodeJson_5(value.options);
+  if (value.sourceCodeInfo !== undefined) result.sourceCodeInfo = decodeJson_6(value.sourceCodeInfo);
+  result.publicDependency = value.publicDependency.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.weakDependency = value.weakDependency.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  if (value.syntax !== undefined) result.syntax = jsonValueToTsValueFns.string(value.syntax);
   return result;
 }
 

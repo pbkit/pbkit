@@ -1,4 +1,8 @@
 import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
+import {
   WireMessage,
 } from "../../../../../core/runtime/wire/index.ts";
 import {
@@ -9,13 +13,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf.EnumDescriptorProto {
+export declare namespace $.google.protobuf.EnumDescriptorProto {
   export interface EnumReservedRange {
     start?: number;
     end?: number;
@@ -34,6 +35,13 @@ export function encodeJson(value: $.google.protobuf.EnumDescriptorProto.EnumRese
   const result: any = {};
   if (value.start !== undefined) result.start = tsValueToJsonValueFns.int32(value.start);
   if (value.end !== undefined) result.end = tsValueToJsonValueFns.int32(value.end);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.EnumDescriptorProto.EnumReservedRange {
+  const result = getDefaultValue();
+  if (value.start !== undefined) result.start = jsonValueToTsValueFns.int32(value.start);
+  if (value.end !== undefined) result.end = jsonValueToTsValueFns.int32(value.end);
   return result;
 }
 

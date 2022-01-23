@@ -1,9 +1,14 @@
 import {
   Type as MethodOptions,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./MethodOptions.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -16,13 +21,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface MethodDescriptorProto {
     name?: string;
     inputType?: string;
@@ -53,6 +55,17 @@ export function encodeJson(value: $.google.protobuf.MethodDescriptorProto): unkn
   if (value.options !== undefined) result.options = encodeJson_1(value.options);
   if (value.clientStreaming !== undefined) result.clientStreaming = tsValueToJsonValueFns.bool(value.clientStreaming);
   if (value.serverStreaming !== undefined) result.serverStreaming = tsValueToJsonValueFns.bool(value.serverStreaming);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.MethodDescriptorProto {
+  const result = getDefaultValue();
+  if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
+  if (value.inputType !== undefined) result.inputType = jsonValueToTsValueFns.string(value.inputType);
+  if (value.outputType !== undefined) result.outputType = jsonValueToTsValueFns.string(value.outputType);
+  if (value.options !== undefined) result.options = decodeJson_1(value.options);
+  if (value.clientStreaming !== undefined) result.clientStreaming = jsonValueToTsValueFns.bool(value.clientStreaming);
+  if (value.serverStreaming !== undefined) result.serverStreaming = jsonValueToTsValueFns.bool(value.serverStreaming);
   return result;
 }
 

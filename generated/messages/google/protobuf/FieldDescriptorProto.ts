@@ -10,10 +10,15 @@ import {
 } from "./(FieldDescriptorProto)/Type.ts";
 import {
   Type as FieldOptions,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./FieldOptions.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -29,13 +34,10 @@ import {
   default as Long,
 } from "../../../../core/runtime/Long.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface FieldDescriptorProto {
     name?: string;
     extendee?: string;
@@ -81,6 +83,22 @@ export function encodeJson(value: $.google.protobuf.FieldDescriptorProto): unkno
   if (value.oneofIndex !== undefined) result.oneofIndex = tsValueToJsonValueFns.int32(value.oneofIndex);
   if (value.jsonName !== undefined) result.jsonName = tsValueToJsonValueFns.string(value.jsonName);
   if (value.proto3Optional !== undefined) result.proto3Optional = tsValueToJsonValueFns.bool(value.proto3Optional);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.FieldDescriptorProto {
+  const result = getDefaultValue();
+  if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
+  if (value.extendee !== undefined) result.extendee = jsonValueToTsValueFns.string(value.extendee);
+  if (value.number !== undefined) result.number = jsonValueToTsValueFns.int32(value.number);
+  if (value.label !== undefined) result.label = jsonValueToTsValueFns.enum(value.label) as Label;
+  if (value.type !== undefined) result.type = jsonValueToTsValueFns.enum(value.type) as Type_1;
+  if (value.typeName !== undefined) result.typeName = jsonValueToTsValueFns.string(value.typeName);
+  if (value.defaultValue !== undefined) result.defaultValue = jsonValueToTsValueFns.string(value.defaultValue);
+  if (value.options !== undefined) result.options = decodeJson_1(value.options);
+  if (value.oneofIndex !== undefined) result.oneofIndex = jsonValueToTsValueFns.int32(value.oneofIndex);
+  if (value.jsonName !== undefined) result.jsonName = jsonValueToTsValueFns.string(value.jsonName);
+  if (value.proto3Optional !== undefined) result.proto3Optional = jsonValueToTsValueFns.bool(value.proto3Optional);
   return result;
 }
 

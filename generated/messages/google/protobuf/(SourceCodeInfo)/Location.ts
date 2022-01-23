@@ -1,4 +1,8 @@
 import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
+import {
   WireMessage,
 } from "../../../../../core/runtime/wire/index.ts";
 import {
@@ -10,13 +14,10 @@ import {
   unpackFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf.SourceCodeInfo {
+export declare namespace $.google.protobuf.SourceCodeInfo {
   export interface Location {
     path: number[];
     span: number[];
@@ -44,6 +45,16 @@ export function encodeJson(value: $.google.protobuf.SourceCodeInfo.Location): un
   if (value.leadingComments !== undefined) result.leadingComments = tsValueToJsonValueFns.string(value.leadingComments);
   if (value.trailingComments !== undefined) result.trailingComments = tsValueToJsonValueFns.string(value.trailingComments);
   result.leadingDetachedComments = value.leadingDetachedComments.map(value => tsValueToJsonValueFns.string(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.SourceCodeInfo.Location {
+  const result = getDefaultValue();
+  result.path = value.path.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.span = value.span.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  if (value.leadingComments !== undefined) result.leadingComments = jsonValueToTsValueFns.string(value.leadingComments);
+  if (value.trailingComments !== undefined) result.trailingComments = jsonValueToTsValueFns.string(value.trailingComments);
+  result.leadingDetachedComments = value.leadingDetachedComments.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
   return result;
 }
 

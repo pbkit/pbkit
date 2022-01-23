@@ -1,9 +1,14 @@
 import {
   Type as EnumValueOptions,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./EnumValueOptions.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -16,13 +21,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface EnumValueDescriptorProto {
     name?: string;
     number?: number;
@@ -44,6 +46,14 @@ export function encodeJson(value: $.google.protobuf.EnumValueDescriptorProto): u
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);
   if (value.number !== undefined) result.number = tsValueToJsonValueFns.int32(value.number);
   if (value.options !== undefined) result.options = encodeJson_1(value.options);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.EnumValueDescriptorProto {
+  const result = getDefaultValue();
+  if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
+  if (value.number !== undefined) result.number = jsonValueToTsValueFns.int32(value.number);
+  if (value.options !== undefined) result.options = decodeJson_1(value.options);
   return result;
 }
 

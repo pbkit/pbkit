@@ -5,10 +5,15 @@ import {
 } from "./(FileOptions)/OptimizeMode.ts";
 import {
   Type as UninterpretedOption,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -24,13 +29,10 @@ import {
   default as Long,
 } from "../../../../core/runtime/Long.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface FileOptions {
     javaPackage?: string;
     javaOuterClassname?: string;
@@ -106,6 +108,32 @@ export function encodeJson(value: $.google.protobuf.FileOptions): unknown {
   if (value.phpMetadataNamespace !== undefined) result.phpMetadataNamespace = tsValueToJsonValueFns.string(value.phpMetadataNamespace);
   if (value.rubyPackage !== undefined) result.rubyPackage = tsValueToJsonValueFns.string(value.rubyPackage);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.FileOptions {
+  const result = getDefaultValue();
+  if (value.javaPackage !== undefined) result.javaPackage = jsonValueToTsValueFns.string(value.javaPackage);
+  if (value.javaOuterClassname !== undefined) result.javaOuterClassname = jsonValueToTsValueFns.string(value.javaOuterClassname);
+  if (value.optimizeFor !== undefined) result.optimizeFor = jsonValueToTsValueFns.enum(value.optimizeFor) as OptimizeMode;
+  if (value.javaMultipleFiles !== undefined) result.javaMultipleFiles = jsonValueToTsValueFns.bool(value.javaMultipleFiles);
+  if (value.goPackage !== undefined) result.goPackage = jsonValueToTsValueFns.string(value.goPackage);
+  if (value.ccGenericServices !== undefined) result.ccGenericServices = jsonValueToTsValueFns.bool(value.ccGenericServices);
+  if (value.javaGenericServices !== undefined) result.javaGenericServices = jsonValueToTsValueFns.bool(value.javaGenericServices);
+  if (value.pyGenericServices !== undefined) result.pyGenericServices = jsonValueToTsValueFns.bool(value.pyGenericServices);
+  if (value.javaGenerateEqualsAndHash !== undefined) result.javaGenerateEqualsAndHash = jsonValueToTsValueFns.bool(value.javaGenerateEqualsAndHash);
+  if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
+  if (value.javaStringCheckUtf8 !== undefined) result.javaStringCheckUtf8 = jsonValueToTsValueFns.bool(value.javaStringCheckUtf8);
+  if (value.ccEnableArenas !== undefined) result.ccEnableArenas = jsonValueToTsValueFns.bool(value.ccEnableArenas);
+  if (value.objcClassPrefix !== undefined) result.objcClassPrefix = jsonValueToTsValueFns.string(value.objcClassPrefix);
+  if (value.csharpNamespace !== undefined) result.csharpNamespace = jsonValueToTsValueFns.string(value.csharpNamespace);
+  if (value.swiftPrefix !== undefined) result.swiftPrefix = jsonValueToTsValueFns.string(value.swiftPrefix);
+  if (value.phpClassPrefix !== undefined) result.phpClassPrefix = jsonValueToTsValueFns.string(value.phpClassPrefix);
+  if (value.phpNamespace !== undefined) result.phpNamespace = jsonValueToTsValueFns.string(value.phpNamespace);
+  if (value.phpGenericServices !== undefined) result.phpGenericServices = jsonValueToTsValueFns.bool(value.phpGenericServices);
+  if (value.phpMetadataNamespace !== undefined) result.phpMetadataNamespace = jsonValueToTsValueFns.string(value.phpMetadataNamespace);
+  if (value.rubyPackage !== undefined) result.rubyPackage = jsonValueToTsValueFns.string(value.rubyPackage);
+  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

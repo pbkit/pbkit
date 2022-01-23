@@ -1,9 +1,14 @@
 import {
   Type as UninterpretedOption,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -16,13 +21,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface MessageOptions {
     messageSetWireFormat?: boolean;
     noStandardDescriptorAccessor?: boolean;
@@ -50,6 +52,16 @@ export function encodeJson(value: $.google.protobuf.MessageOptions): unknown {
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = tsValueToJsonValueFns.bool(value.mapEntry);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.MessageOptions {
+  const result = getDefaultValue();
+  if (value.messageSetWireFormat !== undefined) result.messageSetWireFormat = jsonValueToTsValueFns.bool(value.messageSetWireFormat);
+  if (value.noStandardDescriptorAccessor !== undefined) result.noStandardDescriptorAccessor = jsonValueToTsValueFns.bool(value.noStandardDescriptorAccessor);
+  if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
+  if (value.mapEntry !== undefined) result.mapEntry = jsonValueToTsValueFns.bool(value.mapEntry);
+  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

@@ -1,21 +1,28 @@
 import {
   Type as EnumValueDescriptorProto,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./EnumValueDescriptorProto.ts";
 import {
   Type as EnumOptions,
-  encodeBinary as encodeBinary_2,
   encodeJson as encodeJson_2,
+  decodeJson as decodeJson_2,
+  encodeBinary as encodeBinary_2,
   decodeBinary as decodeBinary_2,
 } from "./EnumOptions.ts";
 import {
   Type as EnumReservedRange,
-  encodeBinary as encodeBinary_3,
   encodeJson as encodeJson_3,
+  decodeJson as decodeJson_3,
+  encodeBinary as encodeBinary_3,
   decodeBinary as decodeBinary_3,
 } from "./(EnumDescriptorProto)/EnumReservedRange.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -28,13 +35,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface EnumDescriptorProto {
     name?: string;
     value: EnumValueDescriptorProto[];
@@ -62,6 +66,16 @@ export function encodeJson(value: $.google.protobuf.EnumDescriptorProto): unknow
   if (value.options !== undefined) result.options = encodeJson_2(value.options);
   result.reservedRange = value.reservedRange.map(value => encodeJson_3(value));
   result.reservedName = value.reservedName.map(value => tsValueToJsonValueFns.string(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.EnumDescriptorProto {
+  const result = getDefaultValue();
+  if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
+  result.value = value.value.map((value: any) => decodeJson_1(value)) ?? [];
+  if (value.options !== undefined) result.options = decodeJson_2(value.options);
+  result.reservedRange = value.reservedRange.map((value: any) => decodeJson_3(value)) ?? [];
+  result.reservedName = value.reservedName.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
   return result;
 }
 

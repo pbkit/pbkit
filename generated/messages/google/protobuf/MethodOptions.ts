@@ -5,10 +5,15 @@ import {
 } from "./(MethodOptions)/IdempotencyLevel.ts";
 import {
   Type as UninterpretedOption,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -24,13 +29,10 @@ import {
   default as Long,
 } from "../../../../core/runtime/Long.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface MethodOptions {
     deprecated?: boolean;
     idempotencyLevel?: IdempotencyLevel;
@@ -52,6 +54,14 @@ export function encodeJson(value: $.google.protobuf.MethodOptions): unknown {
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
   if (value.idempotencyLevel !== undefined) result.idempotencyLevel = tsValueToJsonValueFns.enum(value.idempotencyLevel);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.MethodOptions {
+  const result = getDefaultValue();
+  if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
+  if (value.idempotencyLevel !== undefined) result.idempotencyLevel = jsonValueToTsValueFns.enum(value.idempotencyLevel) as IdempotencyLevel;
+  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

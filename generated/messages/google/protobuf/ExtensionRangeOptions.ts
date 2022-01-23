@@ -1,9 +1,13 @@
 import {
   Type as UninterpretedOption,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./UninterpretedOption.ts";
+import {
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -15,7 +19,7 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface ExtensionRangeOptions {
     uninterpretedOption: UninterpretedOption[];
   }
@@ -31,6 +35,12 @@ export function getDefaultValue(): $.google.protobuf.ExtensionRangeOptions {
 export function encodeJson(value: $.google.protobuf.ExtensionRangeOptions): unknown {
   const result: any = {};
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.ExtensionRangeOptions {
+  const result = getDefaultValue();
+  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

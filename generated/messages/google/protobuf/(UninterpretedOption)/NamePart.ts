@@ -1,4 +1,8 @@
 import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../../core/runtime/json/scalar.ts";
+import {
   WireMessage,
 } from "../../../../../core/runtime/wire/index.ts";
 import {
@@ -9,13 +13,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf.UninterpretedOption {
+export declare namespace $.google.protobuf.UninterpretedOption {
   export interface NamePart {
     namePart: string;
     isExtension: boolean;
@@ -34,6 +35,13 @@ export function encodeJson(value: $.google.protobuf.UninterpretedOption.NamePart
   const result: any = {};
   if (value.namePart !== undefined) result.namePart = tsValueToJsonValueFns.string(value.namePart);
   if (value.isExtension !== undefined) result.isExtension = tsValueToJsonValueFns.bool(value.isExtension);
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.UninterpretedOption.NamePart {
+  const result = getDefaultValue();
+  if (value.namePart !== undefined) result.namePart = jsonValueToTsValueFns.string(value.namePart);
+  if (value.isExtension !== undefined) result.isExtension = jsonValueToTsValueFns.bool(value.isExtension);
   return result;
 }
 

@@ -1,4 +1,4 @@
-declare namespace $.google.protobuf.FileOptions {
+export declare namespace $.google.protobuf.FileOptions {
   export type OptimizeMode =
     | "UNSPECIFIED"
     | "SPEED"

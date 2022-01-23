@@ -1,45 +1,56 @@
 import {
   Type as FieldDescriptorProto,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./FieldDescriptorProto.ts";
 import {
   Type as DescriptorProto_1,
-  encodeBinary as encodeBinary_2,
   encodeJson as encodeJson_2,
+  decodeJson as decodeJson_2,
+  encodeBinary as encodeBinary_2,
   decodeBinary as decodeBinary_2,
 } from "./DescriptorProto.ts";
 import {
   Type as EnumDescriptorProto,
-  encodeBinary as encodeBinary_3,
   encodeJson as encodeJson_3,
+  decodeJson as decodeJson_3,
+  encodeBinary as encodeBinary_3,
   decodeBinary as decodeBinary_3,
 } from "./EnumDescriptorProto.ts";
 import {
   Type as ExtensionRange,
-  encodeBinary as encodeBinary_4,
   encodeJson as encodeJson_4,
+  decodeJson as decodeJson_4,
+  encodeBinary as encodeBinary_4,
   decodeBinary as decodeBinary_4,
 } from "./(DescriptorProto)/ExtensionRange.ts";
 import {
   Type as MessageOptions,
-  encodeBinary as encodeBinary_5,
   encodeJson as encodeJson_5,
+  decodeJson as decodeJson_5,
+  encodeBinary as encodeBinary_5,
   decodeBinary as decodeBinary_5,
 } from "./MessageOptions.ts";
 import {
   Type as OneofDescriptorProto,
-  encodeBinary as encodeBinary_6,
   encodeJson as encodeJson_6,
+  decodeJson as decodeJson_6,
+  encodeBinary as encodeBinary_6,
   decodeBinary as decodeBinary_6,
 } from "./OneofDescriptorProto.ts";
 import {
   Type as ReservedRange,
-  encodeBinary as encodeBinary_7,
   encodeJson as encodeJson_7,
+  decodeJson as decodeJson_7,
+  encodeBinary as encodeBinary_7,
   decodeBinary as decodeBinary_7,
 } from "./(DescriptorProto)/ReservedRange.ts";
+import {
+  tsValueToJsonValueFns,
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -52,13 +63,10 @@ import {
   wireValueToTsValueFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
-  tsValueToJsonValueFns,
-} from "../../../../core/runtime/json/scalar.ts";
-import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface DescriptorProto {
     name?: string;
     field: FieldDescriptorProto[];
@@ -101,6 +109,21 @@ export function encodeJson(value: $.google.protobuf.DescriptorProto): unknown {
   result.oneofDecl = value.oneofDecl.map(value => encodeJson_6(value));
   result.reservedRange = value.reservedRange.map(value => encodeJson_7(value));
   result.reservedName = value.reservedName.map(value => tsValueToJsonValueFns.string(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.DescriptorProto {
+  const result = getDefaultValue();
+  if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
+  result.field = value.field.map((value: any) => decodeJson_1(value)) ?? [];
+  result.nestedType = value.nestedType.map((value: any) => decodeJson_2(value)) ?? [];
+  result.enumType = value.enumType.map((value: any) => decodeJson_3(value)) ?? [];
+  result.extensionRange = value.extensionRange.map((value: any) => decodeJson_4(value)) ?? [];
+  result.extension = value.extension.map((value: any) => decodeJson_1(value)) ?? [];
+  if (value.options !== undefined) result.options = decodeJson_5(value.options);
+  result.oneofDecl = value.oneofDecl.map((value: any) => decodeJson_6(value)) ?? [];
+  result.reservedRange = value.reservedRange.map((value: any) => decodeJson_7(value)) ?? [];
+  result.reservedName = value.reservedName.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
   return result;
 }
 

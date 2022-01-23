@@ -1,4 +1,4 @@
-declare namespace $.google.protobuf.MethodOptions {
+export declare namespace $.google.protobuf.MethodOptions {
   export type IdempotencyLevel =
     | "IDEMPOTENCY_UNKNOWN"
     | "NO_SIDE_EFFECTS"

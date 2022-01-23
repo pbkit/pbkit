@@ -1,9 +1,13 @@
 import {
   Type as Location,
-  encodeBinary as encodeBinary_1,
   encodeJson as encodeJson_1,
+  decodeJson as decodeJson_1,
+  encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
 } from "./(SourceCodeInfo)/Location.ts";
+import {
+  jsonValueToTsValueFns,
+} from "../../../../core/runtime/json/scalar.ts";
 import {
   WireMessage,
   WireType,
@@ -15,7 +19,7 @@ import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
 
-declare namespace $.google.protobuf {
+export declare namespace $.google.protobuf {
   export interface SourceCodeInfo {
     location: Location[];
   }
@@ -31,6 +35,12 @@ export function getDefaultValue(): $.google.protobuf.SourceCodeInfo {
 export function encodeJson(value: $.google.protobuf.SourceCodeInfo): unknown {
   const result: any = {};
   result.location = value.location.map(value => encodeJson_1(value));
+  return result;
+}
+
+export function decodeJson(value: any): $.google.protobuf.SourceCodeInfo {
+  const result = getDefaultValue();
+  result.location = value.location.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

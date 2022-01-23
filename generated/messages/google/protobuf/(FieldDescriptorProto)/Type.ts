@@ -1,4 +1,4 @@
-declare namespace $.google.protobuf.FieldDescriptorProto {
+export declare namespace $.google.protobuf.FieldDescriptorProto {
   export type Type =
     | "UNSPECIFIED"
     | "TYPE_DOUBLE"

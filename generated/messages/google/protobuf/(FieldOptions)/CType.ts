@@ -1,4 +1,4 @@
-declare namespace $.google.protobuf.FieldOptions {
+export declare namespace $.google.protobuf.FieldOptions {
   export type CType =
     | "STRING"
     | "CORD"
