@@ -19,7 +19,7 @@ For more information, check with the `--help` argument.
 ### Using Homebrew
 
 ```sh
-brew tap riiid/riiid
+brew tap pbkit/tap
 brew install pbkit
 ```
 
