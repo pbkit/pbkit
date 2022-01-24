@@ -13,7 +13,7 @@ pollapo는 [Protobuf][protobuf] 의존성 관리 도구입니다.
 
 (이렇게 설치할 경우 deno는 직접 설치할 필요 없습니다)
 ```sh
-brew tap riiid/riiid
+brew tap pbkit/tap
 brew install pbkit
 ```
 
