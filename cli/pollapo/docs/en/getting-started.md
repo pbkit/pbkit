@@ -9,7 +9,7 @@
 ### Using Homebrew
 
 ```sh
-brew tap riiid/riiid
+brew tap pbkit/tap
 brew install pbkit
 ```
 
