@@ -1,4 +1,4 @@
-import { green, yellow } from "https://deno.land/std@0.107.0/fmt/colors.ts";
+import { green, yellow } from "https://deno.land/std@0.122.0/fmt/colors.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.3/mod.ts";
 import { subscribeFnToAsyncGenerator } from "../../../../core/runtime/async/observer.ts";
 import { progressResponse } from "../../../../misc/fetch.ts";

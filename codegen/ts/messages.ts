@@ -1,4 +1,4 @@
-import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
+import { StringReader } from "https://deno.land/std@0.122.0/io/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
@@ -425,14 +425,14 @@ const getDecodeJsonCode: GetCodeFn = ({
       return [
         fields.map((field) => {
           const jsonValueToTsValueCode = getGetJsonValueToTsValueCode({
-          customTypeMapping,
-          schema: field.schema,
-          messages,
-        })({ filePath, importBuffer, field });
+            customTypeMapping,
+            schema: field.schema,
+            messages,
+          })({ filePath, importBuffer, field });
           return [
-            `  if (value.${field.tsName} !== undefined) result.${tsName} = {field: "${field.tsName}", value: ${jsonValueToTsValueCode}};\n`
-          ].join("")
-        }).join("")
+            `  if (value.${field.tsName} !== undefined) result.${tsName} = {field: "${field.tsName}", value: ${jsonValueToTsValueCode}};\n`,
+          ].join("");
+        }).join(""),
       ];
     }).join(""),
     `  return result;\n`,
@@ -894,7 +894,11 @@ export function getDefaultJsonValueToTsValueCode({
   }
   const { typePath } = schema;
   return typePathToCode("value." + tsName, typePath, tsType);
-  function typePathToCode(jsonValue: string, typePath?: string, tsType?: string) {
+  function typePathToCode(
+    jsonValue: string,
+    typePath?: string,
+    tsType?: string,
+  ) {
     if (!typePath) return;
     const jsonValueToTsValueFns = importBuffer.addRuntimeImport(
       filePath,

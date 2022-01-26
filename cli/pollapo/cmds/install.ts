@@ -1,11 +1,11 @@
-import { stringify } from "https://deno.land/std@0.107.0/encoding/yaml.ts";
+import { stringify } from "https://deno.land/std@0.122.0/encoding/yaml.ts";
 import {
   green,
   red,
   yellow,
-} from "https://deno.land/std@0.107.0/fmt/colors.ts";
-import { emptyDir, ensureDir } from "https://deno.land/std@0.107.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.107.0/path/mod.ts";
+} from "https://deno.land/std@0.122.0/fmt/colors.ts";
+import { emptyDir, ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import { parse } from "../../../core/parser/proto.ts";
 import minify from "../../../core/stringifier/minify.ts";

@@ -1,4 +1,4 @@
-import { StringReader } from "https://deno.land/std@0.107.0/io/mod.ts";
+import { StringReader } from "https://deno.land/std@0.122.0/io/mod.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { join } from "../path.ts";
@@ -228,12 +228,16 @@ function getMethodDescriptorsCode({
         `    requestType: {\n`,
         `      serializeBinary: ${encodeRequestBinary},\n`,
         `      deserializeBinary: ${decodeRequestBinary},\n`,
-        `      serializeJson: (value: ${getTsType(rpc.reqType.typePath)}) => JSON.stringify(${encodeRequestJson}(value)),\n`,
+        `      serializeJson: (value: ${
+          getTsType(rpc.reqType.typePath)
+        }) => JSON.stringify(${encodeRequestJson}(value)),\n`,
         `    },\n`,
         `    responseType: {\n`,
         `      serializeBinary: ${encodeResponseBinary},\n`,
         `      deserializeBinary: ${decodeResponseBinary},\n`,
-        `      serializeJson: (value: ${getTsType(rpc.resType.typePath)}) => JSON.stringify(${encodeResponseJson}(value)),\n`,
+        `      serializeJson: (value: ${
+          getTsType(rpc.resType.typePath)
+        }) => JSON.stringify(${encodeResponseJson}(value)),\n`,
         `    },\n`,
         "  },\n",
       ].join("");
