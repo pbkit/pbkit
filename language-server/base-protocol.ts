@@ -1,4 +1,7 @@
-import { BufReader } from "https://deno.land/std@0.122.0/io/buffer.ts";
+import {
+  BufReader,
+  BufWriter,
+} from "https://deno.land/std@0.122.0/io/buffer.ts";
 import { TextProtoReader } from "https://deno.land/std@0.122.0/textproto/mod.ts";
 
 export interface BaseProtocolMessage {
@@ -33,11 +36,13 @@ export async function writeBaseProtocolMessage(
   body: Uint8Array,
   headers: Headers = new Headers(),
 ): Promise<void> {
+  const bufWriter = new BufWriter(writer);
   headers.set("Content-Length", String(body.length));
-  writer.write(textEncoder.encode(
+  await bufWriter.write(textEncoder.encode(
     Array.from(headers.entries()).map(
       (key, value) => `${key}: ${value}\r\n`,
     ).join("") + "\r\n",
   ));
-  writer.write(body);
+  await bufWriter.write(body);
+  await bufWriter.flush();
 }
