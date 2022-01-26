@@ -1,13 +1,13 @@
 import { BufReader } from "https://deno.land/std@0.122.0/io/buffer.ts";
 import { TextProtoReader } from "https://deno.land/std@0.122.0/textproto/mod.ts";
 
-export interface Message {
+export interface BaseProtocolMessage {
   headers: Headers;
   body: Uint8Array;
 }
-export async function* readMessages(
+export async function* readBaseProtocolMessages(
   reader: Deno.Reader,
-): AsyncGenerator<Message> {
+): AsyncGenerator<BaseProtocolMessage> {
   const bufReader = new BufReader(reader);
   const textProtoReader = new TextProtoReader(bufReader);
   while (true) {
@@ -25,4 +25,19 @@ export async function* readMessages(
     if (!body) throw new Deno.errors.UnexpectedEof();
     yield { headers, body };
   }
+}
+
+const textEncoder = new TextEncoder();
+export async function writeBaseProtocolMessage(
+  writer: Deno.Writer,
+  body: Uint8Array,
+  headers: Headers = new Headers(),
+): Promise<void> {
+  headers.set("Content-Length", String(body.length));
+  writer.write(textEncoder.encode(
+    Array.from(headers.entries()).map(
+      (key, value) => `${key}: ${value}\r\n`,
+    ).join("") + "\r\n",
+  ));
+  writer.write(body);
 }
