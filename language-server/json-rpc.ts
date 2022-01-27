@@ -35,7 +35,7 @@ export function createJsonRpcConnection(
   config: CreateJsonRpcConnectionConfig,
 ): JsonRpcConnection {
   let finished = false;
-  const writeQueue: (() => Promise<void>)[] = [];
+  const writeQueue = createJobQueue();
   const waitingRequests: Map<
     string | number | null,
     Deferred<ResponseMessage>
@@ -46,14 +46,6 @@ export function createJsonRpcConnection(
       return writeBaseProtocolMessage(config.writer, body);
     });
   }
-  (async function writeLoop() {
-    while (!finished) {
-      await tick();
-      if (writeQueue.length < 1) continue;
-      const writeFn = writeQueue.shift()!;
-      await writeFn();
-    }
-  })();
   function parseMessage(message: BaseProtocolMessage) {
     try {
       return JSON.parse(new TextDecoder().decode(message.body));
@@ -70,6 +62,7 @@ export function createJsonRpcConnection(
     for await (const bpm of readBaseProtocolMessages(config.reader)) {
       try {
         const message = parseMessage(bpm);
+        if (!message) continue;
         if (isResponseMessage(message)) {
           const request = waitingRequests.get(message.id);
           if (!request) {
@@ -105,4 +98,27 @@ export function createJsonRpcConnection(
 
 function tick(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+interface JobQueue {
+  push(job: () => Promise<void>): void;
+}
+function createJobQueue(): JobQueue {
+  let jobQueue: (() => Promise<void>)[] | undefined;
+  function push(job: () => Promise<void>): void {
+    if (!jobQueue) return void startLoop(job);
+    else jobQueue.push(job);
+  }
+  async function startLoop(job: () => Promise<void>): Promise<void> {
+    try {
+      jobQueue = [job];
+      while (jobQueue.length) {
+        await jobQueue.shift()!();
+        await tick();
+      }
+    } finally {
+      jobQueue = undefined;
+    }
+  }
+  return { push };
 }
