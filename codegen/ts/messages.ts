@@ -144,6 +144,8 @@ interface OneofField {
 const reservedNames = [
   "Type",
   "Uint8Array",
+  "getDefaultValue",
+  "createValue",
   "encodeBinary",
   "decodeBinary",
   "encodeJson",
