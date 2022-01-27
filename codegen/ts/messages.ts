@@ -344,7 +344,7 @@ const getCreateValueCode: GetCodeFn = ({ typePath }) => {
     `export function createValue(partialValue: Partial<$${typePath}>): $${typePath} {`,
     `  return {`,
     `    ...getDefaultValue(),`,
-    `    ...partialValue`,
+    `    ...partialValue,`,
     `  };`,
     `}`,
     "",
