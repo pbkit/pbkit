@@ -144,6 +144,8 @@ interface OneofField {
 const reservedNames = [
   "Type",
   "Uint8Array",
+  "getDefaultValue",
+  "createValue",
   "encodeBinary",
   "decodeBinary",
   "encodeJson",
@@ -215,6 +217,7 @@ function* genMessage({
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   const getDefaultValueCode = getGetDefaultValueCode(getCodeConfig);
+  const createValueCode = getCreateValueCode(getCodeConfig);
   const encodeJsonCode = getEncodeJsonCode(getCodeConfig);
   const decodeJsonCode = getDecodeJsonCode(getCodeConfig);
   const encodeBinaryCode = getEncodeBinaryCode(getCodeConfig);
@@ -227,6 +230,7 @@ function* genMessage({
         importCode ? importCode + "\n" : "",
         typeDefCode,
         "\n" + getDefaultValueCode,
+        "\n" + createValueCode,
         "\n" + encodeJsonCode,
         "\n" + decodeJsonCode,
         "\n" + encodeBinaryCode,
@@ -333,6 +337,18 @@ const getGetDefaultValueCode: GetCodeFn = ({ typePath, message }) => {
     "  };\n",
     "}\n",
   ].join("");
+};
+
+const getCreateValueCode: GetCodeFn = ({ typePath }) => {
+  return [
+    `export function createValue(partialValue: Partial<$${typePath}>): $${typePath} {`,
+    `  return {`,
+    `    ...getDefaultValue(),`,
+    `    ...partialValue,`,
+    `  };`,
+    `}`,
+    "",
+  ].join("\n");
 };
 
 const getEncodeJsonCode: GetCodeFn = ({
