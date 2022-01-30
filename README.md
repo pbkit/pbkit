@@ -6,12 +6,17 @@
   <a href="https://discord.gg/UKsvFsehhK">
     <img src="https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square" />
   </a>
+  <a href="https://twitter.com/pbkit_">
+    <img src="https://img.shields.io/twitter/url.svg?label=Follow%20%40pbkit_&style=social&url=https%3A%2F%2Ftwitter.com%2Fpbkit_" />
+  </a>
+  <br>
   <a href="https://github.com/pbkit/pbkit/releases">
     <img src="https://img.shields.io/github/release/pbkit/pbkit/all.svg" />
   </a>
   <a href="https://deno.land/x/pbkit">
     <img src="https://img.shields.io/badge/deno.land/x/-pbkit-gray?logo=deno&labelColor=black" />
   </a>
+  <br>
   <a href="https://github.com/pbkit/pbkit">
     <img src="https://tokei.rs/b1/github/pbkit/pbkit" />
   </a>
