@@ -32,7 +32,7 @@ export interface RequestHandlers {
   [methodName: string]: (params: any) => Promise<any>;
 }
 export function createJsonRpcConnection(
-  config: CreateJsonRpcConnectionConfig,
+  config: CreateJsonRpcConnectionConfig
 ): JsonRpcConnection {
   let finished = false;
   const writeQueue = createJobQueue();
@@ -77,6 +77,7 @@ export function createJsonRpcConnection(
           if ("error" in message) request.reject(message);
           else if ("result" in message) request.resolve(message);
         }
+        // TODO: handle request, notification
       } finally {
         if (finished) break;
       }
