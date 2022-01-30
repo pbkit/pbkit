@@ -1,4 +1,4 @@
-// @deno-types="https://unpkg.com/vscode-jsonrpc@6.0.0/lib/common/messages.d.ts"
+// @deno-types="https://esm.sh/vscode-jsonrpc@6.0.0/lib/common/messages.d.ts"
 import {
   ErrorCodes,
   isResponseMessage,
@@ -6,7 +6,7 @@ import {
   NotificationMessage,
   RequestMessage,
   ResponseMessage,
-} from "https://unpkg.com/vscode-jsonrpc@6.0.0/lib/common/messages.js";
+} from "https://esm.sh/vscode-jsonrpc@6.0.0/lib/common/messages.js";
 import { defer, Deferred } from "../core/runtime/async/observer.ts";
 import {
   BaseProtocolMessage,
