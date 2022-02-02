@@ -2,6 +2,9 @@
   "deno.enable": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "denoland.vscode-deno",
+  "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  },
   "deno.import_intellisense_origins": {
     "https://deno.land": true
   },
