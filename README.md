@@ -53,6 +53,13 @@ web browser) because it does not use platform APIs inside the `core` directory.
     package.
   - [How to install and how to use](./cli/pollapo/docs/en/getting-started.md)
 
+### GUI
+
+  - pbkit-devtools (Browser Extension)
+    - <img width=200 src="https://user-images.githubusercontent.com/690661/152089698-e519047e-c073-473b-a96a-fca295cd7263.jpg" />
+    - [repo](https://github.com/pbkit/pbkit-devtools)
+    - [chrome web store](https://chrome.google.com/webstore/detail/pbkit-devtools/fjacmiijeihblfhobghceofniolonhca)
+
 ### Library
 
 - Deno - [deno.land/x/pbkit](https://deno.land/x/pbkit)
@@ -60,7 +67,11 @@ web browser) because it does not use platform APIs inside the `core` directory.
   - [@pbkit/runtime][@pbkit/runtime] - This is a separate package with only the
     `runtime` folder.
   - See also - <https://github.com/pbkit/npm-packages>
-    - There are RPC related libraries
+    - RPC related libraries
+      - [frpc-client](https://www.npmjs.com/package/@pbkit/frpc-client)
+      - [frpc-server](https://www.npmjs.com/package/@pbkit/frpc-server)
+      - [grpc-client](https://www.npmjs.com/package/@pbkit/grpc-client)
+      - [grpc-web-client](https://www.npmjs.com/package/@pbkit/grpc-web-client)
 
 [npm pbkit]: https://www.npmjs.com/package/pbkit
 [@pbkit/runtime]: https://www.npmjs.com/package/@pbkit/runtime
