@@ -22,6 +22,7 @@ export type Node =
   | Empty;
 
 export interface CommentGroup extends Span {
+  type: "comment-group";
   comments: Comment[];
 }
 

@@ -93,6 +93,9 @@ function acceptStatements<T extends ast.StatementBase>(
 }
 
 const whitespacePattern = /^\s+/;
+const whitespaceWithoutNewlinePattern =
+  /^[ \f\t\v\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+/;
+const newlinePattern = /^\r?\n/;
 const multilineCommentPattern = /^\/\*(?:.|\r?\n)*?\*\//;
 const singlelineCommentPattern = /^\/\/.*(?:\r?\n|$)/;
 const intLitPattern = /^0(?:x[0-9a-f]+|[0-7]*)|^[1-9]\d*/i;
@@ -140,6 +143,46 @@ function acceptKeyword(
   pattern: Pattern = identPattern,
 ): ast.Keyword | undefined {
   return acceptSpecialToken(parser, "keyword", pattern);
+}
+
+function acceptTrailingComments(
+  parser: RecursiveDescentParser,
+): ast.CommentGroup[] {
+  const comments: ast.Comment[] = [];
+  while (true) {
+    const whitespace = parser.accept(whitespaceWithoutNewlinePattern);
+    if (whitespace) continue;
+    const newline = parser.accept(newlinePattern);
+    if (newline) break;
+    const multilineComment = acceptSpecialToken(
+      parser,
+      "multiline-comment",
+      multilineCommentPattern,
+    );
+    if (multilineComment) {
+      comments.push(multilineComment);
+      continue;
+    }
+    const singlelineComment = acceptSpecialToken(
+      parser,
+      "singleline-comment",
+      singlelineCommentPattern,
+    );
+    if (singlelineComment) {
+      comments.push(singlelineComment);
+      break;
+    }
+    break;
+  }
+  if (comments.length < 1) return [];
+  const start = comments[0].start;
+  const end = comments[comments.length - 1].end;
+  return [{
+    start,
+    end,
+    type: "comment-group",
+    comments,
+  }];
 }
 
 function skipWsAndSweepComments(parser: RecursiveDescentParser): ast.Comment[] {
@@ -424,11 +467,12 @@ function acceptSyntax(
   const quoteClose = parser.expect(/^['"]/);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "syntax",
     keyword,
@@ -452,11 +496,12 @@ function acceptImport(
   const strLit = expectStrLit(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "import",
     keyword,
@@ -476,11 +521,12 @@ function acceptPackage(
   const fullIdent = expectFullIdent(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "package",
     keyword,
@@ -503,11 +549,12 @@ function acceptOption(
   const constant = expectConstant(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "option",
     keyword,
@@ -524,11 +571,12 @@ function acceptEmpty(
 ): ast.Empty | undefined {
   const semi = acceptSemi(parser);
   if (!semi) return;
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: semi.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "empty",
     semi,
@@ -592,11 +640,12 @@ function acceptEnumField(
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: fieldName.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "enum-field",
     fieldName,
@@ -671,11 +720,12 @@ function acceptField(
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: (fieldLabel ?? fieldType).start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "field",
     fieldLabel,
@@ -704,11 +754,12 @@ function acceptOneofField(
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: fieldType.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "oneof-field",
     fieldType,
@@ -746,11 +797,12 @@ function acceptMapField(
   const fieldOptions = acceptFieldOptions(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "map-field",
     keyword,
@@ -796,11 +848,12 @@ function acceptOneof(
   const oneofName = parser.expect(identPattern);
   skipWsAndComments(parser);
   const oneofBody = expectOneofBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: oneofBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "oneof",
     keyword,
@@ -869,11 +922,12 @@ function acceptExtensions(
   const ranges = expectRanges(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "extensions",
     keyword,
@@ -913,11 +967,12 @@ function acceptReserved(
     : expectFieldNames(parser);
   skipWsAndComments(parser);
   const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semi.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "reserved",
     keyword,
@@ -954,11 +1009,12 @@ function acceptExtend(
   const messageType = expectType(parser);
   skipWsAndComments(parser);
   const extendBody = expectExtendBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: extendBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "extend",
     keyword,
@@ -991,11 +1047,12 @@ function acceptGroup(
   const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: groupLabel.start,
     end: messageBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "group",
     groupLabel,
@@ -1021,11 +1078,12 @@ function acceptOneofGroup(
   const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: messageBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "oneof-group",
     keyword,
@@ -1072,11 +1130,12 @@ function acceptMessage(
   const messageName = parser.expect(identPattern);
   skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: messageBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "message",
     keyword,
@@ -1119,11 +1178,12 @@ function acceptRpc(
   const resType = expectRpcType(parser);
   skipWsAndComments(parser);
   const semiOrRpcBody = acceptSemi(parser) ?? expectRpcBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: semiOrRpcBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "rpc",
     keyword,
@@ -1180,11 +1240,12 @@ function acceptService(
   const serviceName = parser.expect(identPattern);
   skipWsAndComments(parser);
   const serviceBody = expectServiceBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
     start: keyword.start,
     end: serviceBody.end,
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments: [], // TODO
     type: "service",
     keyword,
