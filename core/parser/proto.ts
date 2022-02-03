@@ -3,6 +3,7 @@ import {
   createRecursiveDescentParser,
   Pattern,
   RecursiveDescentParser,
+  Span,
   SyntaxError,
   Token,
 } from "./recursive-descent-parser.ts";
@@ -33,6 +34,20 @@ export function parseConstant(text: string): ParseResult<ast.Constant> {
   const parser = createRecursiveDescentParser(text);
   const constant = expectConstant(parser);
   return { ast: constant, parser };
+}
+
+function mergeSpans(spans: (undefined | Span | (undefined | Span)[])[]): Span {
+  let start = Infinity;
+  let end = -Infinity;
+  for (let i = 0; i < spans.length; ++i) {
+    if (spans[i] == null) continue;
+    const span = Array.isArray(spans[i])
+      ? mergeSpans(spans[i] as Span[])
+      : spans[i] as Span;
+    start = Math.min(start, span.start);
+    end = Math.max(end, span.end);
+  }
+  return { start, end };
 }
 
 interface AcceptFn<T> {
@@ -196,11 +211,8 @@ function acceptCommentGroup(
     parser.loc = loc;
     return;
   }
-  const start = comments[0].start;
-  const end = comments[comments.length - 1].end;
   return {
-    start,
-    end,
+    ...mergeSpans(comments),
     type: "comment-group",
     comments,
   };
@@ -240,11 +252,8 @@ function acceptTrailingComments(
     parser.loc = loc;
     return [];
   }
-  const start = comments[0].start;
-  const end = comments[comments.length - 1].end;
   return [{
-    start,
-    end,
+    ...mergeSpans(comments),
     type: "comment-group",
     comments,
   }];
@@ -314,11 +323,8 @@ function acceptFullIdent(
     ]),
   );
   if (identOrDots.length < 1) return;
-  const first = identOrDots[0];
-  const last = identOrDots[identOrDots.length - 1];
   return {
-    start: first.start,
-    end: last.end,
+    ...mergeSpans(identOrDots),
     type: "full-ident",
     identOrDots,
   };
@@ -341,11 +347,8 @@ function acceptType(
     ]),
   );
   if (identOrDots.length < 1) return;
-  const first = identOrDots[0];
-  const last = identOrDots[identOrDots.length - 1];
   return {
-    start: first.start,
-    end: last.end,
+    ...mergeSpans(identOrDots),
     type: "type",
     identOrDots,
   };
@@ -379,9 +382,12 @@ function acceptSignedIntLit(
     parser.loc = loc;
     return;
   }
-  const start = sign?.start ?? intLit.start;
-  const end = intLit.end;
-  return { start, end, type: "signed-int-lit", sign, value: intLit };
+  return {
+    ...mergeSpans([sign, intLit]),
+    type: "signed-int-lit",
+    sign,
+    value: intLit,
+  };
 }
 
 function expectSignedIntLit(parser: RecursiveDescentParser): ast.SignedIntLit {
@@ -408,9 +414,12 @@ function acceptSignedFloatLit(
     parser.loc = loc;
     return;
   }
-  const start = sign?.start ?? floatLit.start;
-  const end = floatLit.end;
-  return { start, end, type: "signed-float-lit", sign, value: floatLit };
+  return {
+    ...mergeSpans([sign, floatLit]),
+    type: "signed-float-lit",
+    sign,
+    value: floatLit,
+  };
 }
 
 function acceptBoolLit(
@@ -431,9 +440,7 @@ function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
     if (!strLit) break;
     tokens.push(strLit);
   }
-  const start = tokens[0].start;
-  const end = tokens[tokens.length - 1].end;
-  return { type: "str-lit", start, end, tokens };
+  return { ...mergeSpans(tokens), type: "str-lit", tokens };
 }
 
 function expectStrLit(parser: RecursiveDescentParser): ast.StrLit {
@@ -463,9 +470,10 @@ function acceptAggregate(
       break;
     }
   }
-  const start = parenthesisOpen.start;
-  const end = character.end;
-  return { type: "aggregate", start, end };
+  return {
+    ...mergeSpans([parenthesisOpen, character]),
+    type: "aggregate",
+  };
 }
 
 function acceptConstant(
@@ -499,11 +507,8 @@ function acceptOptionNameSegment(
     return;
   }
   const bracketClose = parser[bracketOpen ? "expect" : "accept"](")");
-  const start = bracketOpen?.start ?? name.start;
-  const end = bracketClose?.end ?? name.end;
   return {
-    start,
-    end,
+    ...mergeSpans([bracketOpen, name, bracketClose]),
     type: "option-name-segment",
     bracketOpen,
     name,
@@ -522,11 +527,8 @@ function acceptOptionName(
     ]),
   );
   if (optionNameSegmentOrDots.length < 1) return;
-  const first = optionNameSegmentOrDots[0];
-  const last = optionNameSegmentOrDots[optionNameSegmentOrDots.length - 1];
   return {
-    start: first.start,
-    end: last.end,
+    ...mergeSpans(optionNameSegmentOrDots),
     type: "option-name",
     optionNameSegmentOrDots,
   };
@@ -555,8 +557,13 @@ function acceptSyntax(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -585,8 +592,13 @@ function acceptImport(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -611,8 +623,13 @@ function acceptPackage(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -640,8 +657,13 @@ function acceptOption(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -663,8 +685,12 @@ function acceptEmpty(
   if (!semi) return;
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: semi.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -683,8 +709,7 @@ function acceptFieldOption(
   skipWsAndComments(parser);
   const constant = expectConstant(parser);
   return {
-    start: optionName.start,
-    end: constant.end,
+    ...mergeSpans([optionName, constant]),
     type: "field-option",
     optionName,
     eq,
@@ -707,8 +732,7 @@ function acceptFieldOptions(
   );
   const bracketClose = parser.expect("]");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "field-options",
     bracketOpen,
     fieldOptionOrCommas,
@@ -733,8 +757,13 @@ function acceptEnumField(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: fieldName.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      fieldName,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -757,8 +786,7 @@ function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
   ]);
   const bracketClose = parser.expect("}");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "enum-body",
     bracketOpen,
     statements,
@@ -777,11 +805,17 @@ function acceptEnum(
   const enumName = parser.expect(identPattern);
   skipWsAndComments(parser);
   const enumBody = expectEnumBody(parser);
+  const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: enumBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      enumBody,
+      trailingComments,
+    ]),
     leadingComments,
-    trailingComments: [], // TODO
+    trailingComments,
     leadingDetachedComments,
     type: "enum",
     keyword,
@@ -815,8 +849,14 @@ function acceptField(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: (fieldLabel ?? fieldType).start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      fieldLabel,
+      fieldType,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -850,8 +890,13 @@ function acceptOneofField(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: fieldType.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      fieldType,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -894,8 +939,13 @@ function acceptMapField(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -924,8 +974,7 @@ function expectOneofBody(parser: RecursiveDescentParser): ast.OneofBody {
   ]);
   const bracketClose = parser.expect("}");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "oneof-body",
     bracketOpen,
     statements,
@@ -946,8 +995,13 @@ function acceptOneof(
   const oneofBody = expectOneofBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: oneofBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      oneofBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -980,8 +1034,7 @@ function acceptRange(parser: RecursiveDescentParser): ast.Range | undefined {
   const rangeEnd = acceptIntLit(parser) ?? acceptMax(parser);
   if (!rangeEnd) throw new SyntaxError(parser, [intLitPattern, "max"]);
   return {
-    start: rangeStart.start,
-    end: rangeEnd.end,
+    ...mergeSpans([rangeStart, rangeEnd]),
     type: "range",
     rangeStart,
     to,
@@ -998,11 +1051,8 @@ function expectRanges(parser: RecursiveDescentParser): ast.Ranges {
       acceptRange,
     ]),
   );
-  const first = rangeOrCommas[0];
-  const last = rangeOrCommas[rangeOrCommas.length - 1];
   return {
-    start: first.start,
-    end: last.end,
+    ...mergeSpans(rangeOrCommas),
     type: "ranges",
     rangeOrCommas,
   };
@@ -1021,8 +1071,13 @@ function acceptExtensions(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1042,11 +1097,8 @@ function expectFieldNames(parser: RecursiveDescentParser): ast.FieldNames {
       acceptStrLit,
     ]),
   );
-  const first = strLitOrCommas[0];
-  const last = strLitOrCommas[strLitOrCommas.length - 1];
   return {
-    start: first.start,
-    end: last.end,
+    ...mergeSpans(strLitOrCommas),
     type: "field-names",
     strLitOrCommas,
   };
@@ -1067,8 +1119,13 @@ function acceptReserved(
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semi.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1088,8 +1145,7 @@ function expectExtendBody(parser: RecursiveDescentParser): ast.ExtendBody {
   ]);
   const bracketClose = parser.expect("}");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "extend-body",
     bracketOpen,
     statements,
@@ -1110,8 +1166,13 @@ function acceptExtend(
   const extendBody = expectExtendBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: extendBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      extendBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1149,8 +1210,13 @@ function acceptGroup(
   const messageBody = expectMessageBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: groupLabel.start,
-    end: messageBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      groupLabel,
+      messageBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1181,8 +1247,13 @@ function acceptOneofGroup(
   const messageBody = expectMessageBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: messageBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      messageBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1212,8 +1283,7 @@ function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
   ]);
   const bracketClose = parser.expect("}");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "message-body",
     bracketOpen,
     statements,
@@ -1234,8 +1304,13 @@ function acceptMessage(
   const messageBody = expectMessageBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: messageBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      messageBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1255,8 +1330,7 @@ function expectRpcType(parser: RecursiveDescentParser): ast.RpcType {
   skipWsAndComments(parser);
   const bracketClose = parser.expect(")");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     bracketOpen,
     stream,
     messageType,
@@ -1283,8 +1357,13 @@ function acceptRpc(
   const semiOrRpcBody = acceptSemi(parser) ?? expectRpcBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: semiOrRpcBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semiOrRpcBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
@@ -1306,8 +1385,7 @@ function expectRpcBody(parser: RecursiveDescentParser): ast.RpcBody {
   ]);
   const bracketClose = parser.expect("}");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "rpc-body",
     bracketOpen,
     statements,
@@ -1324,8 +1402,7 @@ function expectServiceBody(parser: RecursiveDescentParser): ast.ServiceBody {
   ]);
   const bracketClose = parser.expect("}");
   return {
-    start: bracketOpen.start,
-    end: bracketClose.end,
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "service-body",
     bracketOpen,
     statements,
@@ -1346,8 +1423,13 @@ function acceptService(
   const serviceBody = expectServiceBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
-    start: keyword.start,
-    end: serviceBody.end,
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      serviceBody,
+      trailingComments,
+    ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
