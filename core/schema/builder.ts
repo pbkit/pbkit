@@ -163,19 +163,19 @@ async function* iterFiles(
 }
 
 function getSyntax(statements: ast.Statement[]): File["syntax"] {
-  const syntaxStatement = findNodeByType(statements, "syntax");
+  const syntaxStatement = findNodeByType(statements, "syntax" as const);
   const syntax = syntaxStatement?.syntax.text;
   return syntax === "proto3" ? "proto3" : "proto2";
 }
 
 function getPackage(statements: ast.Statement[]): string {
-  const packageStatement = findNodeByType(statements, "package");
+  const packageStatement = findNodeByType(statements, "package" as const);
   if (!packageStatement) return "";
   return stringifyFullIdent(packageStatement.fullIdent);
 }
 
 function getImports(statements: ast.Statement[]): Import[] {
-  const importStatements = filterNodesByType(statements, "import");
+  const importStatements = filterNodesByType(statements, "import" as const);
   return importStatements.map((statement) => {
     const kind = (statement.weakOrPublic?.text || "") as Import["kind"];
     const importPath = evalStrLit(statement.strLit);
@@ -189,8 +189,8 @@ function getImports(statements: ast.Statement[]): Import[] {
 function getOptions(nodes?: ast.Node[]): Options {
   if (!nodes) return {};
   const optionStatements = filterNodesByTypes(nodes, [
-    "option",
-    "field-option",
+    "option" as const,
+    "field-option" as const,
   ]);
   const result: Options = {};
   for (const statement of optionStatements) {
@@ -206,7 +206,7 @@ function* iterServices(
   typePath: string,
   filePath: string,
 ): Generator<[string, Service]> {
-  const serviceStatements = filterNodesByType(statements, "service");
+  const serviceStatements = filterNodesByType(statements, "service" as const);
   for (const statement of serviceStatements) {
     const serviceTypePath = typePath + "." + statement.serviceName.text;
     const service: Service = {
@@ -220,7 +220,7 @@ function* iterServices(
 }
 
 function getRpcs(statements: ast.Statement[]): Service["rpcs"] {
-  const rpcStatements = filterNodesByType(statements, "rpc");
+  const rpcStatements = filterNodesByType(statements, "rpc" as const);
   const rpcs: Service["rpcs"] = {};
   for (const statement of rpcStatements) {
     const options = statement.semiOrRpcBody.type === "rpc-body"
@@ -285,7 +285,9 @@ function getMessageBody(
     fields[fieldNumber] = field;
   }
   const groups: Message["groups"] = {};
-  for (const groupStatement of filterNodesByType(statements, "group")) {
+  for (
+    const groupStatement of filterNodesByType(statements, "group" as const)
+  ) {
     const groupName = groupStatement.groupName.text;
     groups[groupName] = getGroup(groupStatement);
   }
@@ -345,7 +347,7 @@ function* iterOneofFields(
   statements: ast.OneofBodyStatement[],
   oneof: string,
 ): Generator<[number, MessageField]> {
-  const oneofStatements = filterNodesByType(statements, "oneof-field");
+  const oneofStatements = filterNodesByType(statements, "oneof-field" as const);
   for (const statement of oneofStatements) {
     const fieldNumber = evalIntLit(statement.fieldNumber);
     yield [fieldNumber, {
@@ -391,7 +393,10 @@ function getEnum(
 
 function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
   const fields: Enum["fields"] = {};
-  const enumFieldStatements = filterNodesByType(statements, "enum-field");
+  const enumFieldStatements = filterNodesByType(
+    statements,
+    "enum-field" as const,
+  );
   for (const statement of enumFieldStatements) {
     const fieldNumber = evalSignedIntLit(statement.fieldNumber);
     fields[fieldNumber] = {
@@ -403,7 +408,10 @@ function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
   return fields;
 }
 
-function getDescription(comments: ast.Comment[]): string {
+function getDescription(commentGroups: ast.CommentGroup[]): string {
+  const comments = commentGroups.flatMap(
+    (commentGroup) => commentGroup.comments,
+  );
   const docComment = comments.find((comment) => isDocComment(comment.text));
   return parseDocComment(docComment?.text ?? "");
 }

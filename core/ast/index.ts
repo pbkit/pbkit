@@ -1,6 +1,6 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import {
-  Comment,
+  CommentGroup,
   Constant,
   Dot,
   Empty,
@@ -69,9 +69,9 @@ export type TopLevelStatement =
 export type TopLevelDef = Message | Enum | Extend | Service;
 
 export interface StatementBase extends Span {
-  leadingComments: Comment[];
-  trailingComments: Comment[];
-  leadingDetachedComments: Comment[];
+  leadingComments: CommentGroup[];
+  trailingComments: CommentGroup[];
+  leadingDetachedComments: CommentGroup[];
 }
 
 export interface Syntax extends StatementBase {

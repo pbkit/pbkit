@@ -46,6 +46,7 @@ export interface Visitor {
   visitReserved: VisitFn<ast.Reserved>;
   visitFieldNames: VisitFn<ast.FieldNames>;
   visitConstant: VisitFn<ast.Constant>;
+  visitCommentGroup: VisitFn<ast.CommentGroup>;
   visitComment: VisitFn<ast.Comment>;
   visitSinglelineComment: VisitFn<ast.SinglelineComment>;
   visitMultilineComment: VisitFn<ast.MultilineComment>;
@@ -501,6 +502,11 @@ export const visitor: Visitor = {
         return visitor.visitAggregate(visitor, node);
     }
   },
+  visitCommentGroup(visitor, node) {
+    for (const comment of node.comments) {
+      visitor.visitComment(visitor, comment);
+    }
+  },
   visitComment(visitor, node) {
     switch (node.type) {
       case "singleline-comment":
@@ -585,14 +591,14 @@ function visitStatementBase<T extends ast.StatementBase>(
   node: T,
   visit: () => void,
 ): void {
-  for (const comment of node.leadingDetachedComments) {
-    visitor.visitComment(visitor, comment);
+  for (const commentGroup of node.leadingDetachedComments) {
+    visitor.visitCommentGroup(visitor, commentGroup);
   }
-  for (const comment of node.leadingComments) {
-    visitor.visitComment(visitor, comment);
+  for (const commentGroup of node.leadingComments) {
+    visitor.visitCommentGroup(visitor, commentGroup);
   }
   visit();
-  for (const comment of node.trailingComments) {
-    visitor.visitComment(visitor, comment);
+  for (const commentGroup of node.trailingComments) {
+    visitor.visitCommentGroup(visitor, commentGroup);
   }
 }
