@@ -1,5 +1,5 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { Option, OptionName, StatementBase } from "./index.ts";
+import { MalformedBase, Option, OptionName, StatementBase } from "./index.ts";
 import {
   Comma,
   Constant,
@@ -13,6 +13,7 @@ import { MessageBody } from "./top-level-definitions.ts";
 
 export type Node =
   | Field
+  | MalformedField
   | FieldOptions
   | FieldOption
   | Group
@@ -32,6 +33,12 @@ export interface Field extends StatementBase {
   fieldOptions?: FieldOptions;
   semi: Semi;
 }
+export type MalformedField = MalformedBase<
+  Field,
+  "malformed-field",
+  | "fieldLabel"
+  | "fieldType"
+>;
 
 export interface FieldOptions extends Span {
   type: "field-options";

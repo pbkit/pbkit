@@ -81,6 +81,55 @@ function many<T>(parser: RecursiveDescentParser, acceptFn: AcceptFn<T>): T[] {
   return nodes;
 }
 
+// https://dev.to/svehla/typescript-object-fromentries-389c
+type ArrayElement<A> = A extends readonly (infer T)[] ? T : never;
+type Cast<X, Y> = X extends Y ? X : Y;
+type FromEntries<T> = T extends [infer Key, any][]
+  ? { [K in Cast<Key, string>]: Extract<ArrayElement<T>, [K, any]>[1] }
+  : { [key in string]: any };
+type DeepWriteable<T> = T extends Function ? T
+  : { -readonly [key in keyof T]: DeepWriteable<T[key]> };
+type AcceptComplexSequenceResult<
+  T extends Record<string, AcceptFn<any>>,
+> = {
+  partial: false;
+  result: { [key in keyof T]: ReturnType<T[key]> };
+} | {
+  partial: true;
+  result: { [key in keyof T]?: ReturnType<T[key]> };
+};
+function acceptComplexSequence<
+  T extends readonly (readonly [string, AcceptFn<any>])[],
+>(
+  parser: RecursiveDescentParser,
+  expectFnSeq: T,
+  escapePattern?: Pattern,
+): AcceptComplexSequenceResult<FromEntries<DeepWriteable<T>>> {
+  const result: any = {};
+  let partial = false;
+  let hasNewline = false;
+  let recoveryPoint: { loc: number; result: any } | undefined;
+  for (const [key, expectFn] of expectFnSeq) {
+    const loc = parser.loc;
+    hasNewline = skipWsAndComments2(parser);
+    if (hasNewline && !recoveryPoint) {
+      recoveryPoint = { loc: parser.loc, result: { ...result } };
+    }
+    try {
+      result[key] = expectFn(parser);
+    } catch {
+      parser.loc = loc;
+      partial = true;
+      if (escapePattern && parser.try(escapePattern)) break;
+    }
+  }
+  if (partial && recoveryPoint) {
+    parser.loc = recoveryPoint.loc;
+    return { partial, result: recoveryPoint.result };
+  }
+  return { partial, result };
+}
+
 interface AcceptStatementFn<T extends ast.StatementBase> {
   (
     parser: RecursiveDescentParser,
@@ -139,6 +188,8 @@ const boolLitPattern = /^true|^false/;
 const strLitPattern =
   /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\\?'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\\?'"]|[^"\0\n\\])*"/i;
 const identPattern = /^[a-z_][a-z0-9_]*/i;
+const messageBodyStatementKeywordPattern =
+  /^(?:enum|message|extend|extensions|group|option|oneof|map|reserved)\b/;
 
 const acceptDot = acceptPatternAndThen<ast.Dot>(
   ".",
@@ -310,6 +361,36 @@ function skipWsAndComments(parser: RecursiveDescentParser): undefined {
     break;
   }
   return;
+}
+
+function skipWsAndComments2(parser: RecursiveDescentParser): boolean {
+  let hasNewline = false;
+  while (true) {
+    const whitespace = parser.accept(whitespaceWithoutNewlinePattern);
+    if (whitespace) continue;
+    const newline = parser.accept(newlinePattern);
+    if (newline) {
+      hasNewline = true;
+      continue;
+    }
+    const multilineComment = acceptSpecialToken(
+      parser,
+      "multiline-comment",
+      multilineCommentPattern,
+    );
+    if (multilineComment) continue;
+    const singlelineComment = acceptSpecialToken(
+      parser,
+      "singleline-comment",
+      singlelineCommentPattern,
+    );
+    if (singlelineComment) {
+      hasNewline = true;
+      continue;
+    }
+    break;
+  }
+  return hasNewline;
 }
 
 function acceptFullIdent(
@@ -828,7 +909,7 @@ function acceptField(
   parser: RecursiveDescentParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
-): ast.Field | undefined {
+): ast.Field | ast.MalformedField | undefined {
   const loc = parser.loc;
   const fieldLabel = acceptKeyword(parser, /^required|^optional|^repeated/);
   skipWsAndComments(parser);
@@ -837,37 +918,37 @@ function acceptField(
     parser.loc = loc;
     return;
   }
-  skipWsAndComments(parser);
-  const fieldName = parser.expect(identPattern);
-  skipWsAndComments(parser);
-  const eq = parser.expect("=");
-  skipWsAndComments(parser);
-  const fieldNumber = expectIntLit(parser);
-  skipWsAndComments(parser);
-  const fieldOptions = acceptFieldOptions(parser);
-  skipWsAndComments(parser);
-  const semi = expectSemi(parser);
-  const trailingComments = acceptTrailingComments(parser);
+  const rest = acceptComplexSequence(
+    parser,
+    [
+      ["fieldName", (parser) => parser.expect(identPattern)],
+      ["eq", (parser) => parser.expect("=")],
+      ["fieldNumber", expectIntLit],
+      ["fieldOptions", acceptFieldOptions],
+      ["semi", expectSemi],
+    ] as const,
+    messageBodyStatementKeywordPattern,
+  );
+  const trailingComments = rest.result.semi
+    ? acceptTrailingComments(parser)
+    : [];
+  const type = rest.partial ? "malformed-field" : "field";
   return {
     ...mergeSpans([
       leadingDetachedComments,
       leadingComments,
       fieldLabel,
       fieldType,
-      semi,
+      rest.result.semi,
       trailingComments,
     ]),
     leadingComments,
     trailingComments,
     leadingDetachedComments,
-    type: "field",
+    type: type as any,
     fieldLabel,
     fieldType,
-    fieldName,
-    eq,
-    fieldNumber,
-    fieldOptions,
-    semi,
+    ...rest.result,
   };
 }
 

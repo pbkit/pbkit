@@ -1,6 +1,13 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 import { Extensions, Reserved } from "./extensions-and-reserved.ts";
-import { Field, FieldOptions, Group, MapField, Oneof } from "./fields.ts";
+import {
+  Field,
+  FieldOptions,
+  Group,
+  MalformedField,
+  MapField,
+  Oneof,
+} from "./fields.ts";
 import { Option, StatementBase } from "./index.ts";
 import {
   Empty,
@@ -68,6 +75,7 @@ export interface MessageBody extends Span {
 
 export type MessageBodyStatement =
   | Field
+  | MalformedField
   | Enum
   | Message
   | Extend
@@ -95,6 +103,7 @@ export interface ExtendBody extends Span {
 
 export type ExtendBodyStatement =
   | Field
+  | MalformedField
   | Group
   | Empty;
 

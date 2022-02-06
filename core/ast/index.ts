@@ -50,6 +50,15 @@ type index_Node =
   | OptionName
   | OptionNameSegment;
 
+export type MalformedBase<
+  T extends StatementBase,
+  TType extends string,
+  TKeep extends keyof T,
+> =
+  & Pick<T, TKeep | keyof StatementBase>
+  & Partial<Omit<T, TKeep | keyof StatementBase | "type">>
+  & { type: TType };
+
 export type Statement =
   | TopLevelStatement
   | MessageBodyStatement
