@@ -97,6 +97,13 @@ export function getDefaultValue(): $.google.protobuf.DescriptorProto {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.DescriptorProto>): $.google.protobuf.DescriptorProto {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.DescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);

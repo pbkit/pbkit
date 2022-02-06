@@ -41,6 +41,13 @@ export function getDefaultValue(): $.google.protobuf.EnumOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.EnumOptions>): $.google.protobuf.EnumOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.EnumOptions): unknown {
   const result: any = {};
   if (value.allowAlias !== undefined) result.allowAlias = tsValueToJsonValueFns.bool(value.allowAlias);

@@ -59,6 +59,13 @@ export function getDefaultValue(): $.google.protobuf.EnumDescriptorProto {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.EnumDescriptorProto>): $.google.protobuf.EnumDescriptorProto {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.EnumDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);

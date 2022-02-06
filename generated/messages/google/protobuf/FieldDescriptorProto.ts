@@ -70,6 +70,13 @@ export function getDefaultValue(): $.google.protobuf.FieldDescriptorProto {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.FieldDescriptorProto>): $.google.protobuf.FieldDescriptorProto {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.FieldDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);

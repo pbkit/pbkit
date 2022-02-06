@@ -47,6 +47,13 @@ export function getDefaultValue(): $.google.protobuf.MethodDescriptorProto {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.MethodDescriptorProto>): $.google.protobuf.MethodDescriptorProto {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.MethodDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);

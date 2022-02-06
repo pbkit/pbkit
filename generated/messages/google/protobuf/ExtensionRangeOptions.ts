@@ -32,6 +32,13 @@ export function getDefaultValue(): $.google.protobuf.ExtensionRangeOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.ExtensionRangeOptions>): $.google.protobuf.ExtensionRangeOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.ExtensionRangeOptions): unknown {
   const result: any = {};
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));

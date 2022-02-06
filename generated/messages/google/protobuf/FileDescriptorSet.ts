@@ -32,6 +32,13 @@ export function getDefaultValue(): $.google.protobuf.FileDescriptorSet {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.FileDescriptorSet>): $.google.protobuf.FileDescriptorSet {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.FileDescriptorSet): unknown {
   const result: any = {};
   result.file = value.file.map(value => encodeJson_1(value));

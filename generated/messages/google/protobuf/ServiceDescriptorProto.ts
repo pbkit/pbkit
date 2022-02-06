@@ -48,6 +48,13 @@ export function getDefaultValue(): $.google.protobuf.ServiceDescriptorProto {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.ServiceDescriptorProto>): $.google.protobuf.ServiceDescriptorProto {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.ServiceDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);

@@ -31,6 +31,13 @@ export function getDefaultValue(): $.google.protobuf.EnumDescriptorProto.EnumRes
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.EnumDescriptorProto.EnumReservedRange>): $.google.protobuf.EnumDescriptorProto.EnumReservedRange {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.EnumDescriptorProto.EnumReservedRange): unknown {
   const result: any = {};
   if (value.start !== undefined) result.start = tsValueToJsonValueFns.int32(value.start);

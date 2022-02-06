@@ -62,6 +62,13 @@ export function getDefaultValue(): $.google.protobuf.FieldOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.FieldOptions>): $.google.protobuf.FieldOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.FieldOptions): unknown {
   const result: any = {};
   if (value.ctype !== undefined) result.ctype = tsValueToJsonValueFns.enum(value.ctype);

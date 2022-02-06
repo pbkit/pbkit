@@ -41,6 +41,13 @@ export function getDefaultValue(): $.google.protobuf.DescriptorProto.ExtensionRa
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.DescriptorProto.ExtensionRange>): $.google.protobuf.DescriptorProto.ExtensionRange {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.DescriptorProto.ExtensionRange): unknown {
   const result: any = {};
   if (value.start !== undefined) result.start = tsValueToJsonValueFns.int32(value.start);

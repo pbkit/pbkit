@@ -49,6 +49,13 @@ export function getDefaultValue(): $.google.protobuf.MethodOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.MethodOptions>): $.google.protobuf.MethodOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.MethodOptions): unknown {
   const result: any = {};
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);

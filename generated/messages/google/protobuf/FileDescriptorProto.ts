@@ -95,6 +95,13 @@ export function getDefaultValue(): $.google.protobuf.FileDescriptorProto {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.FileDescriptorProto>): $.google.protobuf.FileDescriptorProto {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknown {
   const result: any = {};
   if (value.name !== undefined) result.name = tsValueToJsonValueFns.string(value.name);

@@ -45,6 +45,13 @@ export function getDefaultValue(): $.google.protobuf.MessageOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.MessageOptions>): $.google.protobuf.MessageOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.MessageOptions): unknown {
   const result: any = {};
   if (value.messageSetWireFormat !== undefined) result.messageSetWireFormat = tsValueToJsonValueFns.bool(value.messageSetWireFormat);

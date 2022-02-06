@@ -32,6 +32,13 @@ export function getDefaultValue(): $.google.protobuf.GeneratedCodeInfo {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.GeneratedCodeInfo>): $.google.protobuf.GeneratedCodeInfo {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.GeneratedCodeInfo): unknown {
   const result: any = {};
   result.annotation = value.annotation.map(value => encodeJson_1(value));

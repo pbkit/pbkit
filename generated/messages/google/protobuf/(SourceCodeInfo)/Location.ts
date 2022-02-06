@@ -38,6 +38,13 @@ export function getDefaultValue(): $.google.protobuf.SourceCodeInfo.Location {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.SourceCodeInfo.Location>): $.google.protobuf.SourceCodeInfo.Location {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.SourceCodeInfo.Location): unknown {
   const result: any = {};
   result.path = value.path.map(value => tsValueToJsonValueFns.int32(value));

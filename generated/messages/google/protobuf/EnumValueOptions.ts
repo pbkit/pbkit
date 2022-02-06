@@ -39,6 +39,13 @@ export function getDefaultValue(): $.google.protobuf.EnumValueOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.EnumValueOptions>): $.google.protobuf.EnumValueOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.EnumValueOptions): unknown {
   const result: any = {};
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);

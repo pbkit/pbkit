@@ -31,6 +31,13 @@ export function getDefaultValue(): $.google.protobuf.UninterpretedOption.NamePar
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.UninterpretedOption.NamePart>): $.google.protobuf.UninterpretedOption.NamePart {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.UninterpretedOption.NamePart): unknown {
   const result: any = {};
   if (value.namePart !== undefined) result.namePart = tsValueToJsonValueFns.string(value.namePart);

@@ -85,6 +85,13 @@ export function getDefaultValue(): $.google.protobuf.FileOptions {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.FileOptions>): $.google.protobuf.FileOptions {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.FileOptions): unknown {
   const result: any = {};
   if (value.javaPackage !== undefined) result.javaPackage = tsValueToJsonValueFns.string(value.javaPackage);

@@ -49,6 +49,13 @@ export function getDefaultValue(): $.google.protobuf.UninterpretedOption {
   };
 }
 
+export function createValue(partialValue: Partial<$.google.protobuf.UninterpretedOption>): $.google.protobuf.UninterpretedOption {
+  return {
+    ...getDefaultValue(),
+    ...partialValue,
+  };
+}
+
 export function encodeJson(value: $.google.protobuf.UninterpretedOption): unknown {
   const result: any = {};
   result.name = value.name.map(value => encodeJson_1(value));
