@@ -14,8 +14,10 @@ import {
 } from "./base-protocol.ts";
 
 export interface JsonRpcConnection {
-  sendNotification(message: NotificationMessage): void;
-  sendRequest(message: RequestMessage): Promise<ResponseMessage>;
+  sendNotification(message: Omit<NotificationMessage, "jsonrpc">): void;
+  sendRequest(
+    message: Omit<RequestMessage, "id" | "jsonrpc">,
+  ): Promise<ResponseMessage>;
   finish(): void;
 }
 export interface CreateJsonRpcConnectionConfig {
@@ -33,6 +35,7 @@ export interface RequestHandlers {
 export function createJsonRpcConnection(
   config: CreateJsonRpcConnectionConfig,
 ): JsonRpcConnection {
+  let reqId = 0;
   let finished = false;
   const writeQueue = createJobQueue();
   const waitingRequests: Map<
@@ -76,22 +79,51 @@ export function createJsonRpcConnection(
           if ("error" in message) request.reject(message);
           else if ("result" in message) request.resolve(message);
         }
-        // TODO: handle request, notification
+        if (Message.isRequest(message)) {
+          if (!config.requestHandlers[message.method]) {
+            writeMessage({
+              jsonrpc: "2.0",
+              id: message.id,
+              error: ErrorCodes.MethodNotFound,
+              message: "Method not found",
+            });
+            continue;
+          }
+          config.requestHandlers[message.method](
+            message.params,
+          ).then((result) =>
+            writeMessage({
+              jsonrpc: "2.0",
+              id: message.id,
+              result,
+            })
+          );
+        }
+        if (Message.isNotification(message)) {
+          // Skip error on handling notification
+          // https://www.jsonrpc.org/specification#notification
+          if (config.notificationHandlers[message.method]) {
+            config.notificationHandlers[message.method](message.params);
+          }
+        }
       } finally {
         if (finished) break;
       }
     }
   })();
   return {
-    sendNotification: writeMessage,
+    sendNotification(message) {
+      writeMessage({ ...message, jsonrpc: "2.0" });
+    },
     sendRequest(message) {
       const deferred = defer<ResponseMessage>();
-      waitingRequests.set(message.id, deferred);
-      writeMessage(message);
+      waitingRequests.set(reqId, deferred);
+      writeMessage({ ...message, jsonrpc: "2.0", id: reqId++ });
       return deferred;
     },
     finish() {
       finished = true;
+      [...waitingRequests.values()].forEach((request) => request.reject());
     },
   };
 }
