@@ -1,12 +1,11 @@
-// @deno-types="https://esm.sh/vscode-jsonrpc@6.0.0/lib/common/messages.d.ts"
+// @deno-types="https://esm.sh/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.d.ts"
 import {
   ErrorCodes,
-  isResponseMessage,
   Message,
   NotificationMessage,
   RequestMessage,
   ResponseMessage,
-} from "https://esm.sh/vscode-jsonrpc@6.0.0/lib/common/messages.js";
+} from "https://esm.sh/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.js";
 import { defer, Deferred } from "../core/runtime/async/observer.ts";
 import {
   BaseProtocolMessage,
@@ -32,7 +31,7 @@ export interface RequestHandlers {
   [methodName: string]: (params: any) => Promise<any>;
 }
 export function createJsonRpcConnection(
-  config: CreateJsonRpcConnectionConfig
+  config: CreateJsonRpcConnectionConfig,
 ): JsonRpcConnection {
   let finished = false;
   const writeQueue = createJobQueue();
@@ -63,7 +62,7 @@ export function createJsonRpcConnection(
       try {
         const message = parseMessage(bpm);
         if (!message) continue;
-        if (isResponseMessage(message)) {
+        if (Message.isResponse(message)) {
           const request = waitingRequests.get(message.id);
           if (!request) {
             writeMessage({
