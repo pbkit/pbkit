@@ -40,7 +40,7 @@ export async function writeBaseProtocolMessage(
   headers.set("Content-Length", String(body.length));
   await bufWriter.write(textEncoder.encode(
     Array.from(headers.entries()).map(
-      (key, value) => `${key}: ${value}\r\n`,
+      ([key, value]) => `${key}: ${value}\r\n`,
     ).join("") + "\r\n",
   ));
   await bufWriter.write(body);
