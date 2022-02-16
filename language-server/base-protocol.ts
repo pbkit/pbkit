@@ -37,7 +37,9 @@ export async function writeBaseProtocolMessage(
   headers: Headers = new Headers(),
 ): Promise<void> {
   const bufWriter = new BufWriter(writer);
-  headers.set("Content-Length", String(body.length));
+  await bufWriter.write(
+    textEncoder.encode(`Content-Length: ${body.length}\r\n`),
+  );
   await bufWriter.write(textEncoder.encode(
     Array.from(headers.entries()).map(
       ([key, value]) => `${key}: ${value}\r\n`,
