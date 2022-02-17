@@ -136,16 +136,17 @@ async function* iterFiles(
   absoluteFilePathMapping: AbsoluteFilePathMapping,
 ): AsyncGenerator<IterFileResult> {
   const queue = [...files];
-  const done: { [filePath: string]: true } = {};
+  const visited: { [filePath: string]: true } = {};
+  const loaded: { [filePath: string]: true } = {};
   while (queue.length) {
     const filePath = queue.pop()!;
-    if (done[filePath]) continue;
-    done[filePath] = true;
+    if (visited[filePath]) continue;
+    visited[filePath] = true;
     const loadResult = await loader.load(filePath);
     if (!loadResult) continue;
     absoluteFilePathMapping[filePath] = loadResult.absolutePath;
-    if (done[loadResult.absolutePath]) continue;
-    done[loadResult.absolutePath] = true;
+    if (loaded[loadResult.absolutePath]) continue;
+    loaded[loadResult.absolutePath] = true;
     const parseResult = parse(loadResult.data);
     const statements = parseResult.ast.statements;
     const file: File = {
@@ -420,7 +421,7 @@ type ResolveTypePathFn = (
   type: string,
   scope: `.${string}`,
 ) => string | undefined;
-function getResolveTypePathFn(
+export function getResolveTypePathFn(
   schema: Schema,
   filePath: string,
 ): ResolveTypePathFn {

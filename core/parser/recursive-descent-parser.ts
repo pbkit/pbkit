@@ -2,6 +2,7 @@ export interface RecursiveDescentParser {
   readonly input: string;
   loc: number;
   offsetToColRow: (offset: number) => ColRow;
+  colRowToOffset: (colRow: ColRow) => number;
   getAroundText: (loc: number, length?: number, window?: number) => string;
   try(pattern: Pattern): Token | undefined;
   accept(pattern: Pattern): Token | undefined;
@@ -38,6 +39,7 @@ export function createRecursiveDescentParser(
     input,
     loc: 0,
     offsetToColRow: (offset) => offsetToColRow(lines, offset),
+    colRowToOffset: (colRow) => colRowToOffset(lines, colRow),
     getAroundText: (loc, length, window) =>
       getAroundText(
         lines,
@@ -140,18 +142,26 @@ function patternToString(pattern: Pattern) {
 }
 
 function offsetToColRow(lines: string[], offset: number) {
-  let col = offset;
   let row = 0;
-  for (const line of lines) {
-    const len = line.length + 1;
-    if (len < col) {
-      col -= len;
-      row++;
-      continue;
+  let col = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (offset < line.length + 1) {
+      row = i;
+      col = offset;
+      break;
     }
-    return { col, row };
+    offset -= line.length + 1;
   }
-  return { col: 0, row };
+  return { col, row };
+}
+
+function colRowToOffset(lines: string[], { col, row }: ColRow) {
+  let offset = 0;
+  for (let i = 0; i < row; i++) {
+    offset += lines[i].length + 1;
+  }
+  return offset + col;
 }
 
 function getAroundText(
