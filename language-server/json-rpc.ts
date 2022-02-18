@@ -25,9 +25,19 @@ export interface CreateJsonRpcConnectionConfig {
   writer: Deno.Writer;
   notificationHandlers: NotificationHandlers;
   requestHandlers: RequestHandlers;
+  logConfig?: CreateJsonRpcLogConfig;
+}
+export type CreateJsonRpcLogConfig = Partial<LogConfig>;
+export interface LogConfig {
+  logMessageMethod: string;
+  showMessageRequestMethod: string;
+  showMessageResponseMethod: string;
+  sendReceivedMessageRequest: boolean;
+  sendReceivedMessageResponse: boolean;
+  sendReceivedNotification: boolean;
 }
 export interface NotificationHandlers {
-  [methodName: string]: (params: any) => Promise<void>;
+  [methodName: string]: (params: any) => void;
 }
 export interface RequestHandlers {
   [methodName: string]: (params: any) => Promise<any>;
@@ -42,6 +52,30 @@ export function createJsonRpcConnection(
     string | number | null,
     Deferred<ResponseMessage>
   > = new Map();
+  const logConfig = Object.assign(
+    getDefaultLogConfig(),
+    config.logConfig ?? {},
+  );
+  function sendReceivedMessageRequestLog(message: Message) {
+    writeMessage({
+      method: logConfig.showMessageRequestMethod,
+      params: {
+        type: "info",
+        message: `Received (Request): ${JSON.stringify(message)}`,
+      },
+      jsonrpc: "2.0",
+    });
+  }
+  function sendReceivedMessageResponseLog(message: Message) {
+    writeMessage({
+      method: logConfig.showMessageResponseMethod,
+      params: {
+        type: "info",
+        message: `Received (Response): ${JSON.stringify(message)}`,
+      },
+      jsonrpc: "2.0",
+    });
+  }
   function writeMessage<T extends Message>(message: T): void {
     writeQueue.push(() => {
       const body = new TextEncoder().encode(JSON.stringify(message));
@@ -66,6 +100,8 @@ export function createJsonRpcConnection(
         const message = parseMessage(bpm);
         if (!message) continue;
         if (Message.isResponse(message)) {
+          logConfig.sendReceivedMessageResponse &&
+            sendReceivedMessageResponseLog(message);
           const request = waitingRequests.get(message.id);
           if (!request) {
             writeMessage({
@@ -80,6 +116,8 @@ export function createJsonRpcConnection(
           else if ("result" in message) request.resolve(message);
         }
         if (Message.isRequest(message)) {
+          logConfig.sendReceivedMessageRequest &&
+            sendReceivedMessageRequestLog(message);
           if (!config.requestHandlers[message.method]) {
             writeMessage({
               jsonrpc: "2.0",
@@ -153,4 +191,16 @@ function createJobQueue(): JobQueue {
     }
   }
   return { push };
+}
+
+function getDefaultLogConfig(): LogConfig {
+  // @TODO: Disable Log option on production deployment.
+  return {
+    logMessageMethod: "window/logMessage",
+    showMessageRequestMethod: "window/showMessageRequest",
+    showMessageResponseMethod: "window/showMessageResponse",
+    sendReceivedNotification: true,
+    sendReceivedMessageRequest: true,
+    sendReceivedMessageResponse: true,
+  };
 }
