@@ -6,17 +6,13 @@ import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
 import { getResolveTypePathFn } from "./builder.ts";
 import { Schema } from "./model.ts";
 import { stringifyFullIdent, stringifyType } from "./stringify-ast-frag.ts";
+import { Location } from "../parser/location.ts";
 
-export interface GotoDefinitionResult {
-  filePath: string;
-  start: ColRow;
-  end: ColRow;
-}
 export default function gotoDefinition(
   schema: Schema,
   filePath: string,
   colRow: ColRow,
-): GotoDefinitionResult | undefined {
+): Location | undefined {
   if (!schema.files[filePath]) return;
   const { parseResult } = schema.files[filePath];
   if (!parseResult) return;
