@@ -4,7 +4,10 @@ import gotoDefinition from "../core/schema/gotoDefinition.ts";
 import { build } from "../core/schema/builder.ts";
 import { createJsonRpcConnection, CreateJsonRpcLogConfig } from "./json-rpc.ts";
 import { ColRow } from "../core/parser/recursive-descent-parser.ts";
+import { Location as PbkitLocation } from "../core/parser/location.ts";
 import { Schema } from "../core/schema/model.ts";
+import findAllReferences from "../core/schema/findAllReferences.ts";
+import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
@@ -51,6 +54,7 @@ interface ServerCapabilities {
   definitionProvider?: boolean; // @TODO: Add Support for DefinitionOptions
   typeDefinitionProvider?: boolean; // @TODO: Add Support for TypeDefinitionRegistrationOptions
   implementationProvider?: boolean; // @TODO: Add Support for ImplementationRegistrationOptions
+  referencesProvider?: boolean;
   workspace?: {
     workspaceFolders?: {
       supported?: boolean;
@@ -66,8 +70,7 @@ export function run(config: RunConfig): Server {
     logConfig: config.logConfig,
     notificationHandlers: {
       ["initialized"]() {},
-      ["textDocument/didOpen"]() {
-      },
+      ["textDocument/didOpen"]() {},
       ["exit"]() {
         throw new Error("Implement this");
       },
@@ -88,6 +91,7 @@ export function run(config: RunConfig): Server {
               // @TODO: Add support for resolveProvider
               resolveProvider: false,
             },
+            referencesProvider: true,
             definitionProvider: true,
             workspace: {
               workspaceFolders: {
@@ -106,34 +110,56 @@ export function run(config: RunConfig): Server {
       async ["textDocument/definition"](params: any) {
         const { textDocument, position } = params;
         const schema = await buildFreshSchema(textDocument.uri);
-        const gotoDefinitionResult = gotoDefinition(
+        const location = gotoDefinition(
           schema,
           textDocument.uri,
           positionToColRow(position),
         );
-        if (!gotoDefinitionResult) return null;
-        const { filePath: uri, start, end } = gotoDefinitionResult;
-        const range = {
-          start: colRowToPosition(start),
-          end: colRowToPosition(end),
-        };
-        return { uri, range };
+        return location && pbkitLocationToLspLocation(location);
+      },
+      async ["textDocument/references"](params: any) {
+        const { textDocument, position } = params;
+        const schema = await buildFreshSchema(textDocument.uri);
+        const locations = findAllReferences(
+          schema,
+          textDocument.uri,
+          positionToColRow(position),
+        );
+        return locations.map(pbkitLocationToLspLocation);
       },
     },
   });
-  return {
-    finish() {
-      connection.finish();
-    },
-  };
+  return { finish: connection.finish };
   async function buildFreshSchema(file: string): Promise<Schema> {
     const projectPath = projectPaths.find((p) => file.startsWith(p));
-    const roots = projectPath
-      ? [projectPath + "/.pollapo", projectPath, getVendorDir()]
-      : [getVendorDir()];
+    const entryPaths = projectPath
+      ? [projectPath + "/.pollapo", projectPath]
+      : [];
+    const roots = [...entryPaths, getVendorDir()];
     const loader = createLoader({ roots });
-    return await build({ loader, files: [file] });
+    return await build({
+      loader,
+      files: [...await expandEntryPaths(entryPaths), file],
+    });
   }
+}
+
+function pbkitLocationToLspLocation(location: PbkitLocation): LspLocation {
+  return {
+    uri: location.filePath,
+    range: {
+      start: colRowToPosition(location.start),
+      end: colRowToPosition(location.end),
+    },
+  };
+}
+
+interface LspLocation {
+  uri: string;
+  range: {
+    start: Position;
+    end: Position;
+  };
 }
 
 interface Position {
