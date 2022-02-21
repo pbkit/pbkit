@@ -61,6 +61,7 @@ export interface Group extends StatementBase {
   groupName: Token;
   eq: Token;
   fieldNumber: IntLit;
+  fieldOptions?: FieldOptions;
   messageBody: MessageBody;
 }
 

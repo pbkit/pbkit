@@ -1288,6 +1288,8 @@ function acceptGroup(
   skipWsAndComments(parser);
   const fieldNumber = expectIntLit(parser);
   skipWsAndComments(parser);
+  const fieldOptions = acceptFieldOptions(parser);
+  skipWsAndComments(parser);
   const messageBody = expectMessageBody(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
@@ -1307,6 +1309,7 @@ function acceptGroup(
     groupName,
     eq,
     fieldNumber,
+    fieldOptions,
     messageBody,
   };
 }

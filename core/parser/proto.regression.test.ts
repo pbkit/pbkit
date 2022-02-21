@@ -143,3 +143,13 @@ Deno.test("#105", () => {
     }
   `);
 });
+
+Deno.test("#172", () => {
+  parse(String.raw`
+    message Outer {
+      repeated group MyInner = 2 [deprecated=true] {
+        required string a = 3;
+      }
+    }
+  `);
+});

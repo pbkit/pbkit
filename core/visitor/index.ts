@@ -361,6 +361,8 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.groupName);
       visitor.visitToken(visitor, node.eq);
       visitor.visitIntLit(visitor, node.fieldNumber);
+      node.fieldOptions &&
+        visitor.visitFieldOptions(visitor, node.fieldOptions);
       visitor.visitMessageBody(visitor, node.messageBody);
     });
   },
