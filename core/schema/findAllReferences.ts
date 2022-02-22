@@ -4,7 +4,7 @@ import { Schema } from "./model.ts";
 import { ColRow } from "../parser/recursive-descent-parser.ts";
 import { ParseResult } from "../parser/proto.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
-import { getResolveTypePathFn } from "./builder.ts";
+import { getResolveTypePathFn, ResolveTypePathFn } from "./builder.ts";
 import { stringifyType } from "./stringify-ast-frag.ts";
 import { Location, Range } from "../parser/location.ts";
 
@@ -17,7 +17,13 @@ export default function findAllReferences(
   const { package: packageName, parseResult } = schema.files[filePath];
   if (!parseResult) return [];
   const offset = parseResult.parser.colRowToOffset(colRow);
-  const typePath = getTypePath(packageName, parseResult, offset);
+  const resolveTypePath = getResolveTypePathFn(schema, filePath);
+  const typePath = getTypePath(
+    packageName,
+    parseResult,
+    offset,
+    resolveTypePath,
+  );
   if (!typePath) return [];
   const references = getTypeReferences(schema, typePath);
   const referenceNodeMap: Record<string, Range[]> = {};
@@ -45,6 +51,7 @@ function getTypePath(
   packageName: string,
   parseResult: ParseResult,
   offset: number,
+  resolveTypePath: ResolveTypePathFn,
 ): string | undefined {
   let result: string | undefined;
   const stack: string[] = [packageName];
@@ -78,6 +85,11 @@ function getTypePath(
         result = `.${stack.join(".")}`;
       }
       stack.pop();
+    },
+    visitType(visitor, node) {
+      if (offset < node.start) return;
+      if (offset >= node.end) return;
+      result = resolveTypePath(stringifyType(node), `.${stack.join(".")}`);
     },
   };
   visitor.visitProto(visitor, parseResult.ast);
