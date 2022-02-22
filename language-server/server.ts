@@ -1,6 +1,8 @@
 import { getVendorDir } from "../cli/pb/config.ts";
 import { createLoader } from "../core/loader/deno-fs.ts";
-import gotoDefinition from "../core/schema/gotoDefinition.ts";
+import gotoDefinition, {
+  getTypeInformation,
+} from "../core/schema/gotoDefinition.ts";
 import { build } from "../core/schema/builder.ts";
 import { createJsonRpcConnection, CreateJsonRpcLogConfig } from "./json-rpc.ts";
 import { ColRow } from "../core/parser/recursive-descent-parser.ts";
@@ -50,6 +52,7 @@ export function run(config: RunConfig): Server {
             },
             referencesProvider: true,
             definitionProvider: true,
+            hoverProvider: true,
             workspace: {
               workspaceFolders: {
                 // @TODO: Add support for workspaceFolders
@@ -87,6 +90,24 @@ export function run(config: RunConfig): Server {
           positionToColRow(position),
         );
         return locations.map(locationToLspLocation);
+      },
+      async ["textDocument/hover"](
+        params: lsp.HoverParams,
+      ): Promise<lsp.HoverResponse> {
+        const { textDocument, position } = params;
+        const schema = await buildFreshSchema(textDocument.uri);
+        const typeInformation = getTypeInformation(
+          schema,
+          textDocument.uri,
+          positionToColRow(position),
+        );
+        if (!typeInformation) return null;
+        return {
+          contents: {
+            kind: "markdown",
+            value: typeInformation,
+          },
+        };
       },
     },
   });
