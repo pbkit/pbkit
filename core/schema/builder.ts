@@ -417,7 +417,7 @@ function getDescription(commentGroups: ast.CommentGroup[]): string {
   return parseDocComment(docComment?.text ?? "");
 }
 
-type ResolveTypePathFn = (
+export type ResolveTypePathFn = (
   type: string,
   scope: `.${string}`,
 ) => string | undefined;
