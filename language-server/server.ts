@@ -23,19 +23,31 @@ export interface Server {
 
 export function run(config: RunConfig): Server {
   let projectPaths: string[] = []; // sorted string array in descending order
+  let schema: Schema | undefined;
   const connection = createJsonRpcConnection({
     reader: config.reader,
     writer: config.writer,
     logConfig: config.logConfig,
     notificationHandlers: {
       ["initialized"]() {},
-      ["textDocument/didOpen"]() {},
+      ["textDocument/didOpen"](params: lsp.DidOpenTextDocumentParams) {
+        if (!schema) return;
+        const { textDocument } = params;
+        if (textDocument.uri in schema.files) return;
+        revalidateSchema([textDocument.uri]);
+      },
+      ["textDocument/didChange"](params: lsp.DidChangeTextDocumentParams) {
+        const { textDocument } = params;
+        revalidateSchema([textDocument.uri]);
+      },
       ["exit"]() {
         throw new Error("Implement this");
       },
     },
     requestHandlers: {
-      ["initialize"](params: lsp.InitializeParams): lsp.InitializeResult {
+      async ["initialize"](
+        params: lsp.InitializeParams,
+      ): Promise<lsp.InitializeResult> {
         if (params.workspaceFolders) {
           // TODO: traverse workspaces and find project directories
           projectPaths = params.workspaceFolders.map(({ uri }) => uri).sort()
@@ -65,13 +77,15 @@ export function run(config: RunConfig): Server {
             version: "0.0.1",
           },
         };
+        schema = await buildFreshSchema();
         return result;
       },
       async ["textDocument/definition"](
         params: lsp.DefinitionParams,
       ): Promise<lsp.DefinitionResponse> {
         const { textDocument, position } = params;
-        const schema = await buildFreshSchema(textDocument.uri);
+        // @TODO: Throw error for re-initialize?
+        if (!schema) return null;
         const location = gotoDefinition(
           schema,
           textDocument.uri,
@@ -83,7 +97,8 @@ export function run(config: RunConfig): Server {
         params: lsp.ReferenceParams,
       ): Promise<lsp.ReferenceResponse> {
         const { textDocument, position } = params;
-        const schema = await buildFreshSchema(textDocument.uri);
+        // @TODO: Throw error for re-initialize?
+        if (!schema) return null;
         const locations = findAllReferences(
           schema,
           textDocument.uri,
@@ -112,17 +127,70 @@ export function run(config: RunConfig): Server {
     },
   });
   return { finish: connection.finish };
-  async function buildFreshSchema(file: string): Promise<Schema> {
-    const projectPath = projectPaths.find((p) => file.startsWith(p));
+  async function buildFreshSchema(): Promise<Schema> {
+    const entryPaths = projectPaths.flatMap(
+      (projectPath) => [projectPath + "/.pollapo", projectPath],
+    );
+    const roots = [...entryPaths, getVendorDir()];
+    const loader = createLoader({ roots });
+    return await build({
+      loader,
+      files: [...await expandEntryPaths(entryPaths)],
+    });
+  }
+  async function revalidateSchema(files: string[]): Promise<Schema> {
+    if (!schema) return buildFreshSchema();
+    const projectPath = projectPaths.find((p) =>
+      files.some((file) => file.startsWith(p))
+    );
     const entryPaths = projectPath
       ? [projectPath + "/.pollapo", projectPath]
       : [];
     const roots = [...entryPaths, getVendorDir()];
     const loader = createLoader({ roots });
-    return await build({
+    const partialSchema = await build({
       loader,
-      files: [...await expandEntryPaths(entryPaths), file],
+      files,
     });
+    return schema = revalidate(schema, partialSchema, files);
+  }
+  function revalidate(oldSchema: Schema, newSchema: Schema, files: string[]) {
+    const result: Schema = oldSchema;
+    for (const file of files) {
+      if (newSchema.files[file]) {
+        result.files[file] = newSchema.files[file];
+      }
+      for (const [path, service] of Object.entries(newSchema.services)) {
+        if (files.some((file) => file === service.filePath)) {
+          result.services[path] = service;
+        }
+      }
+      for (const [path, type] of Object.entries(newSchema.types)) {
+        if (files.some((file) => file === type.filePath)) {
+          result.types[path] = type;
+        }
+      }
+    }
+    updateShallowResult();
+    return result;
+
+    function updateShallowResult() {
+      updateShallowDiff(result.extends, newSchema.extends);
+      updateShallowDiff(result.services, newSchema.services);
+      updateShallowDiff(result.files, newSchema.files);
+      updateShallowDiff(result.types, newSchema.types);
+    }
+    function updateShallowDiff(a: Record<string, any>, b: Record<string, any>) {
+      const _a = new Set(Object.keys(a));
+      const _b = new Set(Object.keys(b));
+      const newKeys = diff(_b, _a);
+      for (const key of newKeys) {
+        a[key] = b[key];
+      }
+    }
+    function diff<T>(a: Set<T>, b: Set<T>) {
+      return [...a].filter((value) => !b.has(value));
+    }
   }
 }
 
