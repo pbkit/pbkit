@@ -76,6 +76,81 @@ export interface ReferenceContext {
 }
 
 /**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#hoverParams
+ */
+export interface HoverParams
+  extends TextDocumentPositionParams, WorkDoneProgressParams {
+}
+
+export type HoverResponse = Hover | null;
+/**
+ * The result of a hover request.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#hover
+ */
+export interface Hover {
+  /**
+   * The hover's content
+   * MarkedString is deprecated. Use MarkupContent instead.
+   */
+  contents: MarkupContent;
+
+  /**
+   * An optional range is a range inside a text document
+   * that is used to visualize a hover, e.g. by changing the background color.
+   */
+  range?: Range;
+}
+
+/**
+ * A `MarkupContent` literal represents a string value which content is
+ * interpreted base on its kind flag. Currently the protocol supports
+ * `plaintext` and `markdown` as markup kinds.
+ *
+ * If the kind is `markdown` then the value can contain fenced code blocks like
+ * in GitHub issues.
+ *
+ * Here is an example how such a string can be constructed using
+ * JavaScript / TypeScript:
+ * ```typescript
+ * let markdown: MarkdownContent = {
+ * 	kind: MarkupKind.Markdown,
+ * 	value: [
+ * 		'# Header',
+ * 		'Some text',
+ * 		'```typescript',
+ * 		'someCode();',
+ * 		'```'
+ * 	].join('\n')
+ * };
+ * ```
+ *
+ * *Please Note* that clients might sanitize the return markdown. A client could
+ * decide to remove HTML from the markdown to avoid script execution.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#markupContentInnerDefinition
+ */
+export interface MarkupContent {
+  /**
+   * The type of the Markup
+   */
+  kind: MarkupKind;
+
+  /**
+   * The content itself
+   */
+  value: string;
+}
+
+/**
+ * Describes the content type that a client supports in various
+ * result literals like `Hover`, `ParameterInfo` or `CompletionItem`.
+ *
+ * Please note that `MarkupKinds` must not start with a `$`. This kinds
+ * are reserved for internal usage.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#markupContent
+ */
+export type MarkupKind = "plaintext" | "markdown";
+
+/**
  * A parameter literal used to pass a partial result token.
  * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#partialResultParams
  */
