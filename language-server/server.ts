@@ -33,7 +33,7 @@ export function run(config: RunConfig): Server {
       },
     },
     requestHandlers: {
-      ["initialize"](params: lsp.InitializeParams) {
+      ["initialize"](params: lsp.InitializeParams): lsp.InitializeResult {
         if (params.workspaceFolders) {
           // TODO: traverse workspaces and find project directories
           projectPaths = params.workspaceFolders.map(({ uri }) => uri).sort()
@@ -62,9 +62,11 @@ export function run(config: RunConfig): Server {
             version: "0.0.1",
           },
         };
-        return Promise.resolve(result);
+        return result;
       },
-      async ["textDocument/definition"](params: any) {
+      async ["textDocument/definition"](
+        params: lsp.DefinitionParams,
+      ): Promise<lsp.DefinitionResponse> {
         const { textDocument, position } = params;
         const schema = await buildFreshSchema(textDocument.uri);
         const location = gotoDefinition(
@@ -72,9 +74,11 @@ export function run(config: RunConfig): Server {
           textDocument.uri,
           positionToColRow(position),
         );
-        return location && locationToLspLocation(location);
+        return location ? locationToLspLocation(location) : null;
       },
-      async ["textDocument/references"](params: any) {
+      async ["textDocument/references"](
+        params: lsp.ReferenceParams,
+      ): Promise<lsp.ReferenceResponse> {
         const { textDocument, position } = params;
         const schema = await buildFreshSchema(textDocument.uri);
         const locations = findAllReferences(
