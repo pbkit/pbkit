@@ -4,7 +4,7 @@ import { ParseResult } from "../parser/proto.ts";
 import { ColRow, Token } from "../parser/recursive-descent-parser.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
 import { getResolveTypePathFn } from "./builder.ts";
-import { Schema } from "./model.ts";
+import { Schema, Type } from "./model.ts";
 import { stringifyFullIdent, stringifyType } from "./stringify-ast-frag.ts";
 import { Location } from "../parser/location.ts";
 
@@ -36,6 +36,57 @@ export default function gotoDefinition(
     start: parser.offsetToColRow(start),
     end: parser.offsetToColRow(end),
   };
+}
+
+export function getTypeInformation(
+  schema: Schema,
+  filePath: string,
+  colRow: ColRow,
+) {
+  if (!schema.files[filePath]) return;
+  const { parseResult } = schema.files[filePath];
+  if (!parseResult) return;
+  const offset = parseResult.parser.colRowToOffset(colRow);
+  const typeReference = getTypeReference(parseResult, offset);
+  if (!typeReference) return;
+  const typePath = getResolveTypePathFn(schema, filePath)(
+    stringifyType(typeReference.node),
+    typeReference.scope,
+  );
+  if (!typePath) return;
+  const type = schema.types[typePath];
+  if (!type) return;
+  const fields = getFields(type);
+  return [
+    "```proto",
+    `${type.kind} ${typePath.split(".").pop()} {`,
+    ...fields.map((field) => "  " + field),
+    "}",
+    "```",
+  ].join(
+    "\n",
+  );
+  function getFields(type: Type) {
+    switch (type.kind) {
+      case "message":
+        return Object.entries(type.fields).sort((a, b) =>
+          parseInt(a[0]) - parseInt(b[0])
+        ).map(([fieldNumber, value]) => {
+          if (value.kind === "map") {
+            return `map<${value.keyType}, ${value.valueType}> ${fieldNumber} = ${fieldNumber};`;
+          }
+          return `${
+            value.typePath ? value.typePath.slice(1) : ""
+          } ${value.name} = ${fieldNumber};`;
+        });
+      case "enum":
+        return Object.entries(type.fields).sort((a, b) =>
+          parseInt(a[0]) - parseInt(b[0])
+        ).map(([fieldNumber, value]) => {
+          return `${value.name} = ${fieldNumber};`;
+        });
+    }
+  }
 }
 
 interface TypeReference {
