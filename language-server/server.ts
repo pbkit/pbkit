@@ -36,7 +36,8 @@ export function run(config: RunConfig): Server {
         if (textDocument.uri in schema.files) return;
         revalidateSchema([textDocument.uri]);
       },
-      ["textDocument/didChange"](params: lsp.DidChangeTextDocumentParams) {
+      ["textDocument/didChange"](params: lsp.DidChangeTextDocumentParams) {},
+      ["textDocument/didSave"](params: any) {
         const { textDocument } = params;
         revalidateSchema([textDocument.uri]);
       },
@@ -173,7 +174,6 @@ export function run(config: RunConfig): Server {
     }
     updateShallowResult();
     return result;
-
     function updateShallowResult() {
       updateShallowDiff(result.extends, newSchema.extends);
       updateShallowDiff(result.services, newSchema.services);
