@@ -111,7 +111,7 @@ export function run(config: RunConfig): Server {
         params: lsp.HoverParams,
       ): Promise<lsp.HoverResponse> {
         const { textDocument, position } = params;
-        const schema = await buildFreshSchema(textDocument.uri);
+        const schema = await buildFreshSchema();
         const typeInformation = getTypeInformation(
           schema,
           textDocument.uri,
