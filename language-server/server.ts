@@ -1,13 +1,16 @@
 import { getVendorDir } from "../cli/pb/config.ts";
 import { createLoader } from "../core/loader/deno-fs.ts";
-import gotoDefinition from "../core/schema/gotoDefinition.ts";
+import gotoDefinition, {
+  getTypeInformation,
+} from "../core/schema/gotoDefinition.ts";
 import { build } from "../core/schema/builder.ts";
 import { createJsonRpcConnection, CreateJsonRpcLogConfig } from "./json-rpc.ts";
 import { ColRow } from "../core/parser/recursive-descent-parser.ts";
-import { Location as PbkitLocation } from "../core/parser/location.ts";
+import { Location } from "../core/parser/location.ts";
 import { Schema } from "../core/schema/model.ts";
 import findAllReferences from "../core/schema/findAllReferences.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
+import * as lsp from "./lsp.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
@@ -16,50 +19,6 @@ export interface RunConfig {
 }
 export interface Server {
   finish(): void;
-}
-
-interface WorkspaceFolder {
-  uri: string;
-  name: string;
-}
-
-interface InitializeParams {
-  workspaceFolders?: WorkspaceFolder[] | null;
-}
-
-interface InitializeResult {
-  capabilities: ServerCapabilities;
-  serverInfo?: {
-    name: string;
-    version?: string;
-  };
-}
-
-enum TextDocumentSyncKind {
-  None = 0,
-  Full = 1,
-  Incremental = 2,
-}
-interface CompletionOptions {
-  resolveProvider?: boolean;
-  completionItem?: {
-    labelDetailsSupport?: boolean;
-  };
-}
-interface ServerCapabilities {
-  textDocumentSync?: TextDocumentSyncKind;
-  completionProvider?: CompletionOptions;
-  hoverProvider?: boolean;
-  declarationProvider?: boolean; // @TODO: Add Support for DeclarationRegistrationOptions
-  definitionProvider?: boolean; // @TODO: Add Support for DefinitionOptions
-  typeDefinitionProvider?: boolean; // @TODO: Add Support for TypeDefinitionRegistrationOptions
-  implementationProvider?: boolean; // @TODO: Add Support for ImplementationRegistrationOptions
-  referencesProvider?: boolean;
-  workspace?: {
-    workspaceFolders?: {
-      supported?: boolean;
-    };
-  };
 }
 
 export function run(config: RunConfig): Server {
@@ -76,23 +35,24 @@ export function run(config: RunConfig): Server {
       },
     },
     requestHandlers: {
-      ["initialize"](params: InitializeParams) {
+      ["initialize"](params: lsp.InitializeParams): lsp.InitializeResult {
         if (params.workspaceFolders) {
           // TODO: traverse workspaces and find project directories
           projectPaths = params.workspaceFolders.map(({ uri }) => uri).sort()
             .reverse();
         }
         // Find .pollapo paths in workspace folders
-        const result: InitializeResult = {
+        const result: lsp.InitializeResult = {
           capabilities: {
             // @TODO: Add support for incremental sync
-            textDocumentSync: TextDocumentSyncKind.Full,
+            textDocumentSync: lsp.TextDocumentSyncKind.Full,
             completionProvider: {
               // @TODO: Add support for resolveProvider
               resolveProvider: false,
             },
             referencesProvider: true,
             definitionProvider: true,
+            hoverProvider: true,
             workspace: {
               workspaceFolders: {
                 // @TODO: Add support for workspaceFolders
@@ -105,9 +65,11 @@ export function run(config: RunConfig): Server {
             version: "0.0.1",
           },
         };
-        return Promise.resolve(result);
+        return result;
       },
-      async ["textDocument/definition"](params: any) {
+      async ["textDocument/definition"](
+        params: lsp.DefinitionParams,
+      ): Promise<lsp.DefinitionResponse> {
         const { textDocument, position } = params;
         const schema = await buildFreshSchema(textDocument.uri);
         const location = gotoDefinition(
@@ -115,9 +77,11 @@ export function run(config: RunConfig): Server {
           textDocument.uri,
           positionToColRow(position),
         );
-        return location && pbkitLocationToLspLocation(location);
+        return location ? locationToLspLocation(location) : null;
       },
-      async ["textDocument/references"](params: any) {
+      async ["textDocument/references"](
+        params: lsp.ReferenceParams,
+      ): Promise<lsp.ReferenceResponse> {
         const { textDocument, position } = params;
         const schema = await buildFreshSchema(textDocument.uri);
         const locations = findAllReferences(
@@ -125,7 +89,25 @@ export function run(config: RunConfig): Server {
           textDocument.uri,
           positionToColRow(position),
         );
-        return locations.map(pbkitLocationToLspLocation);
+        return locations.map(locationToLspLocation);
+      },
+      async ["textDocument/hover"](
+        params: lsp.HoverParams,
+      ): Promise<lsp.HoverResponse> {
+        const { textDocument, position } = params;
+        const schema = await buildFreshSchema(textDocument.uri);
+        const typeInformation = getTypeInformation(
+          schema,
+          textDocument.uri,
+          positionToColRow(position),
+        );
+        if (!typeInformation) return null;
+        return {
+          contents: {
+            kind: "markdown",
+            value: typeInformation,
+          },
+        };
       },
     },
   });
@@ -144,7 +126,7 @@ export function run(config: RunConfig): Server {
   }
 }
 
-function pbkitLocationToLspLocation(location: PbkitLocation): LspLocation {
+function locationToLspLocation(location: Location): lsp.Location {
   return {
     uri: location.filePath,
     range: {
@@ -154,25 +136,13 @@ function pbkitLocationToLspLocation(location: PbkitLocation): LspLocation {
   };
 }
 
-interface LspLocation {
-  uri: string;
-  range: {
-    start: Position;
-    end: Position;
-  };
-}
-
-interface Position {
-  character: number;
-  line: number;
-}
-function positionToColRow(position: Position): ColRow {
+function positionToColRow(position: lsp.Position): ColRow {
   return {
     col: position.character,
     row: position.line,
   };
 }
-function colRowToPosition(colRow: ColRow): Position {
+function colRowToPosition(colRow: ColRow): lsp.Position {
   return {
     character: colRow.col,
     line: colRow.row,

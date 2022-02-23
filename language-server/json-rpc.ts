@@ -40,7 +40,7 @@ export interface NotificationHandlers {
   [methodName: string]: (params: any) => void;
 }
 export interface RequestHandlers {
-  [methodName: string]: (params: any) => Promise<any>;
+  [methodName: string]: (params: any) => any;
 }
 export function createJsonRpcConnection(
   config: CreateJsonRpcConnectionConfig,
@@ -127,9 +127,9 @@ export function createJsonRpcConnection(
             });
             continue;
           }
-          config.requestHandlers[message.method](
+          Promise.resolve(config.requestHandlers[message.method](
             message.params,
-          ).then((result) =>
+          )).then((result) =>
             writeMessage({
               jsonrpc: "2.0",
               id: message.id,
