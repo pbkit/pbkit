@@ -8,7 +8,7 @@ import { createJsonRpcConnection, CreateJsonRpcLogConfig } from "./json-rpc.ts";
 import { ColRow } from "../core/parser/recursive-descent-parser.ts";
 import { Location } from "../core/parser/location.ts";
 import { Schema } from "../core/schema/model.ts";
-import findAllReferences from "../core/schema/findAllReferences.ts";
+import findAllReferences, { rename } from "../core/schema/findAllReferences.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 import * as lsp from "./lsp.ts";
 
@@ -52,6 +52,7 @@ export function run(config: RunConfig): Server {
             },
             referencesProvider: true,
             definitionProvider: true,
+            renameProvider: true,
             hoverProvider: true,
             workspace: {
               workspaceFolders: {
@@ -109,11 +110,20 @@ export function run(config: RunConfig): Server {
           },
         };
       },
+      async ["textDocument/rename"](
+        params: lsp.RenameParams,
+      ): Promise<lsp.RenameResponse> {
+        const { textDocument, position, newName } = params;
+        const schema = await buildFreshSchema(textDocument.uri);
+        rename(schema, textDocument.uri, positionToColRow(position));
+        throw new Error("");
+      },
     },
   });
   return { finish: connection.finish };
   async function buildFreshSchema(file: string): Promise<Schema> {
-    const projectPath = projectPaths.find((p) => file.startsWith(p));
+    // @FIXME: revert on production
+    const projectPath = projectPaths[0];
     const entryPaths = projectPath
       ? [projectPath + "/.pollapo", projectPath]
       : [];

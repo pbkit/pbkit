@@ -47,11 +47,41 @@ export default function findAllReferences(
   });
 }
 
+export function rename(schema: Schema, filePath: string, colRow: ColRow) {
+  if (!schema.files[filePath]) return;
+  const { package: packageName, parseResult } = schema.files[filePath];
+  if (!parseResult) return;
+  const offset = parseResult.parser.colRowToOffset(colRow);
+  const resolveTypePath = getResolveTypePathFn(schema, filePath);
+  const typePath = getTypePath(
+    packageName,
+    parseResult,
+    offset,
+    resolveTypePath,
+    false,
+  );
+  if (!typePath) return;
+  const references = getRecursiveTypeReferences(schema, typePath);
+  const referenceNodeMap: Record<string, string[]> = {};
+  for (const refFilePath in references) {
+    const targetTypePaths = references[refFilePath];
+    referenceNodeMap[refFilePath] = findReferenceTypeNodes(
+      schema,
+      refFilePath,
+      typePath,
+      targetTypePaths,
+    ).map(stringifyType);
+  }
+  // @TODO: Rename relative, imported types by traversing the referenceNodeMap
+  console.error(JSON.stringify(referenceNodeMap, null, 2));
+}
+
 function getTypePath(
   packageName: string,
   parseResult: ParseResult,
   offset: number,
   resolveTypePath: ResolveTypePathFn,
+  allowType = true,
 ): string | undefined {
   let result: string | undefined;
   const stack: string[] = [packageName];
@@ -99,7 +129,10 @@ function getTypePath(
 interface TypeReferences {
   [filePath: string]: string[];
 }
-function getTypeReferences(schema: Schema, typePath: string): TypeReferences {
+function getTypeReferences(
+  schema: Schema,
+  typePath: string,
+): TypeReferences {
   const references: TypeReferences = {};
   for (const [name, type] of Object.entries(schema.types)) {
     if (type.kind === "message") {
@@ -112,6 +145,33 @@ function getTypeReferences(schema: Schema, typePath: string): TypeReferences {
           }
         } else {
           if (field.typePath === typePath) {
+            references[type.filePath]
+              ? references[type.filePath].push(name)
+              : references[type.filePath] = [name];
+          }
+        }
+      }
+    }
+  }
+  return references;
+}
+
+function getRecursiveTypeReferences(
+  schema: Schema,
+  typePath: string,
+): TypeReferences {
+  const references: TypeReferences = {};
+  for (const [name, type] of Object.entries(schema.types)) {
+    if (type.kind === "message") {
+      for (const field of Object.values(type.fields)) {
+        if (field.kind === "map") {
+          if (field.valueTypePath?.startsWith(typePath)) {
+            references[type.filePath]
+              ? references[type.filePath].push(name)
+              : references[type.filePath] = [name];
+          }
+        } else {
+          if (field.typePath?.startsWith(typePath)) {
             references[type.filePath]
               ? references[type.filePath].push(name)
               : references[type.filePath] = [name];
@@ -168,4 +228,45 @@ function findReferenceNodes(
     const end = file.parseResult.parser.offsetToColRow(endOffset);
     return { start, end };
   });
+}
+
+function findReferenceTypeNodes(
+  schema: Schema,
+  filePath: string,
+  typePath: string,
+  targetTypePaths: string[],
+): ast.Type[] {
+  const file = schema.files[filePath];
+  if (!file.parseResult) return [];
+  const typeNodes: ast.Type[] = [];
+  const stack: string[] = [file.package];
+  const resolveTypePath = getResolveTypePathFn(schema, filePath);
+  const visitor: Visitor = {
+    ...defaultVisitor,
+    visitSyntax() {},
+    visitImport() {},
+    visitOption() {},
+    visitEmpty() {},
+    visitPackage() {},
+    visitMessage(visitor, node) {
+      stack.push(node.messageName.text);
+      defaultVisitor.visitMessageBody(visitor, node.messageBody);
+      stack.pop();
+    },
+    visitEnum(visitor, node) {
+      stack.push(node.enumName.text);
+      defaultVisitor.visitEnumBody(visitor, node.enumBody);
+      stack.pop();
+    },
+    visitType(visitor, node) {
+      const scope = `.${stack.join(".")}` as const;
+      if (targetTypePaths.includes(scope)) {
+        if (resolveTypePath(stringifyType(node), scope)?.startsWith(typePath)) {
+          typeNodes.push(node);
+        }
+      }
+    },
+  };
+  visitor.visitProto(visitor, file.parseResult.ast);
+  return typeNodes;
 }

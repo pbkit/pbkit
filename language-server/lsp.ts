@@ -33,6 +33,7 @@ interface ServerCapabilities {
   definitionProvider?: boolean; // @TODO: Add Support for DefinitionOptions
   typeDefinitionProvider?: boolean; // @TODO: Add Support for TypeDefinitionRegistrationOptions
   implementationProvider?: boolean; // @TODO: Add Support for ImplementationRegistrationOptions
+  renameProvider?: boolean;
   referencesProvider?: boolean;
   workspace?: {
     workspaceFolders?: {
@@ -99,6 +100,316 @@ export interface Hover {
    * that is used to visualize a hover, e.g. by changing the background color.
    */
   range?: Range;
+}
+
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#renameParams
+ */
+export interface RenameParams
+  extends TextDocumentPositionParams, WorkDoneProgressParams {
+  /**
+   * The new name of the symbol. If the given name is not valid the
+   * request must return a [ResponseError](#ResponseError) with an
+   * appropriate message set.
+   */
+  newName: string;
+}
+
+export type RenameResponse = WorkspaceEdit | null;
+
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#workspaceEdit
+ */
+export interface WorkspaceEdit {
+  /**
+   * Holds changes to existing resources.
+   */
+  changes?: { [uri: DocumentUri]: TextEdit[] };
+
+  /**
+   * Depending on the client capability
+   * `workspace.workspaceEdit.resourceOperations` document changes are either
+   * an array of `TextDocumentEdit`s to express changes to n different text
+   * documents where each text document edit addresses a specific version of
+   * a text document. Or it can contain above `TextDocumentEdit`s mixed with
+   * create, rename and delete file / folder operations.
+   *
+   * Whether a client supports versioned document edits is expressed via
+   * `workspace.workspaceEdit.documentChanges` client capability.
+   *
+   * If a client neither supports `documentChanges` nor
+   * `workspace.workspaceEdit.resourceOperations` then only plain `TextEdit`s
+   * using the `changes` property are supported.
+   */
+  documentChanges?: (
+    | TextDocumentEdit[]
+    | (TextDocumentEdit | CreateFile | RenameFile | DeleteFile)[]
+  );
+
+  /**
+   * A map of change annotations that can be referenced in
+   * `AnnotatedTextEdit`s or create, rename and delete file / folder
+   * operations.
+   *
+   * Whether clients honor this property depends on the client capability
+   * `workspace.changeAnnotationSupport`.
+   *
+   * @since 3.16.0
+   */
+  changeAnnotations?: {
+    [id: string /* ChangeAnnotationIdentifier */]: ChangeAnnotation;
+  };
+}
+
+/**
+ * Options to create a file.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#resourceChanges
+ */
+export interface CreateFileOptions {
+  /**
+   * Overwrite existing file. Overwrite wins over `ignoreIfExists`
+   */
+  overwrite?: boolean;
+
+  /**
+   * Ignore if exists.
+   */
+  ignoreIfExists?: boolean;
+}
+
+/**
+ * Create file operation
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#resourceChanges
+ */
+export interface CreateFile {
+  /**
+   * A create
+   */
+  kind: "create";
+
+  /**
+   * The resource to create.
+   */
+  uri: DocumentUri;
+
+  /**
+   * Additional options
+   */
+  options?: CreateFileOptions;
+
+  /**
+   * An optional annotation identifier describing the operation.
+   *
+   * @since 3.16.0
+   */
+  annotationId?: ChangeAnnotationIdentifier;
+}
+
+/**
+ * Rename file options
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#resourceChanges
+ */
+export interface RenameFileOptions {
+  /**
+   * Overwrite target if existing. Overwrite wins over `ignoreIfExists`
+   */
+  overwrite?: boolean;
+
+  /**
+   * Ignores if target exists.
+   */
+  ignoreIfExists?: boolean;
+}
+
+/**
+ * Rename file operation
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#resourceChanges
+ */
+export interface RenameFile {
+  /**
+   * A rename
+   */
+  kind: "rename";
+
+  /**
+   * The old (existing) location.
+   */
+  oldUri: DocumentUri;
+
+  /**
+   * The new location.
+   */
+  newUri: DocumentUri;
+
+  /**
+   * Rename options.
+   */
+  options?: RenameFileOptions;
+
+  /**
+   * An optional annotation identifier describing the operation.
+   *
+   * @since 3.16.0
+   */
+  annotationId?: ChangeAnnotationIdentifier;
+}
+
+/**
+ * Delete file options
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#resourceChanges
+ */
+export interface DeleteFileOptions {
+  /**
+   * Delete the content recursively if a folder is denoted.
+   */
+  recursive?: boolean;
+
+  /**
+   * Ignore the operation if the file doesn't exist.
+   */
+  ignoreIfNotExists?: boolean;
+}
+
+/**
+ * Delete file operation
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#resourceChanges
+ */
+export interface DeleteFile {
+  /**
+   * A delete
+   */
+  kind: "delete";
+
+  /**
+   * The file to delete.
+   */
+  uri: DocumentUri;
+
+  /**
+   * Delete options.
+   */
+  options?: DeleteFileOptions;
+
+  /**
+   * An optional annotation identifier describing the operation.
+   *
+   * @since 3.16.0
+   */
+  annotationId?: ChangeAnnotationIdentifier;
+}
+
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#textEdit
+ */
+interface TextEdit {
+  /**
+   * The range of the text document to be manipulated. To insert
+   * text into a document create a range where start === end.
+   */
+  range: Range;
+
+  /**
+   * The string to be inserted. For delete operations use an
+   * empty string.
+   */
+  newText: string;
+}
+
+/**
+ * Additional information that describes document changes.
+ * @since 3.16.0
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#changeAnnotation
+ */
+export interface ChangeAnnotation {
+  /**
+   * A human-readable string describing the actual change. The string
+   * is rendered prominent in the user interface.
+   */
+  label: string;
+
+  /**
+   * A flag which indicates that user confirmation is needed
+   * before applying the change.
+   */
+  needsConfirmation?: boolean;
+
+  /**
+   * A human-readable string which is rendered less prominent in
+   * the user interface.
+   */
+  description?: string;
+}
+
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#textDocumentEdit
+ */
+export interface TextDocumentEdit {
+  /**
+   * The text document to change.
+   */
+  textDocument: OptionalVersionedTextDocumentIdentifier;
+
+  /**
+   * The edits to be applied.
+   *
+   * @since 3.16.0 - support for AnnotatedTextEdit. This is guarded by the
+   * client capability `workspace.workspaceEdit.changeAnnotationSupport`
+   */
+  edits: (TextEdit | AnnotatedTextEdit)[];
+}
+
+/**
+ * A special text edit with an additional change annotation.
+ * @since 3.16.0.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#annotatedTextEdit
+ */
+export interface AnnotatedTextEdit extends TextEdit {
+  /**
+   * The actual annotation identifier.
+   */
+  annotationId: ChangeAnnotationIdentifier;
+}
+
+/**
+ * An identifier referring to a change annotation managed by a workspace
+ * edit.
+ * @since 3.16.0.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#changeAnnotationIdentifier
+ */
+export type ChangeAnnotationIdentifier = string;
+
+/**
+ * An identifier which optionally denotes a specific version of a text document. This information usually flows from the server to the client.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#optionalVersionedTextDocumentIdentifier
+ */
+interface OptionalVersionedTextDocumentIdentifier
+  extends TextDocumentIdentifier {
+  /**
+   * The version number of this document. If an optional versioned text document
+   * identifier is sent from the server to the client and the file is not
+   * open in the editor (the server has not received an open notification
+   * before) the server can send `null` to indicate that the version is
+   * known and the content on disk is the master (as specified with document
+   * content ownership).
+   *
+   * The version number of a document will increase after each change,
+   * including undo/redo. The number doesn't need to be consecutive.
+   */
+  version: integer | null;
+}
+
+/**
+ * An identifier to denote a specific version of a text document. This information usually flows from the client to the server.
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#optionalVersionedTextDocumentIdentifier
+ */
+interface VersionedTextDocumentIdentifier extends TextDocumentIdentifier {
+  /**
+   * The version number of this document.
+   *
+   * The version number of a document will increase after each change,
+   * including undo/redo. The number doesn't need to be consecutive.
+   */
+  version: integer;
 }
 
 /**
