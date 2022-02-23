@@ -895,7 +895,7 @@ export function getDefaultJsonValueToTsValueCode({
   field,
   messages,
 }: GetDefaultJsonValueToTsValueCodeConfig): string | undefined {
-  const { schema, tsName, tsType } = field;
+  const { schema, tsName } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
@@ -909,11 +909,10 @@ export function getDefaultJsonValueToTsValueCode({
     return `value.${tsName}?.map((value: any) => ${typePathCode})`;
   }
   const { typePath } = schema;
-  return typePathToCode("value." + tsName, typePath, tsType);
+  return typePathToCode("value." + tsName, typePath);
   function typePathToCode(
     jsonValue: string,
     typePath?: string,
-    tsType?: string,
   ) {
     if (!typePath) return;
     const jsonValueToTsValueFns = importBuffer.addRuntimeImport(
