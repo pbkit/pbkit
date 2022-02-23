@@ -906,7 +906,7 @@ export function getDefaultJsonValueToTsValueCode({
     const { typePath } = schema;
     if (!typePath) return;
     const typePathCode = typePathToCode("value", typePath);
-    return `value.${tsName}.map((value: any) => ${typePathCode})`;
+    return `value.${tsName}?.map((value: any) => ${typePathCode})`;
   }
   const { typePath } = schema;
   return typePathToCode("value." + tsName, typePath, tsType);
