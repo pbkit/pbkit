@@ -895,7 +895,7 @@ export function getDefaultJsonValueToTsValueCode({
   field,
   messages,
 }: GetDefaultJsonValueToTsValueCodeConfig): string | undefined {
-  const { schema, tsName, tsType } = field;
+  const { schema, tsName } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
@@ -906,14 +906,13 @@ export function getDefaultJsonValueToTsValueCode({
     const { typePath } = schema;
     if (!typePath) return;
     const typePathCode = typePathToCode("value", typePath);
-    return `value.${tsName}.map((value: any) => ${typePathCode})`;
+    return `value.${tsName}?.map((value: any) => ${typePathCode})`;
   }
   const { typePath } = schema;
-  return typePathToCode("value." + tsName, typePath, tsType);
+  return typePathToCode("value." + tsName, typePath);
   function typePathToCode(
     jsonValue: string,
     typePath?: string,
-    tsType?: string,
   ) {
     if (!typePath) return;
     const jsonValueToTsValueFns = importBuffer.addRuntimeImport(
@@ -925,7 +924,7 @@ export function getDefaultJsonValueToTsValueCode({
       return `${jsonValueToTsValueFns}.${typePath.substr(1)}(${jsonValue})`;
     }
     if (field.isEnum) {
-      return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${tsType}`;
+      return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${field.tsType}`;
     }
     const decodeJson = importBuffer.addInternalImport(
       filePath,
