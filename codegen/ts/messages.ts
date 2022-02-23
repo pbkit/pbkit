@@ -925,7 +925,7 @@ export function getDefaultJsonValueToTsValueCode({
       return `${jsonValueToTsValueFns}.${typePath.substr(1)}(${jsonValue})`;
     }
     if (field.isEnum) {
-      return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${tsType}`;
+      return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${field.tsType}`;
     }
     const decodeJson = importBuffer.addInternalImport(
       filePath,
