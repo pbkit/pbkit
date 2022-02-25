@@ -20,14 +20,7 @@ export default function gotoDefinition(
   if (!parseResult) return;
   const offset = parseResult.parser.colRowToOffset(colRow);
   const context: GotoDefinitionContext = { schema, filePath, offset, file };
-  { // import statements
-    const location = handleImportStatements(context);
-    if (location) return location;
-  }
-  { // type references
-    const location = handleTypeReferences(context);
-    if (location) return location;
-  }
+  return handleImportStatements(context) || handleTypeReferences(context);
 }
 
 interface GotoDefinitionContext {
