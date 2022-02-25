@@ -1,12 +1,13 @@
 import * as ast from "../ast/index.ts";
-
 import { ParseResult } from "../parser/proto.ts";
 import { ColRow, Token } from "../parser/recursive-descent-parser.ts";
 import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
 import { getResolveTypePathFn } from "./builder.ts";
-import { Schema, Type } from "./model.ts";
+import { File, Schema, Type } from "./model.ts";
 import { stringifyFullIdent, stringifyType } from "./stringify-ast-frag.ts";
 import { Location } from "../parser/location.ts";
+import { filterNodesByType } from "./ast-util.ts";
+import { evalStrLit } from "./eval-ast-constant.ts";
 
 export default function gotoDefinition(
   schema: Schema,
@@ -14,10 +15,54 @@ export default function gotoDefinition(
   colRow: ColRow,
 ): Location | undefined {
   if (!schema.files[filePath]) return;
-  const { parseResult } = schema.files[filePath];
+  const file = schema.files[filePath] as GotoDefinitionContext["file"];
+  const { parseResult } = file;
   if (!parseResult) return;
   const offset = parseResult.parser.colRowToOffset(colRow);
-  const typeReference = getTypeReference(parseResult, offset);
+  const context: GotoDefinitionContext = { schema, filePath, offset, file };
+  { // import statements
+    const location = handleImportStatements(context);
+    if (location) return location;
+  }
+  { // type references
+    const location = handleTypeReferences(context);
+    if (location) return location;
+  }
+}
+
+interface GotoDefinitionContext {
+  schema: Schema;
+  filePath: string;
+  offset: number;
+  file: File & { parseResult: ParseResult };
+}
+
+function handleImportStatements(
+  { file, offset }: GotoDefinitionContext,
+): Location | undefined {
+  const importStatements = filterNodesByType(
+    file.parseResult.ast.statements,
+    "import",
+  );
+  for (const importStatement of importStatements) {
+    const { strLit } = importStatement;
+    if (offset < strLit.start) continue;
+    if (offset >= strLit.end) continue;
+    const importPath = evalStrLit(strLit);
+    const i = file.imports.find((i) => i.importPath === importPath);
+    if (!i?.filePath) return;
+    return {
+      filePath: i.filePath,
+      start: { col: 0, row: 0 },
+      end: { col: 0, row: 0 },
+    };
+  }
+}
+
+function handleTypeReferences(
+  { schema, filePath, offset, file }: GotoDefinitionContext,
+): Location | undefined {
+  const typeReference = getTypeReference(file.parseResult, offset);
   if (!typeReference) return;
   const typePath = getResolveTypePathFn(schema, filePath)(
     stringifyType(typeReference.node),
@@ -105,7 +150,7 @@ function getTypeReference(
     visitImport() {},
     visitOption() {},
     visitEmpty() {},
-    visitPackage(visitor, node) {
+    visitPackage(_visitor, node) {
       stack.push(stringifyFullIdent(node.fullIdent));
     },
     visitTopLevelDef(visitor, node) {
@@ -118,7 +163,7 @@ function getTypeReference(
       defaultVisitor.visitMessage(visitor, node);
       stack.pop();
     },
-    visitType(visitor, node) {
+    visitType(_visitor, node) {
       if (offset < node.start) return;
       if (offset >= node.end) return;
       result = { node, scope: `.${stack.join(".")}` };
@@ -142,7 +187,7 @@ function getTypeDefinition(
     ...defaultVisitor,
     visitSyntax() {},
     visitImport() {},
-    visitPackage(visitor, node) {
+    visitPackage(_visitor, node) {
       stack.push(stringifyFullIdent(node.fullIdent));
     },
     visitOption() {},
