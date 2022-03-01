@@ -103,9 +103,11 @@ export default new Command()
       }
       const analyzeDepsResult = await analyzeDeps({ cacheDir, pollapoYml });
       await emptyDir(options.outDir);
+      const promises = [];
       for (const [repo, revs] of Object.entries(analyzeDepsResult)) {
-        await installDep(options, cacheDir, pollapoYml, repo, revs);
+        promises.push(installDep(options, cacheDir, pollapoYml, repo, revs));
       }
+      await Promise.all(promises);
       const pollapoYmlText = stringify(
         sanitizeDeps({
           ...pollapoYml,
@@ -153,6 +155,7 @@ async function installDep(
   const pollapoRootReplaceFileOption = (
     pollapoYml?.root?.["replace-file-option"]
   );
+  const promises = [];
   for await (let { fileName, data } of iterFiles(files)) {
     if (fileName.endsWith(".proto") && pollapoRootReplaceFileOption) {
       const textDecoder = new TextDecoder();
@@ -163,7 +166,10 @@ async function installDep(
       data = textEncoder.encode(minify(ast));
     }
     const filePath = path.resolve(targetDir, fileName);
-    await ensureDir(path.dirname(filePath));
-    await Deno.writeFile(filePath, data);
+    promises.push(
+      ensureDir(path.dirname(filePath))
+        .then(() => Deno.writeFile(filePath, data)),
+    );
   }
+  await Promise.all(promises);
 }
