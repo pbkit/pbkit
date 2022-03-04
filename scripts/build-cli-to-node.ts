@@ -1,4 +1,4 @@
-import { build, emptyDir } from "https://deno.land/x/dnt@0.20.1/mod.ts";
+import { build, emptyDir } from "https://deno.land/x/dnt@0.21.1/mod.ts";
 
 await emptyDir("./npm");
 
@@ -8,7 +8,8 @@ await build({
   shims: {
     // see JS docs for overview and more options
     deno: true,
-    
+    undici: true,
+    custom: [{ module: "stream", globalNames: ["ReadableStream"] }],
   },
   package: {
     // package.json properties
@@ -24,15 +25,9 @@ await build({
       url: "https://github.com/username/repo/issues",
     },
   },
-  scriptModule: false,
   typeCheck: false,
   declaration: false,
   test: false,
-  // mappings: {
-  //   "https://esm.sh/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.js": {
-
-  //   }
-  // },
 });
 
 // post build steps
