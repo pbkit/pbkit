@@ -27,6 +27,11 @@ export default async function buildCore(config: BuildConfig) {
     `${config.dist}/package.json`,
     JSON.stringify(packageJson, null, 2) + "\n",
   );
+  await Promise.all([
+    Deno.copyFile("LICENSE-MIT", `${config.dist}/LICENSE-MIT`),
+    Deno.copyFile("LICENSE-APACHE", `${config.dist}/LICENSE-APACHE`),
+    Deno.copyFile("README.md", `${config.dist}/README.md`),
+  ]);
   { // copy core files
     const entries = walk("core", { includeDirs: false, exts: [".ts"] });
     for await (const { path: fromPath } of entries) {
