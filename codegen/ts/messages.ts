@@ -2,7 +2,10 @@ import { StringReader } from "https://deno.land/std@0.122.0/io/mod.ts";
 import { snakeToCamel } from "../../misc/case.ts";
 import * as schema from "../../core/schema/model.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
-import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
+import {
+  ScalarNumericTypePath,
+  ScalarValueTypePath,
+} from "../../core/runtime/scalar.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
 import {
@@ -499,6 +502,33 @@ const getEncodeBinaryCode: GetCodeFn = ({
         ].join("");
       }
       if (schema.kind === "repeated") {
+        const { typePath } = schema;
+        if (!typePath) return;
+        if (typePath in scalarNumericTypeMapping || field.isEnum) {
+          const packFns = importBuffer.addRuntimeImport(
+            filePath,
+            "wire/scalar.ts",
+            "packFns",
+          );
+          return [
+            `  if (value.${tsName} !== undefined && value.${tsName}.length > 0) {\n`,
+            `    result.push(\n`,
+            `      [${fieldNumber}, ${getPackedValueCode(typePath)}],\n`,
+            `    );\n`,
+            `  }\n`,
+          ].join("");
+          function getPackedValueCode(typePath: string) {
+            if (typePath in scalarNumericTypeMapping) {
+              return `${packFns}.${typePath.substr(1)}(value.${tsName})`;
+            }
+            const name2num = importBuffer.addInternalImport(
+              filePath,
+              getFilePath(typePath, messages),
+              "name2num",
+            );
+            return `${packFns}.int32(value.${tsName}.map(v => ${name2num}[v as keyof typeof ${name2num}]))`;
+          }
+        }
         return [
           `  for (const tsValue of value.${tsName}) {\n`,
           "    result.push(\n",
@@ -1050,6 +1080,22 @@ export function pbTypeToTsType({
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return addInternalImport(here, from, "Type", as);
 }
+type ScalarNumericToCodeTable = { [typePath in ScalarNumericTypePath]: string };
+const scalarNumericTypeMapping: ScalarNumericToCodeTable = {
+  ".double": "number",
+  ".float": "number",
+  ".int32": "number",
+  ".int64": "string",
+  ".uint32": "number",
+  ".uint64": "string",
+  ".sint32": "number",
+  ".sint64": "string",
+  ".fixed32": "number",
+  ".fixed64": "string",
+  ".sfixed32": "number",
+  ".sfixed64": "string",
+  ".bool": "boolean",
+};
 type ScalarToCodeTable = { [typePath in ScalarValueTypePath]: string };
 const scalarTypeMapping: ScalarToCodeTable = {
   ".double": "number",
