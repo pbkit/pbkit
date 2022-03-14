@@ -16,6 +16,16 @@ jobs:
         with:
           deno-version: v1.x
       - run: deno run --unstable -A cli/pb/entrypoint.ts vendor install
-      - run: deno run --unstable -A scripts/publish-to-npm.ts
+      - run: deno run --unstable -A scripts/build-npm-packages/entrypoint.ts
+      - run: npm publish
+        working-directory: tmp/npm/pbkit
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish
+        working-directory: tmp/npm/runtime
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish
+        working-directory: tmp/npm/pb-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
