@@ -1,28 +1,48 @@
-import { build, emptyDir } from "https://deno.land/x/dnt@0.21.1/mod.ts";
+import { build, emptyDir } from "https://deno.land/x/dnt@0.22.0/mod.ts";
 
-await emptyDir("./npm");
+const latestTag = new TextDecoder().decode(
+  await Deno.run({
+    cmd: ["git", "describe", "--tags", "--abbrev=0"],
+    stdout: "piped",
+  }).output(),
+);
+const version = latestTag.substr(1).trim();
+
+await emptyDir("tmp/npm/dist-pb-cli");
 
 await build({
   entryPoints: [{ kind: "bin", name: "pb", path: "./cli/pb/entrypoint.ts" }],
-  outDir: "./npm",
+  outDir: "tmp/npm/dist-pb-cli",
   shims: {
-    // see JS docs for overview and more options
     deno: true,
-    undici: true,
-    custom: [{ module: "stream", globalNames: ["ReadableStream"] }],
+    custom: [{
+      package: {
+        name: "web-streams-polyfill",
+        version: "^3.2.0",
+        subPath: "dist/ponyfill.mjs",
+      },
+      globalNames: ["ReadableStream"],
+    }, {
+      package: {
+        name: "undici",
+        version: "^4.15.1",
+        subPath: "lib/fetch/headers.js",
+      },
+      globalNames: ["Headers"],
+    }],
   },
   package: {
-    // package.json properties
-    name: "your-package",
-    version: Deno.args[0],
-    description: "Your package.",
-    license: "MIT",
+    name: "@pbkit/pb-cli",
+    version,
+    description: "Protobuf schema compiler",
+    author: "JongChan Choi <jong@chan.moe>",
+    license: "(MIT OR Apache-2.0)",
     repository: {
       type: "git",
-      url: "git+https://github.com/username/repo.git",
+      url: "git+https://github.com/pbkit/pbkit.git",
     },
     bugs: {
-      url: "https://github.com/username/repo/issues",
+      url: "https://github.com/pbkit/pbkit/issues",
     },
   },
   typeCheck: false,
@@ -31,6 +51,6 @@ await build({
 });
 
 // post build steps
-Deno.copyFileSync("LICENSE-MIT", "npm/LICENSE-MIT");
-Deno.copyFileSync("LICENSE-APACHE", "npm/LICENSE-APACHE");
-Deno.copyFileSync("README.md", "npm/README.md");
+Deno.copyFileSync("LICENSE-MIT", "tmp/npm/dist-pb-cli/LICENSE-MIT");
+Deno.copyFileSync("LICENSE-APACHE", "tmp/npm/dist-pb-cli/LICENSE-APACHE");
+Deno.copyFileSync("README.md", "tmp/npm/dist-pb-cli/README.md");
