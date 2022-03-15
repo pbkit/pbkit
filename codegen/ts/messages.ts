@@ -623,7 +623,8 @@ const getDecodeBinaryCode: GetCodeFn = ({
       if (!wireValueToTsValueCode) return "";
       const isCollection = message.collectionFieldNumbers.has(fieldNumber);
       if (isCollection) {
-        const type = (schema as schema.RepeatedField).typePath?.substr(1);
+        const typePath = (schema as schema.RepeatedField).typePath;
+        const type = typePath?.slice(1);
         let wireValuesToTsValuesCode: string;
         if (type as keyof typeof unpackFns in unpackFns) {
           const unpackFns = importBuffer.addRuntimeImport(
@@ -633,14 +634,12 @@ const getDecodeBinaryCode: GetCodeFn = ({
           );
           wireValuesToTsValuesCode =
             `Array.from(${unpackFns}.${type}(wireValues))`;
-        } else if (field.isEnum) {
+        } else if (field.isEnum && typePath) {
           const unpackFns = importBuffer.addRuntimeImport(
             filePath,
             "wire/scalar.ts",
             "unpackFns",
           );
-          const typePath = (schema as schema.RepeatedField).typePath;
-          if (!typePath) return;
           const num2name = importBuffer.addInternalImport(
             filePath,
             getFilePath(typePath, messages),
