@@ -633,6 +633,21 @@ const getDecodeBinaryCode: GetCodeFn = ({
           );
           wireValuesToTsValuesCode =
             `Array.from(${unpackFns}.${type}(wireValues))`;
+        } else if (field.isEnum) {
+          const unpackFns = importBuffer.addRuntimeImport(
+            filePath,
+            "wire/scalar.ts",
+            "unpackFns",
+          );
+          const typePath = (schema as schema.RepeatedField).typePath;
+          if (!typePath) return;
+          const num2name = importBuffer.addInternalImport(
+            filePath,
+            getFilePath(typePath, messages),
+            "num2name",
+          );
+          wireValuesToTsValuesCode =
+            `Array.from(${unpackFns}.int32(wireValues)).map(num => ${num2name}[num as keyof typeof ${num2name}])`;
         } else {
           wireValuesToTsValuesCode =
             `wireValues.map((wireValue) => ${wireValueToTsValueCode}).filter(x => x !== undefined)`;
