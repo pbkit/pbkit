@@ -1,5 +1,3 @@
-import { getVendorDir } from "../cli/pb/config.ts";
-import { createLoader } from "../core/loader/deno-fs.ts";
 import gotoDefinition, {
   getTypeInformation,
 } from "../core/schema/gotoDefinition.ts";
@@ -11,6 +9,7 @@ import { Schema } from "../core/schema/model.ts";
 import findAllReferences from "../core/schema/findAllReferences.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 import * as lsp from "./lsp.ts";
+import { createProjectManager } from "./project.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
@@ -22,7 +21,7 @@ export interface Server {
 }
 
 export function run(config: RunConfig): Server {
-  let projectPaths: string[] = []; // sorted string array in descending order
+  const projectManager = createProjectManager();
   const connection = createJsonRpcConnection({
     reader: config.reader,
     writer: config.writer,
@@ -36,10 +35,8 @@ export function run(config: RunConfig): Server {
     },
     requestHandlers: {
       ["initialize"](params: lsp.InitializeParams): lsp.InitializeResult {
-        if (params.workspaceFolders) {
-          // TODO: traverse workspaces and find project directories
-          projectPaths = params.workspaceFolders.map(({ uri }) => uri).sort()
-            .reverse();
+        for (const folder of params.workspaceFolders || []) {
+          projectManager.addProjectPath(folder.uri);
         }
         // Find .pollapo paths in workspace folders
         const result: lsp.InitializeResult = {
@@ -113,16 +110,8 @@ export function run(config: RunConfig): Server {
   });
   return { finish: connection.finish };
   async function buildFreshSchema(file: string): Promise<Schema> {
-    const projectPath = projectPaths.find((p) => file.startsWith(p));
-    const entryPaths = projectPath
-      ? [projectPath + "/.pollapo", projectPath]
-      : [];
-    const roots = [...entryPaths, getVendorDir()];
-    const loader = createLoader({ roots });
-    return await build({
-      loader,
-      files: [...await expandEntryPaths(entryPaths), file],
-    });
+    const buildConfig = await projectManager.createBuildConfig(file);
+    return await build(buildConfig);
   }
 }
 

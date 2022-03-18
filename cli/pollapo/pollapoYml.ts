@@ -13,6 +13,7 @@ import { getRevType } from "./rev.ts";
 import { YAMLError } from "https://deno.land/std@0.122.0/encoding/_yaml/error.ts";
 
 export type PollapoYml = {
+  repo?: string;
   deps?: string[];
   root?: PollapoRoot;
 } | undefined;
