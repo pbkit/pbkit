@@ -58,12 +58,12 @@ export async function build(config: BuildConfig): Promise<Schema> {
     const services = iterServices(statements, typePath, filePath);
     for (const [typePath, service] of services) {
       file.servicePaths.push(typePath);
-      result.services[typePath] = service;
+      if (!(typePath in result.services)) result.services[typePath] = service;
     }
     const types = iterTypes(statements, typePath, filePath);
     for (const [typePath, type] of types) {
       file.typePaths.push(typePath);
-      result.types[typePath] = type;
+      if (!(typePath in result.types)) result.types[typePath] = type;
     }
     // TODO: extends
   }

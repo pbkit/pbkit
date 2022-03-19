@@ -59,7 +59,7 @@ async function getPollapoRepo(
   projectPath: string,
 ): Promise<string | undefined> {
   try {
-    const pollapoYmlPath = resolve(projectPath, "/pollapo.yml");
+    const pollapoYmlPath = resolve(projectPath, "pollapo.yml");
     const pollapoYml = await loadPollapoYml(fromFileUrl(pollapoYmlPath));
     if (pollapoYml?.repo) return String(pollapoYml.repo);
   } catch {}
