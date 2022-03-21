@@ -34,13 +34,14 @@ export function createProjectManager(): ProjectManager {
     async createBuildConfig(filePath) {
       const projectPath = getProjectPath(filePath);
       if (!projectPath) {
-        const denoFsLoader = createDenoFsLoader({ roots: [getVendorDir()] });
+        const roots = getVendorDirs();
+        const denoFsLoader = createDenoFsLoader({ roots });
         return { loader: memoizeLoader(denoFsLoader), files: [filePath] };
       }
       const entryPaths = [projectPath + "/.pollapo", projectPath];
       const files = await expandEntryPaths(entryPaths);
       files.push(filePath);
-      const roots = [...entryPaths, getVendorDir()];
+      const roots = [...entryPaths, ...getVendorDirs()];
       const denoFsLoader = createDenoFsLoader({ roots });
       const repo = await getPollapoRepo(projectPath);
       if (!repo) return { loader: memoizeLoader(denoFsLoader), files };
@@ -53,6 +54,10 @@ export function createProjectManager(): ProjectManager {
       };
     },
   };
+}
+
+function getVendorDirs() {
+  return [getVendorDir(), "/usr/local/include"];
 }
 
 async function getPollapoRepo(
