@@ -43,10 +43,7 @@ export function run(config: RunConfig): Server {
           capabilities: {
             // @TODO: Add support for incremental sync
             textDocumentSync: lsp.TextDocumentSyncKind.Full,
-            completionProvider: {
-              // @TODO: Add support for resolveProvider
-              resolveProvider: false,
-            },
+            completionProvider: undefined,
             referencesProvider: true,
             definitionProvider: true,
             hoverProvider: true,
