@@ -1,9 +1,9 @@
 import { exists } from "https://deno.land/std@0.122.0/fs/exists.ts";
 import {
-  fromFileUrl,
+  fromFileUrl as _fromFileUrl,
   isAbsolute,
-  resolve,
-} from "https://deno.land/std@0.122.0/path/mod.ts";
+  resolve as _resolve,
+} from "https://deno.land/std@0.122.0/path/posix.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {
@@ -15,14 +15,14 @@ export function createLoader(
   return {
     async load(path) {
       if (isFileUrl(path) || isAbsolute(path)) {
-        const filePath = _fromFileUrl(path);
-        const absolutePath = _resolve(filePath);
+        const filePath = fromFileUrl(path);
+        const absolutePath = resolve(filePath);
         if (!await exists(filePath)) return null;
         return { absolutePath, data: await Deno.readTextFile(filePath) };
       }
       for (const root of config.roots) {
-        const absolutePath = _resolve(root, path);
-        const filePath = _fromFileUrl(absolutePath);
+        const absolutePath = resolve(root, path);
+        const filePath = fromFileUrl(absolutePath);
         if (!await exists(filePath)) continue;
         return { absolutePath, data: await Deno.readTextFile(filePath) };
       }
@@ -35,11 +35,11 @@ function isFileUrl(path: string): boolean {
   return path.startsWith("file://");
 }
 
-function _resolve(absolutePath: string, subPath: string = ""): string {
-  return "file://" + resolve(_fromFileUrl(absolutePath), subPath);
+export function resolve(absolutePath: string, subPath: string = ""): string {
+  return "file://" + _resolve(fromFileUrl(absolutePath), subPath);
 }
 
-function _fromFileUrl(path: string): string {
+export function fromFileUrl(path: string): string {
   if (!isFileUrl(path)) return path;
-  return fromFileUrl(path);
+  return _fromFileUrl(path);
 }

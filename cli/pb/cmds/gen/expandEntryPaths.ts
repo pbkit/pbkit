@@ -12,10 +12,12 @@ export default async function expandEntryPaths(
     const entryPath = _entryPath.startsWith("file://")
       ? fromFileUrl(_entryPath)
       : _entryPath;
-    const entries = walk(entryPath, { includeDirs: false, exts: [".proto"] });
-    for await (const { path } of entries) {
-      result.push(relative(entryPath, path));
-    }
+    try {
+      const entries = walk(entryPath, { includeDirs: false, exts: [".proto"] });
+      for await (const { path } of entries) {
+        result.push(relative(entryPath, path));
+      }
+    } catch {}
   }
   return result;
 }
