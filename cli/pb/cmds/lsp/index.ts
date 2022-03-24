@@ -3,7 +3,7 @@ import { run } from "../../../../language-server/server.ts";
 
 const command = new Command();
 command
-  .description("Execute langauge server.")
+  .description("Execute language server.")
   .option(
     "--stdio",
     "Option for language-server client",

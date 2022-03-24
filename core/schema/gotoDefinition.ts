@@ -76,6 +76,12 @@ function handleTypeReferences(
   };
 }
 
+export function isTypeSpecifier(parseResult: ParseResult, colRow: ColRow) {
+  const offset = parseResult.parser.colRowToOffset(colRow);
+  const typeRef = getTypeReference(parseResult, offset);
+  return Boolean(typeRef);
+}
+
 export function getTypeInformation(
   schema: Schema,
   filePath: string,
