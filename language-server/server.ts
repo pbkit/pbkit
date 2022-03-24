@@ -95,7 +95,7 @@ export function run(config: RunConfig): Server {
         const parseResult = parse(
           await Deno.readTextFile(fromFileUrl(textDocument.uri)),
         );
-        // build textDocument only -> check if it is type specifier
+        // try parse textDocument only -> check if it is type specifier
         if (!isTypeSpecifier(parseResult, colRow)) return null;
         const schema = await buildFreshSchema(textDocument.uri);
         const typeInformation = getTypeInformation(
