@@ -1,4 +1,5 @@
 import gotoDefinition, {
+  getIsTypeSpecifier,
   getTypeInformation,
 } from "../core/schema/gotoDefinition.ts";
 import { build } from "../core/schema/builder.ts";
@@ -9,6 +10,8 @@ import { Schema } from "../core/schema/model.ts";
 import findAllReferences from "../core/schema/findAllReferences.ts";
 import * as lsp from "./lsp.ts";
 import { createProjectManager } from "./project.ts";
+import { parse } from "../core/parser/proto.ts";
+import { fromFileUrl } from "../core/loader/deno-fs.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
@@ -88,11 +91,17 @@ export function run(config: RunConfig): Server {
         params: lsp.HoverParams,
       ): Promise<lsp.HoverResponse> {
         const { textDocument, position } = params;
+        const colRow = positionToColRow(position);
+        const parseResult = parse(
+          await Deno.readTextFile(fromFileUrl(textDocument.uri)),
+        );
+        // build textDocument only -> check if it is type specifier
+        if (!getIsTypeSpecifier(parseResult, colRow)) return null;
         const schema = await buildFreshSchema(textDocument.uri);
         const typeInformation = getTypeInformation(
           schema,
           textDocument.uri,
-          positionToColRow(position),
+          colRow,
         );
         if (!typeInformation) return null;
         return {
