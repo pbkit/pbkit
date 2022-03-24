@@ -76,7 +76,7 @@ function handleTypeReferences(
   };
 }
 
-export function getIsTypeSpecifier(parseResult: ParseResult, colRow: ColRow) {
+export function isTypeSpecifier(parseResult: ParseResult, colRow: ColRow) {
   const offset = parseResult.parser.colRowToOffset(colRow);
   const typeRef = getTypeReference(parseResult, offset);
   return Boolean(typeRef);
