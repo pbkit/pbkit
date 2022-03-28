@@ -1,6 +1,6 @@
 <div align="center">
   <h1>pbkit</h1>
-  <img src="https://avatars.githubusercontent.com/u/90100959">
+  <img width="128" src="https://avatars.githubusercontent.com/u/90100959">
   <p>TypeScript implementation of protobuf.</p>
   <p>Supports Deno and Node.js.</p>
   <a href="https://discord.gg/PHmV3nhvQq">
