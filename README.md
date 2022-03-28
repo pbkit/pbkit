@@ -3,7 +3,7 @@
   <img src="https://avatars.githubusercontent.com/u/90100959">
   <p>TypeScript implementation of protobuf.</p>
   <p>Supports Deno and Node.js.</p>
-  <a href="https://discord.gg/UKsvFsehhK">
+  <a href="https://discord.gg/PHmV3nhvQq">
     <img src="https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square" />
   </a>
   <a href="https://twitter.com/pbkit_">
