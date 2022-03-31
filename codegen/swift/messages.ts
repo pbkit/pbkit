@@ -45,6 +45,12 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
     schema,
     typePath,
   });
+  const swiftName = toSwiftName(relativeTypePath);
+  const swiftFullName = getSwiftFullName({ schema, typePath });
+  const parentSwiftFullName = getSwiftFullName({
+    schema,
+    typePath: parentTypePath,
+  });
   const filePath = getFilePath(typePath, messages);
   const fields = Object.entries<schema.EnumField>({
     "0": { description: "", name: "UNSPECIFIED", options: {} },
@@ -56,10 +62,8 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
       [
         getImportCode(),
         getProtocGenSwiftVersionCode(),
-        getTypeExtensionCodeBase(parentTypePath, [
-          `public enum ${
-            toSwiftName(relativeTypePath)
-          }: SwiftProtobuf.Enum {\n`,
+        getTypeExtensionCodeBase(parentSwiftFullName, [
+          `public enum ${swiftName}: SwiftProtobuf.Enum {\n`,
           "  public typealias RawValue = Int\n",
           ...fields.map(([fieldNumber, { name }]) =>
             `  case ${toCamelCase(name)} // = ${fieldNumber}\n`
@@ -103,8 +107,8 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
   function getCaseIterable() {
     return [
       `#if swift(>=4.2)\n\n`,
-      `extension ${getExtensionName()}: CaseIterable {\n`,
-      `  public static var allCases: [${getExtensionName()}] {\n`,
+      `extension ${swiftFullName}: CaseIterable {\n`,
+      `  public static var allCases: [${swiftFullName}] {\n`,
       "    return [\n",
       ...fields.map(([fieldNumber, { name }]) =>
         `      .${toCamelCase(name)},\n`
@@ -118,7 +122,7 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
   // @TODO(hyp3rflow): I think that this can be in struct without using extension.
   function getProtoNameMap() {
     return [
-      `extension ${getExtensionName()}: SwiftProtobuf._ProtoNameProviding {\n`,
+      `extension ${swiftFullName}: SwiftProtobuf._ProtoNameProviding {\n`,
       "  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [\n",
       ...fields.map(([fieldNumber, { name }]) =>
         `    ${fieldNumber}: .same(proto: "${name}"),\n`
@@ -126,12 +130,6 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
       "  ]\n",
       "}\n",
     ].join("");
-  }
-  function getExtensionName() {
-    if (parentTypePath) {
-      return `${toSwiftName(parentTypePath)}.${toSwiftName(relativeTypePath)}`;
-    }
-    return toSwiftName(relativeTypePath);
   }
 }
 
@@ -165,11 +163,17 @@ interface GenMessageConfig {
 function* genMessage(
   { schema, typePath, type, customTypeMapping, messages }: GenMessageConfig,
 ): Generator<CodeEntry> {
+  const filePath = getFilePath(typePath, messages);
   const { parentTypePath, relativeTypePath } = getTypePath({
     schema,
     typePath,
   });
-  const filePath = getFilePath(typePath, messages);
+  const swiftName = toSwiftName(relativeTypePath);
+  const swiftFullName = getSwiftFullName({ schema, typePath });
+  const parentSwiftFullName = getSwiftFullName({
+    schema,
+    typePath: parentTypePath,
+  });
   type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
   const schemaFields = Object.entries(type.fields);
   const schemaOneofFields = schemaFields.filter(
@@ -210,8 +214,8 @@ function* genMessage(
     new StringReader([
       getImportCode(),
       getProtocGenSwiftVersionCode(),
-      getTypeExtensionCodeBase(parentTypePath, [
-        `public struct ${toSwiftName(relativeTypePath)} {\n`,
+      getTypeExtensionCodeBase(parentSwiftFullName, [
+        `public struct ${swiftName} {\n`,
         ...message.fields.map(
           (
             {
@@ -326,8 +330,12 @@ function* genMessage(
   }
 }
 
+interface GetTypePathConfig {
+  schema: schema.Schema;
+  typePath: string;
+}
 function getTypePath(
-  { schema, typePath }: { schema: schema.Schema; typePath: string },
+  { schema, typePath }: GetTypePathConfig,
 ): { parentTypePath?: string; relativeTypePath: string } {
   const fragments = typePath.split(".");
   const typeName = fragments.pop()!;
@@ -336,6 +344,23 @@ function getTypePath(
     return { parentTypePath, relativeTypePath: "." + typeName };
   }
   return { relativeTypePath: typePath };
+}
+
+interface GetSwiftFullNameConfig {
+  schema: schema.Schema;
+  typePath?: string;
+}
+function getSwiftFullName(
+  { schema, typePath }: GetSwiftFullNameConfig,
+): string | undefined {
+  if (!typePath) return;
+  const { parentTypePath, relativeTypePath } = getTypePath({
+    schema,
+    typePath,
+  });
+  if (!parentTypePath) return toSwiftName(relativeTypePath);
+  return getSwiftFullName({ schema, typePath: parentTypePath }) +
+    `.${toSwiftName(relativeTypePath)}`;
 }
 
 export function getFilePath(
@@ -353,12 +378,12 @@ export function getFilePath(
 }
 
 function getTypeExtensionCodeBase(
-  parentTypePath: string | undefined,
+  parentSwiftName: string | undefined,
   codes: string[],
 ) {
-  if (parentTypePath) {
+  if (parentSwiftName) {
     return [
-      `extension ${toSwiftName(parentTypePath)} {\n`,
+      `extension ${parentSwiftName} {\n`,
       ...codes.map((code) => code ? `  ${code}` : code),
       "}\n",
     ].join("");
