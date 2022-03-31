@@ -18,7 +18,7 @@ public struct Pbkit_Pingpong_Ping {
 
   public var int32S: [Int32] = []
 
-  public var bytess: [Bytes] = []
+  public var bytess: [Data] = []
 
   public var bools: [Bool] = []
 
@@ -104,7 +104,7 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       case 3: try { try decoder.decodeRepeatedPbkit_Pingpong_PongField(value: &self.pongs) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.strings) }()
       case 5: try { try decoder.decodeRepeatedInt32Field(value: &self.int32S) }()
-      case 6: try { try decoder.decodeRepeatedBytesField(value: &self.bytess) }()
+      case 6: try { try decoder.decodeRepeatedDataField(value: &self.bytess) }()
       case 7: try { try decoder.decodeRepeatedBoolField(value: &self.bools) }()
       case 8: try { try decoder.decodeRepeatedFloatField(value: &self.floats) }()
       case 9: try { try decoder.decodeRepeatedDoubleField(value: &self.doubles) }()

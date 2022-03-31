@@ -1,6 +1,6 @@
 import { StringReader } from "https://deno.land/std@0.122.0/io/mod.ts";
+import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import * as schema from "../../core/schema/model.ts";
-import { snakeToCamel } from "../../misc/case.ts";
 import { CodeEntry } from "../index.ts";
 import { join } from "../path.ts";
 import { CustomTypeMapping, GenMessagesConfig } from "./index.ts";
@@ -169,6 +169,7 @@ interface GenMessageConfig {
 function* genMessage(
   { schema, typePath, type, customTypeMapping, messages }: GenMessageConfig,
 ): Generator<CodeEntry> {
+  console.log({ customTypeMapping });
   const filePath = getFilePath(typePath, messages);
   const packageName = getPackageName(schema.files, type.filePath);
   const { parentTypePath, relativeTypePath } = getTypePath({
@@ -227,6 +228,7 @@ function* genMessage(
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   const decodeMessageCode = getDecodeMessageCode(getCodeConfig);
+  const traverseCode = getTraverseCode(getCodeConfig);
   const typeExtensionCode = getTypeExtensionCode(getCodeConfig);
   const protoNameMapCode = getNameMapCode(getCodeConfig);
   yield [
@@ -242,6 +244,8 @@ function* genMessage(
       protoNameMapCode,
       "\n",
       decodeMessageCode,
+      // "\n",
+      // traverseCode,
     ].join("")),
   ];
   function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
@@ -277,16 +281,7 @@ function* genMessage(
     }
   }
   function toSwiftType(typePath?: string) {
-    if (!typePath) return "Unknown";
-    return isScalarTypePath(typePath)
-      ? getScalarTypePath(typePath)
-      : toSwiftName(typePath);
-    function isScalarTypePath(typePath: string): boolean {
-      return false;
-    }
-    function getScalarTypePath(typePath: string): string {
-      return typePath;
-    }
+    return pbTypeToSwiftType({ customTypeMapping, messages, typePath });
   }
 }
 
@@ -581,6 +576,66 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
   ].join("");
 };
 
+const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
+  return [
+    `extension ${config.swiftFullName}: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {\n`,
+    `  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {\n`,
+    `    switch fieldNumber {\n`,
+    ...config.message.fields.map(
+      ({
+        fieldNumber,
+        swiftName,
+        swiftType,
+        schema: { kind },
+      }) => {
+        const isRepeated = kind === "repeated";
+        if (kind === "map") {
+          return [
+            // @TODO(hyp3rflow): SwiftProtobuf.ProtobufString
+            `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.${swiftName}) }()\n`,
+          ].join("");
+        }
+        return [
+          `      case ${fieldNumber}: try { try decoder.decode${
+            isRepeated ? "Repeated" : "Singular"
+          }${swiftType}Field(value: &self.${swiftName}) }()\n`,
+        ].join("");
+      },
+    ),
+    ...config.message.oneofFields.map(
+      ({
+        swiftName: parentSwiftName,
+        fields,
+      }) => {
+        return fields.map(({
+          fieldNumber,
+          swiftName,
+          swiftType,
+          schema: { kind },
+        }) => {
+          const isRepeated = kind === "repeated";
+          return [
+            `      case ${fieldNumber}: try {\n`,
+            `        var v: ${swiftType}?\n`,
+            `        try decoder.decode${
+              isRepeated ? "Repeated" : "Singular"
+            }${swiftType}Field(value: &v)\n`,
+            `        if let v = v {\n`,
+            `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
+            `          self.${parentSwiftName} = .${swiftName}(v)\n`,
+            `        }\n`,
+            `      }()\n`,
+          ].join("");
+        }).join("");
+      },
+    ),
+    `      default: break\n`,
+    `    }\n`,
+    `  }\n`,
+    `}\n`,
+  ].join("");
+};
+
 const getTypeExtensionCode: GetCodeFn<GetCodeConfig | GetMessageCodeConfig> = (
   config,
 ) => {
@@ -615,20 +670,63 @@ function isGetEnumCodeConfig(
   return (config as GetEnumCodeConfig).enum != undefined;
 }
 
-// ---
-
-function toSwiftType(typePath?: string) {
-  if (!typePath) return "Unknown";
-  return isScalarTypePath(typePath)
-    ? getScalarTypePath(typePath)
-    : toSwiftName(typePath);
-  function isScalarTypePath(typePath: string): boolean {
-    return false;
-  }
-  function getScalarTypePath(typePath: string): string {
-    return typePath;
-  }
+export interface PbTypeToSwiftTypeConfig {
+  customTypeMapping: CustomTypeMapping;
+  messages: GenMessagesConfig;
+  typePath?: string;
 }
+export function pbTypeToSwiftType({
+  customTypeMapping,
+  messages,
+  typePath,
+}: PbTypeToSwiftTypeConfig): string {
+  if (!typePath) return "Unknown";
+  if (typePath in scalarTypeMapping) {
+    return scalarTypeMapping[typePath as keyof typeof scalarTypeMapping];
+  }
+  if (typePath in customTypeMapping) {
+    return customTypeMapping[typePath].swiftType;
+  }
+  // @TODO(hyp3rflow)
+  console.log("pbTypeToSwiftType", "TODO: fallback");
+  return toSwiftName(typePath);
+}
+
+type ScalarToCodeTable = { [typePath in ScalarValueTypePath]: string };
+const scalarTypeMapping: ScalarToCodeTable = {
+  ".double": "Double",
+  ".float": "Float",
+  ".int32": "Int32",
+  ".int64": "Int64",
+  ".uint32": "UInt32",
+  ".uint64": "UInt64",
+  ".sint32": "Int32",
+  ".sint64": "Int64",
+  ".fixed32": "UInt32",
+  ".fixed64": "UInt64",
+  ".sfixed32": "Int32",
+  ".sfixed64": "Int64",
+  ".bool": "Bool",
+  ".string": "String",
+  ".bytes": "Data",
+};
+const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
+  ".double": "0",
+  ".float": "0",
+  ".int32": "0",
+  ".int64": '"0"',
+  ".uint32": "0",
+  ".uint64": '"0"',
+  ".sint32": "0",
+  ".sint64": '"0"',
+  ".fixed32": "0",
+  ".fixed64": '"0"',
+  ".sfixed32": "0",
+  ".sfixed64": '"0"',
+  ".bool": "false",
+  ".string": "String()",
+  ".bytes": "Data()",
+};
 
 function toSwiftName(typePath: string) {
   return typePath.split(".").slice(1).map((fragment) =>
