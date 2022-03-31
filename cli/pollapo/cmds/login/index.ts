@@ -4,14 +4,15 @@ import {
   pollToken,
   requestCode,
   writeGhHosts,
-} from "../../../misc/github/auth.ts";
-import { print, println } from "../misc/stdio.ts";
-import { open } from "../misc/browser.ts";
+} from "../../../../misc/github/auth.ts";
+import { print, println } from "../../misc/stdio.ts";
+import { open } from "../../misc/browser.ts";
 import { bold, yellow } from "https://deno.land/std@0.122.0/fmt/colors.ts";
 import {
   getToken,
   GithubNotLoggedInError,
-} from "../../../misc/github/index.ts";
+} from "../../../../misc/github/index.ts";
+import token from "./token.ts";
 
 export default new Command()
   .description("Sign in with GitHub account")
@@ -52,4 +53,5 @@ export default new Command()
     const pollTokenResult = await pollToken(code);
     await writeGhHosts(pollTokenResult.accessToken);
     await println("You are all set!");
-  });
+  })
+  .command("token", token);

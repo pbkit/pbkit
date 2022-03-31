@@ -5,7 +5,7 @@ import {
 } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import add from "./cmds/add.ts";
 import install from "./cmds/install.ts";
-import login from "./cmds/login.ts";
+import login from "./cmds/login/index.ts";
 import remove from "./cmds/remove.ts";
 import why from "./cmds/why.ts";
 
@@ -23,8 +23,8 @@ command
 
 Pre-built binary: NOT SUPPORTED
 Homebrew: brew info pbkit
-Windows: Settings > Apps > Apps & Features, find pollapo`)
-    }
+Windows: Settings > Apps > Apps & Features, find pollapo`);
+    },
   })
   .command("add", add)
   .command("completions", new CompletionsCommand())
