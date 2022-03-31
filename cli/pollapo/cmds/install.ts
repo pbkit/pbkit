@@ -1,5 +1,6 @@
 import { stringify } from "https://deno.land/std@0.122.0/encoding/yaml.ts";
 import {
+  bold,
   green,
   red,
   yellow,
@@ -65,12 +66,9 @@ export default new Command()
     default: "pollapo.yml",
   })
   .action(async (options: Options) => {
+    const getAndValidateTokenResult = getAndValidateToken(options.token);
     try {
-      const token = options.token ?? await getToken();
-      await backoff(
-        () => validateToken(token),
-        (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
-      );
+      const { token } = await getAndValidateTokenResult;
       const cacheDir = getCacheDir();
       const pollapoYml = await loadPollapoYml(options.config);
       const caching = cacheDeps({
@@ -126,9 +124,19 @@ export default new Command()
       ) {
         await println(red("error"));
         await println(err.message);
-        if (err instanceof PollapoYmlNotFoundError) {
+        if (
+          err instanceof GithubNotLoggedInError ||
+          err instanceof GithubRepoNotFoundError
+        ) {
+          const { notLoggedIn } = await getAndValidateTokenResult;
+          if (notLoggedIn) {
+            await println(
+              `Run ${bold(green("pollapo login"))} first, then try again.`,
+            );
+          }
+        } else if (err instanceof PollapoYmlNotFoundError) {
           const confirmed = await Confirm.prompt(
-            `Create ${path.resolve("pollapo.yml")}?`,
+            `Do you want to create ${path.resolve("pollapo.yml")}?`,
           );
           if (confirmed) await Deno.create(path.resolve("pollapo.yml"));
         }
@@ -137,6 +145,29 @@ export default new Command()
       throw err;
     }
   });
+
+async function getAndValidateToken(_token?: string) {
+  let token = _token;
+  let notLoggedIn = false;
+  if (!token) {
+    try {
+      token = await getToken();
+    } catch (err) {
+      if (err instanceof GithubNotLoggedInError) {
+        notLoggedIn = true;
+      } else {
+        throw err;
+      }
+    }
+  }
+  if (token) {
+    await backoff(
+      () => validateToken(token!),
+      (err, i) => err instanceof PollapoUnauthorizedError || i >= 2,
+    );
+  }
+  return { token, notLoggedIn };
+}
 
 async function installDep(
   options: Options,

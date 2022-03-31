@@ -324,14 +324,14 @@ function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
-export function getFetchCommitHash(token: string) {
+export function getFetchCommitHash(token?: string) {
   return async function fetchCommitHash(dep: PollapoDep): Promise<string> {
     const res = await backoff(() => fetchCommitStatus({ token, ...dep }));
     return res.sha;
   };
 }
 
-export function getFetchZip(token: string) {
+export function getFetchZip(token?: string) {
   return async function fetchZip(dep: PollapoDep): Promise<Uint8Array> {
     const res = await backoff(() =>
       fetchArchive({ type: "zip", token, ...dep })
