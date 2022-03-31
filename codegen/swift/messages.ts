@@ -209,79 +209,22 @@ function* genMessage(
     fields: schemaNonOneofFields.map(toField),
     oneofFields: Object.values(oneofFieldTable),
   };
+  const getCodeConfig: GetCodeConfig = {
+    typePath,
+    message,
+    messages,
+    customTypeMapping,
+    swiftName,
+    swiftFullName,
+    parentSwiftFullName,
+  };
+  const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   yield [
     filePath,
     new StringReader([
       getImportCode(),
       getProtocGenSwiftVersionCode(),
-      getTypeExtensionCodeBase(parentSwiftFullName, [
-        `public struct ${swiftName} {\n`,
-        ...message.fields.map(
-          (
-            {
-              childSwiftName,
-              swiftType,
-              default: defaultValue,
-              schema: { kind },
-            },
-          ) => {
-            const isRepeated = kind === "repeated";
-            return `  public var ${childSwiftName}: ${
-              isRepeated ? `[${swiftType}]` : swiftType
-            }${defaultValue !== undefined ? ` = ${defaultValue}` : ""}\n\n`;
-          },
-        ),
-        ...message.oneofFields.map(({ swiftName, fields }) => {
-          const capitializedSwiftName = toCamelCase(swiftName, true);
-          const parentSwiftName = toSwiftName(relativeTypePath);
-          const parentOneofName =
-            `${parentSwiftName}.OneOf_${capitializedSwiftName}`;
-          return [
-            `  public var ${swiftName}: ${parentOneofName}? = nil\n\n`,
-            ...fields.map(
-              ({ childSwiftName, swiftType }) => {
-                return [
-                  `  public var ${childSwiftName}: ${swiftType} {\n`,
-                  `    get {\n`,
-                  `      if case .${childSwiftName}(let v)? = ${swiftName} {return v}\n`,
-                  `      return ${swiftType}\n`, // @TODO: default value initializer
-                  `    }\n`,
-                  `    set {${swiftName} = .${childSwiftName}(newValue)}\n`,
-                  `  }\n\n`,
-                ].join("");
-              },
-            ),
-            `  public enum OneOf_${capitializedSwiftName}: Equatable {\n`,
-            ...fields.map(({ childSwiftName, swiftType }) => {
-              return [
-                `    case ${childSwiftName}(${swiftType})\n`,
-              ].join("");
-            }),
-            "\n",
-            `    #if !swift(>=4.1)\n`,
-            `    public static func == (lhs: ${parentOneofName}, rhs: ${parentOneofName}) -> Bool {\n`,
-            `      switch (lhs, rhs) {\n`,
-            ...fields.map(({ childSwiftName }) => {
-              return [
-                `      case (.${childSwiftName}, .${childSwiftName}): return {\n`,
-                `        guard case .${childSwiftName}(let l) = lhs, case .${childSwiftName}(let r) = rhs else { preconditionFailure() }\n`,
-                `        return l == r\n`,
-                `      }()\n`,
-              ].join("");
-            }),
-            `      default:\n`,
-            `        return false\n`,
-            `      }\n`,
-            `    }\n`,
-            `    #endif\n`,
-            `  }\n\n`,
-          ].join("");
-        }),
-        "  public var unknownFields = SwiftProtobuf.UnknownStorage()\n",
-        "\n",
-        "  public init() {}\n",
-        "}\n",
-      ]),
+      typeDefCode,
     ].join("")),
   ];
   function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
@@ -351,6 +294,12 @@ interface GetSwiftFullNameConfig {
   typePath?: string;
 }
 function getSwiftFullName(
+  config: { schema: schema.Schema; typePath: string },
+): string;
+function getSwiftFullName(
+  config: { schema: schema.Schema; typePath?: string },
+): string | undefined;
+function getSwiftFullName(
   { schema, typePath }: GetSwiftFullNameConfig,
 ): string | undefined {
   if (!typePath) return;
@@ -408,6 +357,109 @@ export function getProtocGenSwiftVersionCode() {
     "\n",
   ].join("");
 }
+
+interface GetCodeConfig {
+  typePath: string;
+  swiftName: string;
+  swiftFullName: string;
+  parentSwiftFullName?: string;
+  message: Message;
+  messages: GenMessagesConfig;
+  customTypeMapping: CustomTypeMapping;
+}
+type GetCodeFn = (config: GetCodeConfig) => string;
+
+const getMessageTypeDefCode: GetCodeFn = (config) => {
+  const { message } = config;
+  const typeBodyCodes: string[] = [];
+  if (message.fields.length) typeBodyCodes.push(getFieldsCode());
+  if (message.oneofFields.length) typeBodyCodes.push(getOneofsCode());
+  return getTypeExtensionCodeBase(config.parentSwiftFullName, [
+    `public struct ${config.swiftName} {\n`,
+    ...typeBodyCodes,
+    "  public var unknownFields = SwiftProtobuf.UnknownStorage()\n\n",
+    "  public init() {}\n",
+    "}\n",
+  ]);
+  function getFieldsCode() {
+    return message.fields.map(
+      (
+        {
+          childSwiftName,
+          swiftType,
+          default: defaultValue,
+          schema: { kind },
+        },
+      ) => {
+        const isRepeated = kind === "repeated";
+        return `  public var ${childSwiftName}: ${
+          isRepeated ? `[${swiftType}]` : swiftType
+        }${defaultValue !== undefined ? ` = ${defaultValue}` : ""}\n\n`;
+      },
+    ).join("");
+  }
+  function getOneofsCode() {
+    return message.oneofFields.map(({ swiftName, fields }) => {
+      const capitializedSwiftName = toCamelCase(swiftName, true);
+      const parentOneofName =
+        `${config.swiftName}.OneOf_${capitializedSwiftName}`;
+      const oneofVariableCode = getOneofVariableCode();
+      const oneofFieldCode = getOneofFieldCode();
+      const oneofEquatableEnumCode = getOneofEquatableEnumCode();
+      return [
+        oneofVariableCode,
+        oneofFieldCode,
+        oneofEquatableEnumCode,
+      ].join("");
+      function getOneofVariableCode() {
+        return `  public var ${swiftName}: ${parentOneofName}? = nil\n\n`;
+      }
+      function getOneofFieldCode() {
+        return fields.map(
+          ({ childSwiftName, swiftType }) => {
+            return [
+              `  public var ${childSwiftName}: ${swiftType} {\n`,
+              `    get {\n`,
+              `      if case .${childSwiftName}(let v)? = ${swiftName} {return v}\n`,
+              `      return ${swiftType}\n`, // @TODO: default value initializer
+              `    }\n`,
+              `    set {${swiftName} = .${childSwiftName}(newValue)}\n`,
+              `  }\n\n`,
+            ].join("");
+          },
+        ).join("");
+      }
+      function getOneofEquatableEnumCode() {
+        return [
+          `  public enum OneOf_${capitializedSwiftName}: Equatable {\n`,
+          ...fields.map(({ childSwiftName, swiftType }) => {
+            return [
+              `    case ${childSwiftName}(${swiftType})\n`,
+            ].join("");
+          }),
+          "\n",
+          `    #if !swift(>=4.1)\n`,
+          `    public static func == (lhs: ${parentOneofName}, rhs: ${parentOneofName}) -> Bool {\n`,
+          `      switch (lhs, rhs) {\n`,
+          ...fields.map(({ childSwiftName }) => {
+            return [
+              `      case (.${childSwiftName}, .${childSwiftName}): return {\n`,
+              `        guard case .${childSwiftName}(let l) = lhs, case .${childSwiftName}(let r) = rhs else { preconditionFailure() }\n`,
+              `        return l == r\n`,
+              `      }()\n`,
+            ].join("");
+          }),
+          `      default:\n`,
+          `        return false\n`,
+          `      }\n`,
+          `    }\n`,
+          `    #endif\n`,
+          `  }\n\n`,
+        ].join("");
+      }
+    }).join("");
+  }
+};
 
 // ---
 

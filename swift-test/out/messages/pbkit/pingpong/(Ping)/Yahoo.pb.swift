@@ -11,7 +11,7 @@ extension Pbkit_Pingpong_Ping {
     public var a: String
 
     public var unknownFields = SwiftProtobuf.UnknownStorage()
-  
+
     public init() {}
   }
 }

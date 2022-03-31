@@ -9,7 +9,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 extension Pbkit_Pingpong_Ping.Yahoo {
   public struct TripleNested {
     public var unknownFields = SwiftProtobuf.UnknownStorage()
-  
+
     public init() {}
   }
 }
