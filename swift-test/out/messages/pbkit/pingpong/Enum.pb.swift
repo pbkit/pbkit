@@ -1,3 +1,4 @@
+fileprivate let _protobuf_package = "pbkit.pingpong"
 import SwiftProtobuf
 import Foundation
 
@@ -52,3 +53,7 @@ extension Pbkit_Pingpong_Enum: SwiftProtobuf._ProtoNameProviding {
     1: .same(proto: "BcDE"),
   ]
 }
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Pbkit_Pingpong_Enum: @unchecked Sendable {}
+#endif

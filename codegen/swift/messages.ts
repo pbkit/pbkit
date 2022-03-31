@@ -33,6 +33,10 @@ export default function* gen(
   }
 }
 
+interface Enum {
+  schema: schema.Enum;
+  fields: [string, schema.EnumField][];
+}
 interface GenEnumConfig {
   schema: schema.Schema;
   type: schema.Enum;
@@ -52,14 +56,26 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
     typePath: parentTypePath,
   });
   const filePath = getFilePath(typePath, messages);
+  const packageName = getPackageName(schema.files, type.filePath);
   const fields = Object.entries<schema.EnumField>({
     "0": { description: "", name: "UNSPECIFIED", options: {} },
     ...type.fields,
   });
+  const getCodeConfig: GetEnumCodeConfig = {
+    enum: { schema: type, fields },
+    typePath,
+    messages,
+    swiftName,
+    swiftFullName,
+    parentSwiftFullName,
+  };
+  const typeExtensionCode = getTypeExtensionCode(getCodeConfig);
+  const protoNameMapCode = getNameMapCode(getCodeConfig);
   yield [
     filePath,
     new StringReader(
       [
+        `fileprivate let _protobuf_package = "${packageName}"\n`,
         getImportCode(),
         getProtocGenSwiftVersionCode(),
         getTypeExtensionCodeBase(parentSwiftFullName, [
@@ -100,7 +116,9 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
         "\n",
         getCaseIterable(),
         "\n",
-        getProtoNameMap(),
+        protoNameMapCode,
+        "\n",
+        typeExtensionCode,
       ].join(""),
     ),
   ];
@@ -119,18 +137,6 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
       `#endif\n`,
     ].join("");
   }
-  // @TODO(hyp3rflow): I think that this can be in struct without using extension.
-  function getProtoNameMap() {
-    return [
-      `extension ${swiftFullName}: SwiftProtobuf._ProtoNameProviding {\n`,
-      "  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [\n",
-      ...fields.map(([fieldNumber, { name }]) =>
-        `    ${fieldNumber}: .same(proto: "${name}"),\n`
-      ),
-      "  ]\n",
-      "}\n",
-    ].join("");
-  }
 }
 
 // @TODO(refactor): duplicate of codegen/ts/messages.ts:L124-L142
@@ -144,7 +150,7 @@ interface Message {
 export interface Field {
   schema: schema.MessageField;
   fieldNumber: number;
-  childSwiftName: string;
+  swiftName: string;
   swiftType: string;
   isEnum: boolean;
   default: string | undefined;
@@ -164,6 +170,7 @@ function* genMessage(
   { schema, typePath, type, customTypeMapping, messages }: GenMessageConfig,
 ): Generator<CodeEntry> {
   const filePath = getFilePath(typePath, messages);
+  const packageName = getPackageName(schema.files, type.filePath);
   const { parentTypePath, relativeTypePath } = getTypePath({
     schema,
     typePath,
@@ -209,7 +216,7 @@ function* genMessage(
     fields: schemaNonOneofFields.map(toField),
     oneofFields: Object.values(oneofFieldTable),
   };
-  const getCodeConfig: GetCodeConfig = {
+  const getCodeConfig: GetMessageCodeConfig = {
     typePath,
     message,
     messages,
@@ -219,19 +226,29 @@ function* genMessage(
     parentSwiftFullName,
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
+  const decodeMessageCode = getDecodeMessageCode(getCodeConfig);
+  const typeExtensionCode = getTypeExtensionCode(getCodeConfig);
+  const protoNameMapCode = getNameMapCode(getCodeConfig);
   yield [
     filePath,
     new StringReader([
       getImportCode(),
+      `fileprivate let _protobuf_package = "${packageName}"\n`,
       getProtocGenSwiftVersionCode(),
       typeDefCode,
+      "\n",
+      typeExtensionCode,
+      "\n",
+      protoNameMapCode,
+      "\n",
+      decodeMessageCode,
     ].join("")),
   ];
   function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
     return {
       schema: field,
       fieldNumber: +fieldNumber,
-      childSwiftName: toCamelCase(field.name),
+      swiftName: toCamelCase(field.name),
       swiftType: getFieldTypeCode(field),
       isEnum: getFieldIsEnum(field),
       default: getFieldDefaultCode(field),
@@ -312,6 +329,11 @@ function getSwiftFullName(
     `.${toSwiftName(relativeTypePath)}`;
 }
 
+// @TODO(hyp3rflow): handling on undefined
+function getPackageName(files: schema.Schema["files"], filePath: string) {
+  return files[filePath]?.package ?? "";
+}
+
 export function getFilePath(
   typePath: string,
   messages: GenMessagesConfig,
@@ -363,13 +385,18 @@ interface GetCodeConfig {
   swiftName: string;
   swiftFullName: string;
   parentSwiftFullName?: string;
-  message: Message;
   messages: GenMessagesConfig;
+}
+interface GetMessageCodeConfig extends GetCodeConfig {
+  message: Message;
   customTypeMapping: CustomTypeMapping;
 }
-type GetCodeFn = (config: GetCodeConfig) => string;
+interface GetEnumCodeConfig extends GetCodeConfig {
+  enum: Enum;
+}
+type GetCodeFn<T extends GetCodeConfig = GetCodeConfig> = (config: T) => string;
 
-const getMessageTypeDefCode: GetCodeFn = (config) => {
+const getMessageTypeDefCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
   const { message } = config;
   const typeBodyCodes: string[] = [];
   if (message.fields.length) typeBodyCodes.push(getFieldsCode());
@@ -385,14 +412,14 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
     return message.fields.map(
       (
         {
-          childSwiftName,
+          swiftName,
           swiftType,
           default: defaultValue,
           schema: { kind },
         },
       ) => {
         const isRepeated = kind === "repeated";
-        return `  public var ${childSwiftName}: ${
+        return `  public var ${swiftName}: ${
           isRepeated ? `[${swiftType}]` : swiftType
         }${defaultValue !== undefined ? ` = ${defaultValue}` : ""}\n\n`;
       },
@@ -416,14 +443,14 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
       }
       function getOneofFieldCode() {
         return fields.map(
-          ({ childSwiftName, swiftType }) => {
+          ({ swiftName: fieldSwiftName, swiftType }) => {
             return [
-              `  public var ${childSwiftName}: ${swiftType} {\n`,
+              `  public var ${fieldSwiftName}: ${swiftType} {\n`,
               `    get {\n`,
-              `      if case .${childSwiftName}(let v)? = ${swiftName} {return v}\n`,
+              `      if case .${fieldSwiftName}(let v)? = ${swiftName} {return v}\n`,
               `      return ${swiftType}\n`, // @TODO: default value initializer
               `    }\n`,
-              `    set {${swiftName} = .${childSwiftName}(newValue)}\n`,
+              `    set {${swiftName} = .${fieldSwiftName}(newValue)}\n`,
               `  }\n\n`,
             ].join("");
           },
@@ -432,19 +459,19 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
       function getOneofEquatableEnumCode() {
         return [
           `  public enum OneOf_${capitializedSwiftName}: Equatable {\n`,
-          ...fields.map(({ childSwiftName, swiftType }) => {
+          ...fields.map(({ swiftName: fieldSwiftName, swiftType }) => {
             return [
-              `    case ${childSwiftName}(${swiftType})\n`,
+              `    case ${fieldSwiftName}(${swiftType})\n`,
             ].join("");
           }),
           "\n",
           `    #if !swift(>=4.1)\n`,
           `    public static func == (lhs: ${parentOneofName}, rhs: ${parentOneofName}) -> Bool {\n`,
           `      switch (lhs, rhs) {\n`,
-          ...fields.map(({ childSwiftName }) => {
+          ...fields.map(({ swiftName }) => {
             return [
-              `      case (.${childSwiftName}, .${childSwiftName}): return {\n`,
-              `        guard case .${childSwiftName}(let l) = lhs, case .${childSwiftName}(let r) = rhs else { preconditionFailure() }\n`,
+              `      case (.${swiftName}, .${swiftName}): return {\n`,
+              `        guard case .${swiftName}(let l) = lhs, case .${swiftName}(let r) = rhs else { preconditionFailure() }\n`,
               `        return l == r\n`,
               `      }()\n`,
             ].join("");
@@ -460,6 +487,133 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
     }).join("");
   }
 };
+
+const getNameMapCode: GetCodeFn<GetEnumCodeConfig | GetMessageCodeConfig> = (
+  config,
+) => {
+  const { swiftFullName } = config;
+  const buffer = [
+    `extension ${swiftFullName}: SwiftProtobuf._ProtoNameProviding {\n`,
+    "  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [\n",
+  ];
+  if (isGetEnumCodeConfig(config)) {
+    const { enum: { fields } } = config;
+    buffer.push(
+      ...fields.map(([fieldNumber, { name }]) =>
+        `    ${fieldNumber}: .same(proto: "${name}"),\n`
+      ),
+    );
+  } else {
+    const { message: { schema: { fields: _fields } } } = config;
+    const fields = Object.entries(_fields);
+    buffer.push(
+      ...fields.map((
+        [fieldNumber, { name }],
+      ) => `    ${fieldNumber}: .same(proto: "${name}"),\n`),
+    );
+  }
+  buffer.push(
+    "  ]\n",
+    "}\n",
+  );
+  return buffer.join("");
+};
+
+const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
+  return [
+    `extension ${config.swiftFullName}: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {\n`,
+    `  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {\n`,
+    `    while let fieldNumber = try decoder.nextFieldNumber() {\n`,
+    `      switch fieldNumber {\n`,
+    ...config.message.fields.map(
+      ({
+        fieldNumber,
+        swiftName,
+        swiftType,
+        schema: { kind },
+      }) => {
+        const isRepeated = kind === "repeated";
+        if (kind === "map") {
+          return [
+            // @TODO(hyp3rflow): SwiftProtobuf.ProtobufString
+            `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.${swiftName}) }()\n`,
+          ].join("");
+        }
+        return [
+          `      case ${fieldNumber}: try { try decoder.decode${
+            isRepeated ? "Repeated" : "Singular"
+          }${swiftType}Field(value: &self.${swiftName}) }()\n`,
+        ].join("");
+      },
+    ),
+    ...config.message.oneofFields.map(
+      ({
+        swiftName: parentSwiftName,
+        fields,
+      }) => {
+        return fields.map(({
+          fieldNumber,
+          swiftName,
+          swiftType,
+          schema: { kind },
+        }) => {
+          const isRepeated = kind === "repeated";
+          return [
+            `      case ${fieldNumber}: try {\n`,
+            `        var v: ${swiftType}?\n`,
+            `        try decoder.decode${
+              isRepeated ? "Repeated" : "Singular"
+            }${swiftType}Field(value: &v)\n`,
+            `        if let v = v {\n`,
+            `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
+            `          self.${parentSwiftName} = .${swiftName}(v)\n`,
+            `        }\n`,
+            `      }()\n`,
+          ].join("");
+        }).join("");
+      },
+    ),
+    `      default: break\n`,
+    `      }\n`,
+    `    }\n`,
+    `  }\n`,
+    `}\n`,
+  ].join("");
+};
+
+const getTypeExtensionCode: GetCodeFn<GetCodeConfig | GetMessageCodeConfig> = (
+  config,
+) => {
+  const sendableCode = getSendableCode();
+  return [sendableCode].join("");
+  function getSendableCode() {
+    return [
+      "#if swift(>=5.5) && canImport(_Concurrency)\n",
+      `extension ${config.swiftFullName}: @unchecked Sendable {}\n`,
+      isGetMessageCodeConfig(config)
+        ? config.message.oneofFields.map(({ swiftName }) => {
+          return `extension ${config.swiftName}.OneOf_${
+            toCamelCase(swiftName, true)
+          }: @unchecked Sendable {}\n`;
+        })
+        : "",
+      "#endif\n",
+    ].join("");
+  }
+};
+
+function isGetMessageCodeConfig(
+  config: GetCodeConfig | GetMessageCodeConfig | GetEnumCodeConfig,
+): config is GetMessageCodeConfig {
+  return (config as GetMessageCodeConfig).message != undefined &&
+    (config as GetMessageCodeConfig).customTypeMapping != undefined;
+}
+
+function isGetEnumCodeConfig(
+  config: GetCodeConfig | GetMessageCodeConfig | GetEnumCodeConfig,
+): config is GetEnumCodeConfig {
+  return (config as GetEnumCodeConfig).enum != undefined;
+}
 
 // ---
 

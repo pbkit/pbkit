@@ -1,3 +1,4 @@
+fileprivate let _protobuf_package = "pbkit.pingpong"
 import SwiftProtobuf
 import Foundation
 
@@ -49,3 +50,7 @@ extension Pbkit_Pingpong_Ping.Yahoo.TripleNestedEnum: SwiftProtobuf._ProtoNamePr
     0: .same(proto: "aa"),
   ]
 }
+
+#if swift(>=5.5) && canImport(_Concurrency)
+extension Pbkit_Pingpong_Ping.Yahoo.TripleNestedEnum: @unchecked Sendable {}
+#endif
