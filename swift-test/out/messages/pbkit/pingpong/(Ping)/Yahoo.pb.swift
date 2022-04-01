@@ -45,7 +45,7 @@ extension Pbkit_Pingpong_Ping.Yahoo: SwiftProtobuf.Message, SwiftProtobuf._Messa
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.a) }()
-      case 2: try { try decoder.decodeSingularMessageField(value: &self.b) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._b) }()
       default: break
       }
     }
@@ -67,7 +67,7 @@ extension Pbkit_Pingpong_Ping.Yahoo: SwiftProtobuf.Message, SwiftProtobuf._Messa
 extension Pbkit_Pingpong_Ping.Yahoo {
   public static func == (lhs: Pbkit_Pingpong_Ping.Yahoo, rhs: Pbkit_Pingpong_Ping.Yahoo) -> Bool {
     if lhs.a != rhs.a { return false }
-    if lhs.b != rhs.b { return false }
+    if lhs._b != rhs._b { return false }
     if lhs.unknownFields != rhs.unknownFields { return false }
     return true
   }

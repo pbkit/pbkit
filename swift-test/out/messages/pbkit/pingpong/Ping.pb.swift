@@ -111,7 +111,7 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedEnumField(value: &self.babo) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.merong) }()
-      case 3: try { try decoder.decodeSingularMessageField(value: &self.pongs) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._pongs) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.strings) }()
       case 5: try { try decoder.decodeRepeatedInt32Field(value: &self.int32S) }()
       case 6: try { try decoder.decodeRepeatedBytesField(value: &self.bytess) }()
@@ -192,7 +192,7 @@ extension Pbkit_Pingpong_Ping {
   public static func == (lhs: Pbkit_Pingpong_Ping, rhs: Pbkit_Pingpong_Ping) -> Bool {
     if lhs.babo != rhs.babo { return false }
     if lhs.merong != rhs.merong { return false }
-    if lhs.pongs != rhs.pongs { return false }
+    if lhs._pongs != rhs._pongs { return false }
     if lhs.strings != rhs.strings { return false }
     if lhs.int32S != rhs.int32S { return false }
     if lhs.bytess != rhs.bytess { return false }

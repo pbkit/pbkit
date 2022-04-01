@@ -578,6 +578,7 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
         swiftName,
         swiftProtobufType,
         schema,
+        isMessage,
       }) => {
         const isRepeated = schema.kind === "repeated";
         if (schema.kind === "map") {
@@ -613,7 +614,9 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
         return [
           `      case ${fieldNumber}: try { try decoder.decode${
             isRepeated ? "Repeated" : "Singular"
-          }${swiftProtobufType}Field(value: &self.${swiftName}) }()\n`,
+          }${swiftProtobufType}Field(value: &self.${
+            isMessage ? "_" : ""
+          }${swiftName}) }()\n`,
         ].join("");
       },
     ),
@@ -772,9 +775,13 @@ const getMessageOperatorCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
   return [
     `extension ${swiftFullName} {\n`,
     `  public static func == (lhs: ${swiftFullName}, rhs: ${swiftFullName}) -> Bool {\n`,
-    [...message.fields, ...message.oneofFields].map((field) =>
-      `    if lhs.${field.swiftName} != rhs.${field.swiftName} { return false }\n`
-    ).join(""),
+    message.fields.map((field) => {
+      const swiftName = `${field.isMessage ? "_" : ""}${field.swiftName}`;
+      return `    if lhs.${swiftName} != rhs.${swiftName} { return false }\n`;
+    }).join(""),
+    message.oneofFields.map((field) => {
+      return `    if lhs.${field.swiftName} != rhs.${field.swiftName} { return false }\n`;
+    }).join(""),
     `    if lhs.unknownFields != rhs.unknownFields { return false }\n`,
     `    return true\n`,
     `  }\n`,

@@ -39,7 +39,7 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self.aabCDeF) }()
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._aabCDeF) }()
       default: break
       }
     }
@@ -57,7 +57,7 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
 
 extension Pbkit_Pingpong_BB {
   public static func == (lhs: Pbkit_Pingpong_BB, rhs: Pbkit_Pingpong_BB) -> Bool {
-    if lhs.aabCDeF != rhs.aabCDeF { return false }
+    if lhs._aabCDeF != rhs._aabCDeF { return false }
     if lhs.unknownFields != rhs.unknownFields { return false }
     return true
   }
