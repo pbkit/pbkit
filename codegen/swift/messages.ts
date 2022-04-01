@@ -756,11 +756,12 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
               `    }()\n`,
             ].join("");
           }).join(""),
+          `    case nil: break\n`,
+          `    }\n`,
         ].join("");
       },
     ),
     `    try unknownFields.traverse(visitor: &visitor)\n`,
-    `    }\n`,
     `  }\n`,
     `}\n`,
   ].join("");

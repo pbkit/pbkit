@@ -182,8 +182,9 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       guard case .b(let v)? = self.abcDefFf else { preconditionFailure() }
       try visitor.visitSingularInt32Field(value: v, fieldNumber: 11)
     }()
-    try unknownFields.traverse(visitor: &visitor)
+    case nil: break
     }
+    try unknownFields.traverse(visitor: &visitor)
   }
 }
 

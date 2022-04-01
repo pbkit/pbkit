@@ -141,7 +141,6 @@ extension Pbkit_Pingpong_Maps: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufEnumMap<SwiftProtobuf.ProtobufString, Pbkit_Pingpong_MapsEnum>.self, value: self.menum, fieldNumber: 18)
     }
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 

@@ -351,7 +351,6 @@ extension Pbkit_Pingpong_Scalar: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufData>.self, value: self.mbytes, fieldNumber: 45)
     }
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 

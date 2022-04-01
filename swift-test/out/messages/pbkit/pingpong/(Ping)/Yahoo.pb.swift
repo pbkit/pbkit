@@ -61,7 +61,6 @@ extension Pbkit_Pingpong_Ping.Yahoo: SwiftProtobuf.Message, SwiftProtobuf._Messa
       try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
     } }()
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 

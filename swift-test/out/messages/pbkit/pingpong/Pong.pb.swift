@@ -43,7 +43,6 @@ extension Pbkit_Pingpong_Pong: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       try visitor.visitSingularStringField(value: self.a, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 

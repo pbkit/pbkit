@@ -36,7 +36,6 @@ extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 

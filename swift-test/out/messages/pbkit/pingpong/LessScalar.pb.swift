@@ -141,7 +141,6 @@ extension Pbkit_Pingpong_LessScalar: SwiftProtobuf.Message, SwiftProtobuf._Messa
       try visitor.visitSingularBytesField(value: self.bytes, fieldNumber: 15)
     }
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 

@@ -141,7 +141,6 @@ extension Pbkit_Pingpong_LessRepeatedScalar: SwiftProtobuf.Message, SwiftProtobu
       try visitor.visitPackedBytesField(value: self.rbytes, fieldNumber: 30)
     }
     try unknownFields.traverse(visitor: &visitor)
-    }
   }
 }
 
