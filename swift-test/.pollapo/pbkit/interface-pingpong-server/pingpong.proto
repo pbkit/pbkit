@@ -22,6 +22,8 @@ message Ping {
     oneof AbcDefFF {
         string a = 10;
         int32 b = 11;
+        Yahoo c = 13;
+        ABC d = 14;
     }
 
     map<string, string> maps = 12;

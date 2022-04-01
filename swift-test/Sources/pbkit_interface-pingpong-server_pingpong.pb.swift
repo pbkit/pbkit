@@ -120,6 +120,22 @@ public struct Pbkit_Pingpong_Ping {
     set {abcDefFf = .b(newValue)}
   }
 
+  public var c: Pbkit_Pingpong_Ping.Yahoo {
+    get {
+      if case .c(let v)? = abcDefFf {return v}
+      return Pbkit_Pingpong_Ping.Yahoo()
+    }
+    set {abcDefFf = .c(newValue)}
+  }
+
+  public var d: Pbkit_Pingpong_Ping.ABC {
+    get {
+      if case .d(let v)? = abcDefFf {return v}
+      return .bbba
+    }
+    set {abcDefFf = .d(newValue)}
+  }
+
   public var maps: Dictionary<String,String> = [:]
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
@@ -127,6 +143,8 @@ public struct Pbkit_Pingpong_Ping {
   public enum OneOf_AbcDefFf: Equatable {
     case a(String)
     case b(Int32)
+    case c(Pbkit_Pingpong_Ping.Yahoo)
+    case d(Pbkit_Pingpong_Ping.ABC)
 
   #if !swift(>=4.1)
     public static func ==(lhs: Pbkit_Pingpong_Ping.OneOf_AbcDefFf, rhs: Pbkit_Pingpong_Ping.OneOf_AbcDefFf) -> Bool {
@@ -140,6 +158,14 @@ public struct Pbkit_Pingpong_Ping {
       }()
       case (.b, .b): return {
         guard case .b(let l) = lhs, case .b(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.c, .c): return {
+        guard case .c(let l) = lhs, case .c(let r) = rhs else { preconditionFailure() }
+        return l == r
+      }()
+      case (.d, .d): return {
+        guard case .d(let l) = lhs, case .d(let r) = rhs else { preconditionFailure() }
         return l == r
       }()
       default: return false
@@ -326,6 +352,8 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     9: .same(proto: "doubles"),
     10: .same(proto: "a"),
     11: .same(proto: "b"),
+    13: .same(proto: "c"),
+    14: .same(proto: "d"),
     12: .same(proto: "maps"),
   ]
 
@@ -361,6 +389,27 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
         }
       }()
       case 12: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: &self.maps) }()
+      case 13: try {
+        var v: Pbkit_Pingpong_Ping.Yahoo?
+        var hadOneofValue = false
+        if let current = self.abcDefFf {
+          hadOneofValue = true
+          if case .c(let m) = current {v = m}
+        }
+        try decoder.decodeSingularMessageField(value: &v)
+        if let v = v {
+          if hadOneofValue {try decoder.handleConflictingOneOf()}
+          self.abcDefFf = .c(v)
+        }
+      }()
+      case 14: try {
+        var v: Pbkit_Pingpong_Ping.ABC?
+        try decoder.decodeSingularEnumField(value: &v)
+        if let v = v {
+          if self.abcDefFf != nil {try decoder.handleConflictingOneOf()}
+          self.abcDefFf = .d(v)
+        }
+      }()
       default: break
       }
     }
@@ -407,10 +456,21 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       guard case .b(let v)? = self.abcDefFf else { preconditionFailure() }
       try visitor.visitSingularInt32Field(value: v, fieldNumber: 11)
     }()
-    case nil: break
+    default: break
     }
     if !self.maps.isEmpty {
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString,SwiftProtobuf.ProtobufString>.self, value: self.maps, fieldNumber: 12)
+    }
+    switch self.abcDefFf {
+    case .c?: try {
+      guard case .c(let v)? = self.abcDefFf else { preconditionFailure() }
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 13)
+    }()
+    case .d?: try {
+      guard case .d(let v)? = self.abcDefFf else { preconditionFailure() }
+      try visitor.visitSingularEnumField(value: v, fieldNumber: 14)
+    }()
+    default: break
     }
     try unknownFields.traverse(visitor: &visitor)
   }

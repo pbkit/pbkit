@@ -487,12 +487,13 @@ const getMessageTypeDefCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
       }
       function getOneofFieldCode() {
         return fields.map(
-          ({ swiftName: fieldSwiftName, swiftType }) => {
+          ({ swiftName: fieldSwiftName, swiftType, schema }) => {
+            if (schema.kind === "map") throw new Error("Unreachable error");
             return [
               `  public var ${fieldSwiftName}: ${swiftType} {\n`,
               `    get {\n`,
               `      if case .${fieldSwiftName}(let v)? = ${swiftName} {return v}\n`,
-              `      return ${swiftType}\n`, // @TODO: default value initializer
+              `      return .init()\n`,
               `    }\n`,
               `    set {${swiftName} = .${fieldSwiftName}(newValue)}\n`,
               `  }\n\n`,
@@ -629,12 +630,30 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
           fieldNumber,
           swiftName,
           swiftType,
-          schema: { kind },
+          swiftProtobufType,
+          isMessage,
         }) => {
+          if (isMessage) {
+            return [
+              `      case ${fieldNumber}: try {\n`,
+              `        var v: ${swiftType}?\n`,
+              `        var hadOneofValue = false\n`,
+              `        if let current = self.${parentSwiftName} {\n`,
+              `          hadOneofValue = true\n`,
+              `          if case .${swiftName}(let m) = current {v = m}\n`,
+              `        }\n`,
+              `        try decoder.decodeSingular${swiftProtobufType}Field(value: &v)\n`,
+              `        if let v = v {\n`,
+              `          if hadOneofValue {try decoder.handleConflictingOneOf()}\n`,
+              `          self.${parentSwiftName} = .${swiftName}(v)\n`,
+              `        }\n`,
+              `      }()\n`,
+            ].join("");
+          }
           return [
             `      case ${fieldNumber}: try {\n`,
             `        var v: ${swiftType}?\n`,
-            `        try decoder.decodeSingular${swiftType}Field(value: &v)\n`,
+            `        try decoder.decodeSingular${swiftProtobufType}Field(value: &v)\n`,
             `        if let v = v {\n`,
             `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
             `          self.${parentSwiftName} = .${swiftName}(v)\n`,
@@ -759,7 +778,7 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
               `    }()\n`,
             ].join("");
           }).join(""),
-          `    case nil: break\n`,
+          `    default: break\n`,
           `    }\n`,
         ].join("");
       },
