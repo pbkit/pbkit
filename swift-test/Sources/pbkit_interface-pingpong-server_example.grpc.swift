@@ -114,6 +114,43 @@ public final class Pbkit_Pingpong_ExampleServiceClient: Pbkit_Pingpong_ExampleSe
   }
 }
 
+/// Usage: instantiate `Pbkit_Pingpong_ExampleV2serviceClient`, then call methods of this protocol to make API calls.
+public protocol Pbkit_Pingpong_ExampleV2serviceClientProtocol: GRPCClient {
+  var serviceName: String { get }
+  var interceptors: Pbkit_Pingpong_ExampleV2serviceClientInterceptorFactoryProtocol? { get }
+}
+
+extension Pbkit_Pingpong_ExampleV2serviceClientProtocol {
+  public var serviceName: String {
+    return "pbkit.pingpong.ExampleV2service"
+  }
+}
+
+public protocol Pbkit_Pingpong_ExampleV2serviceClientInterceptorFactoryProtocol {
+}
+
+public final class Pbkit_Pingpong_ExampleV2serviceClient: Pbkit_Pingpong_ExampleV2serviceClientProtocol {
+  public let channel: GRPCChannel
+  public var defaultCallOptions: CallOptions
+  public var interceptors: Pbkit_Pingpong_ExampleV2serviceClientInterceptorFactoryProtocol?
+
+  /// Creates a client for the pbkit.pingpong.ExampleV2service service.
+  ///
+  /// - Parameters:
+  ///   - channel: `GRPCChannel` to the service host.
+  ///   - defaultCallOptions: Options to use for each service call if the user doesn't provide them.
+  ///   - interceptors: A factory providing interceptors for each RPC.
+  public init(
+    channel: GRPCChannel,
+    defaultCallOptions: CallOptions = CallOptions(),
+    interceptors: Pbkit_Pingpong_ExampleV2serviceClientInterceptorFactoryProtocol? = nil
+  ) {
+    self.channel = channel
+    self.defaultCallOptions = defaultCallOptions
+    self.interceptors = interceptors
+  }
+}
+
 /// To build a server, implement a class that conforms to this protocol.
 public protocol Pbkit_Pingpong_ExampleServiceProvider: CallHandlerProvider {
   var interceptors: Pbkit_Pingpong_ExampleServiceServerInterceptorFactoryProtocol? { get }
@@ -166,4 +203,27 @@ public protocol Pbkit_Pingpong_ExampleServiceServerInterceptorFactoryProtocol {
   /// - Returns: Interceptors to use when handling 'pingPong2'.
   ///   Defaults to calling `self.makeInterceptors()`.
   func makePingPong2Interceptors() -> [ServerInterceptor<Pbkit_Pingpong_BB, Pbkit_Pingpong_BB>]
+}
+/// To build a server, implement a class that conforms to this protocol.
+public protocol Pbkit_Pingpong_ExampleV2serviceProvider: CallHandlerProvider {
+  var interceptors: Pbkit_Pingpong_ExampleV2serviceServerInterceptorFactoryProtocol? { get }
+}
+
+extension Pbkit_Pingpong_ExampleV2serviceProvider {
+  public var serviceName: Substring { return "pbkit.pingpong.ExampleV2service" }
+
+  /// Determines, calls and returns the appropriate request handler, depending on the request's method.
+  /// Returns nil for methods not handled by this service.
+  public func handle(
+    method name: Substring,
+    context: CallHandlerContext
+  ) -> GRPCServerHandlerProtocol? {
+    switch name {
+    default:
+      return nil
+    }
+  }
+}
+
+public protocol Pbkit_Pingpong_ExampleV2serviceServerInterceptorFactoryProtocol {
 }

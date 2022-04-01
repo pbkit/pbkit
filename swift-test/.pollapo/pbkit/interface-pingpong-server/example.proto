@@ -10,4 +10,8 @@ service ExampleService {
   rpc PingPong2(BB) returns (BB) {}
 }
 
+service ExampleV2service {
+
+}
+
 message A {}

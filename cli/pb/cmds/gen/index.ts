@@ -10,7 +10,7 @@ command
     command.showHelp();
     Deno.exit(0);
   })
-  .command("ts", ts)
   .command("json", json)
-  .command("swift", swift);
+  .command("swift", swift)
+  .command("ts", ts);
 export default command;
