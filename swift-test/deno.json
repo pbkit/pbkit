@@ -1,6 +1,6 @@
 {
   "tasks": {
     "pb": "pb gen swift --entry-path=.pollapo",
-    "pc": "protoc --proto_path=.pollapo --grpc-swift_opt=FileNaming=PathToUnderscores,Visibility=Public --grpc-swift_out=Sources --swift_opt=FileNaming=PathToUnderscores,Visibility=Public --swift_out=Sources ./.pollapo/pbkit/interface-pingpong-server/b.proto ./.pollapo/pbkit/interface-pingpong-server/pingpong.proto ./.pollapo/pbkit/interface-pingpong-server/scalar.proto ./.pollapo/pbkit/interface-pingpong-server/less_scalar.proto"
+    "pc": "protoc --proto_path=.pollapo --grpc-swift_opt=FileNaming=PathToUnderscores,Visibility=Public --grpc-swift_out=Sources --swift_opt=FileNaming=PathToUnderscores,Visibility=Public --swift_out=Sources ./.pollapo/pbkit/interface-pingpong-server/b.proto ./.pollapo/pbkit/interface-pingpong-server/pingpong.proto ./.pollapo/pbkit/interface-pingpong-server/scalar.proto ./.pollapo/pbkit/interface-pingpong-server/less_scalar.proto ./.pollapo/pbkit/interface-pingpong-server/less_repeated_scalar.proto"
   }
 }

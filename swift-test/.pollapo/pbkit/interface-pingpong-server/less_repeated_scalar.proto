@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "pbkit/interface-pingpong-server;interface_pingpong_server";
+
+package pbkit.pingpong;
+
+message LessRepeatedScalar {
+  repeated double rdouble = 16;
+  repeated float rfloat = 17;
+  repeated int32 rint32 = 18;
+  repeated int64 rint64 = 19;
+  repeated uint32 ruint32 = 20;
+  repeated uint64 ruint64 = 21;
+  repeated sint32 rsint32 = 22;
+  repeated sint64 rsint64 = 23;
+  repeated fixed32 rfixed32 = 24;
+  repeated fixed64 rfixed64 = 25;
+  repeated sfixed32 rsfixed32 = 26;
+  repeated sfixed64 rsfixed64 = 27;
+  repeated bool rbool = 28;
+  repeated string rstring = 29;
+  repeated bytes rbytes = 30;
+}

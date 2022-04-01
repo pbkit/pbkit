@@ -8,7 +8,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 }
 
 public struct Pbkit_Pingpong_Pong {
-  public var a: String
+  public var a: String = String()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 

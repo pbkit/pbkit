@@ -272,9 +272,9 @@ function* genMessage(
   function getFieldDefaultCode(field: schema.MessageField): string | undefined {
     if (field.kind === "repeated") return "[]";
     if (field.kind === "map") return "[:]";
-    // if (field.typePath! in scalarTypeDefaultValueCodes) {
-    //   return scalarTypeDefaultValueCodes[field.typePath as ScalarValueTypePath];
-    // }
+    if (field.typePath! in scalarTypeDefaultValueCodes) {
+      return scalarTypeDefaultValueCodes[field.typePath as ScalarValueTypePath];
+    }
     const fieldType = schema.types[field.typePath!];
     if (fieldType?.kind === "enum") {
       return `.${toCamelCase(fieldType.fields[0]?.name) ?? "UNSPECIFIED"}`;
@@ -714,18 +714,35 @@ const scalarTypeDefaultValueCodes: ScalarToCodeTable = {
   ".double": "0",
   ".float": "0",
   ".int32": "0",
-  ".int64": '"0"',
+  ".int64": "0",
   ".uint32": "0",
-  ".uint64": '"0"',
+  ".uint64": "0",
   ".sint32": "0",
-  ".sint64": '"0"',
+  ".sint64": "0",
   ".fixed32": "0",
-  ".fixed64": '"0"',
+  ".fixed64": "0",
   ".sfixed32": "0",
-  ".sfixed64": '"0"',
+  ".sfixed64": "0",
   ".bool": "false",
   ".string": "String()",
   ".bytes": "Data()",
+};
+const scalarSwiftProtobufTypeMapping: ScalarToCodeTable = {
+  ".double": "Double",
+  ".float": "Float",
+  ".int32": "Int32",
+  ".int64": "Int64",
+  ".uint32": "UInt32",
+  ".uint64": "UInt64",
+  ".sint32": "SInt32",
+  ".sint64": "SInt64",
+  ".fixed32": "Fixed32",
+  ".fixed64": "Fixed64",
+  ".sfixed32": "SFixed32",
+  ".sfixed64": "SFixed64",
+  ".bool": "Bool",
+  ".string": "String",
+  ".bytes": "Bytes",
 };
 
 function toSwiftName(typePath: string) {

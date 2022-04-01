@@ -8,35 +8,35 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 }
 
 public struct Pbkit_Pingpong_LessScalar {
-  public var double: Double
+  public var double: Double = 0
 
-  public var float: Float
+  public var float: Float = 0
 
-  public var int32: Int32
+  public var int32: Int32 = 0
 
-  public var int64: Int64
+  public var int64: Int64 = 0
 
-  public var uint32: UInt32
+  public var uint32: UInt32 = 0
 
-  public var uint64: UInt64
+  public var uint64: UInt64 = 0
 
-  public var sint32: Int32
+  public var sint32: Int32 = 0
 
-  public var sint64: Int64
+  public var sint64: Int64 = 0
 
-  public var fixed32: UInt32
+  public var fixed32: UInt32 = 0
 
-  public var fixed64: UInt64
+  public var fixed64: UInt64 = 0
 
-  public var sfixed32: Int32
+  public var sfixed32: Int32 = 0
 
-  public var sfixed64: Int64
+  public var sfixed64: Int64 = 0
 
-  public var bool: Bool
+  public var bool: Bool = false
 
-  public var string: String
+  public var string: String = String()
 
-  public var bytes: Data
+  public var bytes: Data = Data()
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 

@@ -9,7 +9,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 
 extension Pbkit_Pingpong_Ping {
   public struct Yahoo {
-    public var a: String
+    public var a: String = String()
 
     public var unknownFields = SwiftProtobuf.UnknownStorage()
 
