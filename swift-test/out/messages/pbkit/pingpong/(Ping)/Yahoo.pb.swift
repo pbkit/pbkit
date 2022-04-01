@@ -33,6 +33,7 @@ extension Pbkit_Pingpong_Ping.Yahoo: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_Ping.Yahoo: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Yahoo"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "a"),
     2: .same(proto: "b"),

@@ -108,6 +108,7 @@ extension Pbkit_Pingpong_Scalar: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_Scalar: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Scalar"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "double"),
     2: .same(proto: "float"),

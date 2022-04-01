@@ -48,6 +48,7 @@ extension Pbkit_Pingpong_LessRepeatedScalar: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_LessRepeatedScalar: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".LessRepeatedScalar"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     16: .same(proto: "rdouble"),
     17: .same(proto: "rfloat"),

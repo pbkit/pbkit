@@ -48,6 +48,7 @@ extension Pbkit_Pingpong_LessScalar: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_LessScalar: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".LessScalar"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "double"),
     2: .same(proto: "float"),

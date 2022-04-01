@@ -20,6 +20,7 @@ extension Pbkit_Pingpong_Pong: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_Pong: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Pong"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "a"),
   ]

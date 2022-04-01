@@ -88,6 +88,7 @@ extension Pbkit_Pingpong_Ping.OneOf_AbcDefFf: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_Ping: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Ping"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "babo"),
     2: .same(proto: "merong"),

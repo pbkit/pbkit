@@ -1,7 +1,7 @@
-fileprivate let _protobuf_package = "pbkit.pingpong"
 import SwiftProtobuf
 import Foundation
 
+fileprivate let _protobuf_package = "pbkit.pingpong"
 fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAPIVersionCheck {
   struct _2: SwiftProtobuf.ProtobufAPIVersion_2 {}
   typealias Version = _2
@@ -46,6 +46,7 @@ extension Pbkit_Pingpong_Ping.Yahoo.TripleNestedEnum: CaseIterable {
 #endif
 
 extension Pbkit_Pingpong_Ping.Yahoo.TripleNestedEnum: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".TripleNestedEnum"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     0: .same(proto: "aa"),
   ]

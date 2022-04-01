@@ -75,8 +75,8 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
     filePath,
     new StringReader(
       [
-        `fileprivate let _protobuf_package = "${packageName}"\n`,
         getImportCode(),
+        `fileprivate let _protobuf_package = "${packageName}"\n`,
         getProtocGenSwiftVersionCode(),
         getTypeExtensionCodeBase(parentSwiftFullName, [
           `public enum ${swiftName}: SwiftProtobuf.Enum {\n`,
@@ -535,6 +535,9 @@ const getNameMapCode: GetCodeFn<GetEnumCodeConfig | GetMessageCodeConfig> = (
   const { swiftFullName } = config;
   const buffer = [
     `extension ${swiftFullName}: SwiftProtobuf._ProtoNameProviding {\n`,
+    `  public static let protoMessageName: String = _protobuf_package + ".${
+      config.typePath.split(".").pop()
+    }"\n`,
     "  public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [\n",
   ];
   if (isGetEnumCodeConfig(config)) {

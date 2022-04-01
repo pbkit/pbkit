@@ -48,6 +48,7 @@ extension Pbkit_Pingpong_Maps: @unchecked Sendable {}
 #endif
 
 extension Pbkit_Pingpong_Maps: SwiftProtobuf._ProtoNameProviding {
+  public static let protoMessageName: String = _protobuf_package + ".Maps"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "mdouble"),
     2: .same(proto: "mfloat"),
