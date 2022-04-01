@@ -173,6 +173,15 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     if !self.maps.isEmpty {
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: self.maps, fieldNumber: 12)
     }
+    switch self.abcDefFf {
+    case .a?: try {
+      guard case .a(let v)? = self.abcDefFf else { preconditionFailure() }
+      try visitor.visitSingularStringField(value: v, fieldNumber: 10)
+    }()
+    case .b?: try {
+      guard case .b(let v)? = self.abcDefFf else { preconditionFailure() }
+      try visitor.visitSingularInt32Field(value: v, fieldNumber: 11)
+    }()
     try unknownFields.traverse(visitor: &visitor)
   }
 }

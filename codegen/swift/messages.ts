@@ -625,13 +625,10 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
           swiftType,
           schema: { kind },
         }) => {
-          const isRepeated = kind === "repeated";
           return [
             `      case ${fieldNumber}: try {\n`,
             `        var v: ${swiftType}?\n`,
-            `        try decoder.decode${
-              isRepeated ? "Repeated" : "Singular"
-            }${swiftType}Field(value: &v)\n`,
+            `        try decoder.decodeSingular${swiftType}Field(value: &v)\n`,
             `        if let v = v {\n`,
             `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
             `          self.${parentSwiftName} = .${swiftName}(v)\n`,
@@ -736,33 +733,29 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
         return buffer.join("");
       },
     ),
-    // ...config.message.oneofFields.map(
-    //   ({
-    //     swiftName: parentSwiftName,
-    //     fields,
-    //   }) => {
-    //     return fields.map(({
-    //       fieldNumber,
-    //       swiftName,
-    //       swiftType,
-    //       schema: { kind },
-    //     }) => {
-    //       const isRepeated = kind === "repeated";
-    //       return [
-    //         `      case ${fieldNumber}: try {\n`,
-    //         `        var v: ${swiftType}?\n`,
-    //         `        try decoder.decode${
-    //           isRepeated ? "Repeated" : "Singular"
-    //         }${swiftType}Field(value: &v)\n`,
-    //         `        if let v = v {\n`,
-    //         `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
-    //         `          self.${parentSwiftName} = .${swiftName}(v)\n`,
-    //         `        }\n`,
-    //         `      }()\n`,
-    //       ].join("");
-    //     }).join("");
-    //   },
-    // ),
+    ...config.message.oneofFields.map(
+      ({
+        swiftName: parentSwiftName,
+        fields,
+      }) => {
+        return [
+          `    switch self.${parentSwiftName} {\n`,
+          fields.map(({
+            fieldNumber,
+            swiftName,
+            swiftType,
+            swiftProtobufType,
+          }) => {
+            return [
+              `    case .${swiftName}?: try {\n`,
+              `      guard case .${swiftName}(let v)? = self.${parentSwiftName} else { preconditionFailure() }\n`,
+              `      try visitor.visitSingular${swiftProtobufType}Field(value: v, fieldNumber: ${fieldNumber})\n`,
+              `    }()\n`,
+            ].join("");
+          }).join(""),
+        ].join("");
+      },
+    ),
     `    try unknownFields.traverse(visitor: &visitor)\n`,
     `  }\n`,
     `}\n`,
