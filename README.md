@@ -53,12 +53,19 @@ web browser) because it does not use platform APIs inside the `core` directory.
     package.
   - [How to install and how to use](./cli/pollapo/docs/en/getting-started.md)
 
-### GUI
+### Browser Extension
 
-  - pbkit-devtools (Browser Extension)
-    - <img width=200 src="https://user-images.githubusercontent.com/690661/152089698-e519047e-c073-473b-a96a-fca295cd7263.jpg" />
+  - pbkit-devtools
+    - <img width=300 src="https://user-images.githubusercontent.com/690661/161203806-a6d8a864-8693-4744-8f4a-51407f4aa6e7.png" />
     - [repo](https://github.com/pbkit/pbkit-devtools)
     - [chrome web store](https://chrome.google.com/webstore/detail/pbkit-devtools/fjacmiijeihblfhobghceofniolonhca)
+
+### Editor Extension
+
+  - vscode-pbkit
+    - Syntax highlight, Go to definition for VSCode.
+    - [repo](https://github.com/pbkit/vscode-pbkit)
+    - [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=pbkit.vscode-pbkit)
 
 ### Library
 
