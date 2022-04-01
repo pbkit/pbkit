@@ -36,5 +36,13 @@ extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf.Message, SwiftProtobuf._MessageI
 extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_MapsMsg {
+  public static func == (lhs: Pbkit_Pingpong_MapsMsg, rhs: Pbkit_Pingpong_MapsMsg) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

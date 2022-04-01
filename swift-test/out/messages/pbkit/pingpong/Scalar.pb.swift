@@ -351,5 +351,58 @@ extension Pbkit_Pingpong_Scalar: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufData>.self, value: self.mbytes, fieldNumber: 45)
     }
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_Scalar {
+  public static func == (lhs: Pbkit_Pingpong_Scalar, rhs: Pbkit_Pingpong_Scalar) -> Bool {
+    if lhs.double != rhs.double { return false }
+    if lhs.float != rhs.float { return false }
+    if lhs.int32 != rhs.int32 { return false }
+    if lhs.int64 != rhs.int64 { return false }
+    if lhs.uint32 != rhs.uint32 { return false }
+    if lhs.uint64 != rhs.uint64 { return false }
+    if lhs.sint32 != rhs.sint32 { return false }
+    if lhs.sint64 != rhs.sint64 { return false }
+    if lhs.fixed32 != rhs.fixed32 { return false }
+    if lhs.fixed64 != rhs.fixed64 { return false }
+    if lhs.sfixed32 != rhs.sfixed32 { return false }
+    if lhs.sfixed64 != rhs.sfixed64 { return false }
+    if lhs.bool != rhs.bool { return false }
+    if lhs.string != rhs.string { return false }
+    if lhs.bytes != rhs.bytes { return false }
+    if lhs.rdouble != rhs.rdouble { return false }
+    if lhs.rfloat != rhs.rfloat { return false }
+    if lhs.rint32 != rhs.rint32 { return false }
+    if lhs.rint64 != rhs.rint64 { return false }
+    if lhs.ruint32 != rhs.ruint32 { return false }
+    if lhs.ruint64 != rhs.ruint64 { return false }
+    if lhs.rsint32 != rhs.rsint32 { return false }
+    if lhs.rsint64 != rhs.rsint64 { return false }
+    if lhs.rfixed32 != rhs.rfixed32 { return false }
+    if lhs.rfixed64 != rhs.rfixed64 { return false }
+    if lhs.rsfixed32 != rhs.rsfixed32 { return false }
+    if lhs.rsfixed64 != rhs.rsfixed64 { return false }
+    if lhs.rbool != rhs.rbool { return false }
+    if lhs.rstring != rhs.rstring { return false }
+    if lhs.rbytes != rhs.rbytes { return false }
+    if lhs.mdouble != rhs.mdouble { return false }
+    if lhs.mfloat != rhs.mfloat { return false }
+    if lhs.mint32 != rhs.mint32 { return false }
+    if lhs.mint64 != rhs.mint64 { return false }
+    if lhs.muint32 != rhs.muint32 { return false }
+    if lhs.muint64 != rhs.muint64 { return false }
+    if lhs.msint32 != rhs.msint32 { return false }
+    if lhs.msint64 != rhs.msint64 { return false }
+    if lhs.mfixed32 != rhs.mfixed32 { return false }
+    if lhs.mfixed64 != rhs.mfixed64 { return false }
+    if lhs.msfixed32 != rhs.msfixed32 { return false }
+    if lhs.msfixed64 != rhs.msfixed64 { return false }
+    if lhs.mbool != rhs.mbool { return false }
+    if lhs.mstring != rhs.mstring { return false }
+    if lhs.mbytes != rhs.mbytes { return false }
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

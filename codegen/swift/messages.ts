@@ -231,6 +231,7 @@ function* genMessage(
   const traverseCode = getTraverseCode(getCodeConfig);
   const typeExtensionCode = getTypeExtensionCode(getCodeConfig);
   const protoNameMapCode = getNameMapCode(getCodeConfig);
+  const messageOperatorCode = getMessageOperatorCode(getCodeConfig);
   yield [
     filePath,
     new StringReader([
@@ -246,6 +247,8 @@ function* genMessage(
       decodeMessageCode,
       "\n",
       traverseCode,
+      "\n",
+      messageOperatorCode,
     ].join("")),
   ];
   function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
@@ -757,6 +760,22 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
       },
     ),
     `    try unknownFields.traverse(visitor: &visitor)\n`,
+    `    }\n`,
+    `  }\n`,
+    `}\n`,
+  ].join("");
+};
+
+const getMessageOperatorCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
+  const { swiftFullName, message } = config;
+  return [
+    `extension ${swiftFullName} {\n`,
+    `  public static func == (lhs: ${swiftFullName}, rhs: ${swiftFullName}) -> Bool {\n`,
+    [...message.fields, ...message.oneofFields].map((field) =>
+      `    if lhs.${field.swiftName} != rhs.${field.swiftName} { return false }\n`
+    ).join(""),
+    `    if lhs.unknownFields != rhs.unknownFields { return false }\n`,
+    `    return true\n`,
     `  }\n`,
     `}\n`,
   ].join("");

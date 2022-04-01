@@ -141,5 +141,28 @@ extension Pbkit_Pingpong_Maps: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufEnumMap<SwiftProtobuf.ProtobufString, Pbkit_Pingpong_MapsEnum>.self, value: self.menum, fieldNumber: 18)
     }
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_Maps {
+  public static func == (lhs: Pbkit_Pingpong_Maps, rhs: Pbkit_Pingpong_Maps) -> Bool {
+    if lhs.mdouble != rhs.mdouble { return false }
+    if lhs.mfloat != rhs.mfloat { return false }
+    if lhs.mint32 != rhs.mint32 { return false }
+    if lhs.mint64 != rhs.mint64 { return false }
+    if lhs.muint32 != rhs.muint32 { return false }
+    if lhs.mfixed32 != rhs.mfixed32 { return false }
+    if lhs.mfixed64 != rhs.mfixed64 { return false }
+    if lhs.msfixed32 != rhs.msfixed32 { return false }
+    if lhs.msfixed64 != rhs.msfixed64 { return false }
+    if lhs.mbool != rhs.mbool { return false }
+    if lhs.mstring != rhs.mstring { return false }
+    if lhs.mbytes != rhs.mbytes { return false }
+    if lhs.mmsg != rhs.mmsg { return false }
+    if lhs.mint32Msg != rhs.mint32Msg { return false }
+    if lhs.menum != rhs.menum { return false }
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

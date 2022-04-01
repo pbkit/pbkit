@@ -183,5 +183,24 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       try visitor.visitSingularInt32Field(value: v, fieldNumber: 11)
     }()
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_Ping {
+  public static func == (lhs: Pbkit_Pingpong_Ping, rhs: Pbkit_Pingpong_Ping) -> Bool {
+    if lhs.babo != rhs.babo { return false }
+    if lhs.merong != rhs.merong { return false }
+    if lhs.pongs != rhs.pongs { return false }
+    if lhs.strings != rhs.strings { return false }
+    if lhs.int32S != rhs.int32S { return false }
+    if lhs.bytess != rhs.bytess { return false }
+    if lhs.bools != rhs.bools { return false }
+    if lhs.floats != rhs.floats { return false }
+    if lhs.doubles != rhs.doubles { return false }
+    if lhs.maps != rhs.maps { return false }
+    if lhs.abcDefFf != rhs.abcDefFf { return false }
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

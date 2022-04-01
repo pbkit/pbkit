@@ -38,5 +38,13 @@ extension Pbkit_Pingpong_Ping.Yahoo.TripleNested: SwiftProtobuf.Message, SwiftPr
 extension Pbkit_Pingpong_Ping.Yahoo.TripleNested: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_Ping.Yahoo.TripleNested {
+  public static func == (lhs: Pbkit_Pingpong_Ping.Yahoo.TripleNested, rhs: Pbkit_Pingpong_Ping.Yahoo.TripleNested) -> Bool {
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

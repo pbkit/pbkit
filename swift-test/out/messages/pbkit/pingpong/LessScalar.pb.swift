@@ -141,5 +141,28 @@ extension Pbkit_Pingpong_LessScalar: SwiftProtobuf.Message, SwiftProtobuf._Messa
       try visitor.visitSingularBytesField(value: self.bytes, fieldNumber: 15)
     }
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_LessScalar {
+  public static func == (lhs: Pbkit_Pingpong_LessScalar, rhs: Pbkit_Pingpong_LessScalar) -> Bool {
+    if lhs.double != rhs.double { return false }
+    if lhs.float != rhs.float { return false }
+    if lhs.int32 != rhs.int32 { return false }
+    if lhs.int64 != rhs.int64 { return false }
+    if lhs.uint32 != rhs.uint32 { return false }
+    if lhs.uint64 != rhs.uint64 { return false }
+    if lhs.sint32 != rhs.sint32 { return false }
+    if lhs.sint64 != rhs.sint64 { return false }
+    if lhs.fixed32 != rhs.fixed32 { return false }
+    if lhs.fixed64 != rhs.fixed64 { return false }
+    if lhs.sfixed32 != rhs.sfixed32 { return false }
+    if lhs.sfixed64 != rhs.sfixed64 { return false }
+    if lhs.bool != rhs.bool { return false }
+    if lhs.string != rhs.string { return false }
+    if lhs.bytes != rhs.bytes { return false }
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

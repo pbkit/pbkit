@@ -43,5 +43,14 @@ extension Pbkit_Pingpong_Pong: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       try visitor.visitSingularStringField(value: self.a, fieldNumber: 1)
     }
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_Pong {
+  public static func == (lhs: Pbkit_Pingpong_Pong, rhs: Pbkit_Pingpong_Pong) -> Bool {
+    if lhs.a != rhs.a { return false }
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }

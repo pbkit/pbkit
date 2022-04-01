@@ -141,5 +141,28 @@ extension Pbkit_Pingpong_LessRepeatedScalar: SwiftProtobuf.Message, SwiftProtobu
       try visitor.visitPackedBytesField(value: self.rbytes, fieldNumber: 30)
     }
     try unknownFields.traverse(visitor: &visitor)
+    }
+  }
+}
+
+extension Pbkit_Pingpong_LessRepeatedScalar {
+  public static func == (lhs: Pbkit_Pingpong_LessRepeatedScalar, rhs: Pbkit_Pingpong_LessRepeatedScalar) -> Bool {
+    if lhs.rdouble != rhs.rdouble { return false }
+    if lhs.rfloat != rhs.rfloat { return false }
+    if lhs.rint32 != rhs.rint32 { return false }
+    if lhs.rint64 != rhs.rint64 { return false }
+    if lhs.ruint32 != rhs.ruint32 { return false }
+    if lhs.ruint64 != rhs.ruint64 { return false }
+    if lhs.rsint32 != rhs.rsint32 { return false }
+    if lhs.rsint64 != rhs.rsint64 { return false }
+    if lhs.rfixed32 != rhs.rfixed32 { return false }
+    if lhs.rfixed64 != rhs.rfixed64 { return false }
+    if lhs.rsfixed32 != rhs.rsfixed32 { return false }
+    if lhs.rsfixed64 != rhs.rsfixed64 { return false }
+    if lhs.rbool != rhs.rbool { return false }
+    if lhs.rstring != rhs.rstring { return false }
+    if lhs.rbytes != rhs.rbytes { return false }
+    if lhs.unknownFields != rhs.unknownFields { return false }
+    return true
   }
 }
