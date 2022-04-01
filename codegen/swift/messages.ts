@@ -314,7 +314,7 @@ function* genMessage(
     const fieldType = schema.types[field.typePath!];
     // @TODO(hyp3rflow): can we use .init() for codegen perf?
     if (fieldType?.kind === "enum") {
-      return `.${toCamelCase(fieldType.fields[0]?.name) ?? "UNSPECIFIED"}`;
+      return `.${toCamelCase(fieldType.fields[0]?.name ?? "UNSPECIFIED")}`;
     }
   }
   function toSwiftType(typePath?: string) {
@@ -703,7 +703,7 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
             if (type.kind === "enum") {
               buffer.push(
                 `    if self.${swiftName} != .${
-                  toCamelCase(type.fields[0].name)
+                  toCamelCase(type.fields[0]?.name ?? "UNSPECIFIED")
                 } {\n`,
                 `      try visitor.visitSingular${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
                 `    }\n`,

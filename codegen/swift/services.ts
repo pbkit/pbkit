@@ -61,14 +61,6 @@ function* genService({
   messages,
   services,
 }: GenServiceConfig): Generator<CodeEntry> {
-  console.log({
-    typePath,
-    type,
-    customTypeMapping,
-    schema,
-    messages,
-    services,
-  });
   const serviceName = typePath.split(".").slice(1).join(".");
   const serviceSwiftName = toSwiftName(typePath);
   const getCodeConfig: GetCodeConfig = {
