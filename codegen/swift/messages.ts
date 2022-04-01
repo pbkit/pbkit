@@ -3,7 +3,13 @@ import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import * as schema from "../../core/schema/model.ts";
 import { CodeEntry } from "../index.ts";
 import { join } from "../path.ts";
-import { CustomTypeMapping, GenMessagesConfig } from "./index.ts";
+import {
+  CustomTypeMapping,
+  GenMessagesConfig,
+  getSwiftFullName,
+  getTypePath,
+  toSwiftName,
+} from "./index.ts";
 import { toCamelCase } from "./swift-protobuf/case.ts";
 
 export interface GenConfig {
@@ -306,6 +312,7 @@ function* genMessage(
       return scalarTypeDefaultValueCodes[field.typePath as ScalarValueTypePath];
     }
     const fieldType = schema.types[field.typePath!];
+    // @TODO(hyp3rflow): can we use .init() for codegen perf?
     if (fieldType?.kind === "enum") {
       return `.${toCamelCase(fieldType.fields[0]?.name) ?? "UNSPECIFIED"}`;
     }
@@ -313,45 +320,6 @@ function* genMessage(
   function toSwiftType(typePath?: string) {
     return pbTypeToSwiftType({ customTypeMapping, schema, typePath });
   }
-}
-
-interface GetTypePathConfig {
-  schema: schema.Schema;
-  typePath: string;
-}
-function getTypePath(
-  { schema, typePath }: GetTypePathConfig,
-): { parentTypePath?: string; relativeTypePath: string } {
-  const fragments = typePath.split(".");
-  const typeName = fragments.pop()!;
-  const parentTypePath = fragments.join(".");
-  if (Object.keys(schema.types).includes(parentTypePath)) {
-    return { parentTypePath, relativeTypePath: "." + typeName };
-  }
-  return { relativeTypePath: typePath };
-}
-
-interface GetSwiftFullNameConfig {
-  schema: schema.Schema;
-  typePath?: string;
-}
-function getSwiftFullName(
-  config: { schema: schema.Schema; typePath: string },
-): string;
-function getSwiftFullName(
-  config: { schema: schema.Schema; typePath?: string },
-): string | undefined;
-function getSwiftFullName(
-  { schema, typePath }: GetSwiftFullNameConfig,
-): string | undefined {
-  if (!typePath) return;
-  const { parentTypePath, relativeTypePath } = getTypePath({
-    schema,
-    typePath,
-  });
-  if (!parentTypePath) return toSwiftName(relativeTypePath);
-  return getSwiftFullName({ schema, typePath: parentTypePath }) +
-    `.${toSwiftName(relativeTypePath)}`;
 }
 
 // @TODO(hyp3rflow): handling on undefined
@@ -493,7 +461,7 @@ const getMessageTypeDefCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
               `  public var ${fieldSwiftName}: ${swiftType} {\n`,
               `    get {\n`,
               `      if case .${fieldSwiftName}(let v)? = ${swiftName} {return v}\n`,
-              `      return .init()\n`,
+              `      return .init()\n`, // @CHECK(hyp3rflow): is it okay?
               `    }\n`,
               `    set {${swiftName} = .${fieldSwiftName}(newValue)}\n`,
               `  }\n\n`,
@@ -914,9 +882,3 @@ const scalarSwiftProtobufTypeMapping: ScalarToCodeTable = {
   ".string": "String",
   ".bytes": "Bytes",
 };
-
-function toSwiftName(typePath: string) {
-  return typePath.split(".").slice(1).map((fragment) =>
-    fragment.charAt(0).toUpperCase() + fragment.slice(1)
-  ).join("_");
-}

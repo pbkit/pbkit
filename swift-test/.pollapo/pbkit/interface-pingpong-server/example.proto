@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package pbkit.pingpong;
+
+import "pbkit/interface-pingpong-server/b.proto";
+
+service ExampleService {
+  rpc PingPong(BB) returns (BB) {}
+  
+  rpc PingPong2(BB) returns (BB) {}
+}
+
+message A {}

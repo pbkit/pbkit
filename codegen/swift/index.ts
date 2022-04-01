@@ -1,7 +1,7 @@
 import * as schema from "../../core/schema/model.ts";
 import { CodeEntry } from "../index.ts";
-import { Field } from "./messages.ts";
-import genMessages from "./messages.ts";
+import genMessages, { Field } from "./messages.ts";
+import genServices from "./services.ts";
 
 // @TODO(dups)
 export type GenConfig = {
@@ -49,11 +49,11 @@ async function* genBuildUnit(
     customTypeMapping,
     messages,
   });
-  // yield* genServices(schema, {
-  //   customTypeMapping,
-  //   messages,
-  //   services,
-  // });
+  yield* genServices(schema, {
+    customTypeMapping,
+    messages,
+    services,
+  });
 }
 
 export interface CustomTypeMapping {
@@ -87,6 +87,51 @@ export interface GenMessagesConfig {
 }
 export interface GenServicesConfig {
   outDir: string;
+}
+
+export function toSwiftName(typePath: string) {
+  return typePath.split(".").slice(1).map((fragment) =>
+    fragment.charAt(0).toUpperCase() + fragment.slice(1)
+  ).join("_");
+}
+
+interface GetSwiftFullNameConfig {
+  schema: schema.Schema;
+  typePath?: string;
+}
+export function getSwiftFullName(
+  config: { schema: schema.Schema; typePath: string },
+): string;
+export function getSwiftFullName(
+  config: { schema: schema.Schema; typePath?: string },
+): string | undefined;
+export function getSwiftFullName(
+  { schema, typePath }: GetSwiftFullNameConfig,
+): string | undefined {
+  if (!typePath) return;
+  const { parentTypePath, relativeTypePath } = getTypePath({
+    schema,
+    typePath,
+  });
+  if (!parentTypePath) return toSwiftName(relativeTypePath);
+  return getSwiftFullName({ schema, typePath: parentTypePath }) +
+    `.${toSwiftName(relativeTypePath)}`;
+}
+
+interface GetTypePathConfig {
+  schema: schema.Schema;
+  typePath: string;
+}
+export function getTypePath(
+  { schema, typePath }: GetTypePathConfig,
+): { parentTypePath?: string; relativeTypePath: string } {
+  const fragments = typePath.split(".");
+  const typeName = fragments.pop()!;
+  const parentTypePath = fragments.join(".");
+  if (Object.keys(schema.types).includes(parentTypePath)) {
+    return { parentTypePath, relativeTypePath: "." + typeName };
+  }
+  return { relativeTypePath: typePath };
 }
 
 // @TODO(dups)
