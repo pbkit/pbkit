@@ -128,9 +128,7 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
       `extension ${swiftFullName}: CaseIterable {\n`,
       `  public static var allCases: [${swiftFullName}] {\n`,
       "    return [\n",
-      ...fields.map(([fieldNumber, { name }]) =>
-        `      .${toCamelCase(name)},\n`
-      ),
+      ...fields.map(([, { name }]) => `      .${toCamelCase(name)},\n`),
       "    ]\n",
       "  }\n",
       "}\n\n",
@@ -152,7 +150,9 @@ export interface Field {
   fieldNumber: number;
   swiftName: string;
   swiftType: string;
+  swiftProtobufType: string;
   isEnum: boolean;
+  isMessage: boolean;
   default: string | undefined;
 }
 interface OneofField {
@@ -169,7 +169,6 @@ interface GenMessageConfig {
 function* genMessage(
   { schema, typePath, type, customTypeMapping, messages }: GenMessageConfig,
 ): Generator<CodeEntry> {
-  console.log({ customTypeMapping });
   const filePath = getFilePath(typePath, messages);
   const packageName = getPackageName(schema.files, type.filePath);
   const { parentTypePath, relativeTypePath } = getTypePath({
@@ -221,6 +220,7 @@ function* genMessage(
     typePath,
     message,
     messages,
+    schema,
     customTypeMapping,
     swiftName,
     swiftFullName,
@@ -244,8 +244,8 @@ function* genMessage(
       protoNameMapCode,
       "\n",
       decodeMessageCode,
-      // "\n",
-      // traverseCode,
+      "\n",
+      traverseCode,
     ].join("")),
   ];
   function toField([fieldNumber, field]: [string, schema.MessageField]): Field {
@@ -254,7 +254,9 @@ function* genMessage(
       fieldNumber: +fieldNumber,
       swiftName: toCamelCase(field.name),
       swiftType: getFieldTypeCode(field),
+      swiftProtobufType: getFieldProtobufTypeCode(field),
       isEnum: getFieldIsEnum(field),
+      isMessage: getFieldIsMessage(field),
       default: getFieldDefaultCode(field),
     };
   }
@@ -264,10 +266,35 @@ function* genMessage(
     const valueTypeName = toSwiftType(field.valueTypePath);
     return `Dictionary<${keyTypeName}, ${valueTypeName}>`;
   }
+  function getFieldProtobufTypeCode(field: schema.MessageField): string {
+    if (field.kind === "map") {
+      return "Map";
+    }
+    if (field.typePath! in schema.types) {
+      const kind = schema.types[field.typePath!].kind;
+      switch (kind) {
+        case "message":
+          return "Message";
+        case "enum":
+          return "Enum";
+      }
+    }
+    if (field.typePath! in scalarSwiftProtobufTypeMapping) {
+      return scalarSwiftProtobufTypeMapping[
+        field.typePath as ScalarValueTypePath
+      ];
+    }
+    return "Unknown";
+  }
   function getFieldIsEnum(field: schema.MessageField): boolean {
     if (field.kind === "map") return false;
     if (!field.typePath) return false;
     return schema.types[field.typePath]?.kind === "enum";
+  }
+  function getFieldIsMessage(field: schema.MessageField): boolean {
+    if (field.kind === "map") return false;
+    if (!field.typePath) return false;
+    return schema.types[field.typePath]?.kind === "message";
   }
   function getFieldDefaultCode(field: schema.MessageField): string | undefined {
     if (field.kind === "repeated") return "[]";
@@ -281,7 +308,7 @@ function* genMessage(
     }
   }
   function toSwiftType(typePath?: string) {
-    return pbTypeToSwiftType({ customTypeMapping, messages, typePath });
+    return pbTypeToSwiftType({ customTypeMapping, schema, typePath });
   }
 }
 
@@ -384,6 +411,7 @@ interface GetCodeConfig {
 }
 interface GetMessageCodeConfig extends GetCodeConfig {
   message: Message;
+  schema: schema.Schema;
   customTypeMapping: CustomTypeMapping;
 }
 interface GetEnumCodeConfig extends GetCodeConfig {
@@ -394,7 +422,7 @@ type GetCodeFn<T extends GetCodeConfig = GetCodeConfig> = (config: T) => string;
 const getMessageTypeDefCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
   const { message } = config;
   const typeBodyCodes: string[] = [];
-  if (message.fields.length) typeBodyCodes.push(getFieldsCode());
+  if (message.fields.length) typeBodyCodes.push(...getFieldsCode());
   if (message.oneofFields.length) typeBodyCodes.push(getOneofsCode());
   return getTypeExtensionCodeBase(config.parentSwiftFullName, [
     `public struct ${config.swiftName} {\n`,
@@ -404,21 +432,39 @@ const getMessageTypeDefCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
     "}\n",
   ]);
   function getFieldsCode() {
-    return message.fields.map(
+    return message.fields.flatMap(
       (
         {
           swiftName,
           swiftType,
           default: defaultValue,
-          schema: { kind },
+          schema,
+          isMessage,
         },
       ) => {
-        const isRepeated = kind === "repeated";
-        return `  public var ${swiftName}: ${
-          isRepeated ? `[${swiftType}]` : swiftType
-        }${defaultValue !== undefined ? ` = ${defaultValue}` : ""}\n\n`;
+        const isRepeated = schema.kind === "repeated";
+        if (!isRepeated && isMessage) {
+          return [
+            `  fileprivate var _${swiftName}: ${swiftType}? = nil\n\n`,
+            `  public var ${swiftName}: ${swiftType} {\n`,
+            `    get {return _${swiftName} ?? ${swiftType}()}\n`,
+            `    set {_${swiftName} = newValue}\n`,
+            "  }\n\n",
+            `  public var has${
+              toCamelCase(swiftName, true)
+            }: Bool {return self._${swiftName} != nil}\n\n`,
+            `  public mutating func clear${
+              toCamelCase(swiftName, true)
+            }() {self._${swiftName} = nil}\n\n`,
+          ];
+        }
+        return [
+          `  public var ${swiftName}: ${
+            isRepeated ? `[${swiftType}]` : swiftType
+          }${defaultValue !== undefined ? ` = ${defaultValue}` : ""}\n\n`,
+        ];
       },
-    ).join("");
+    );
   }
   function getOneofsCode() {
     return message.oneofFields.map(({ swiftName, fields }) => {
@@ -524,20 +570,44 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
       ({
         fieldNumber,
         swiftName,
-        swiftType,
-        schema: { kind },
+        swiftProtobufType,
+        schema,
       }) => {
-        const isRepeated = kind === "repeated";
-        if (kind === "map") {
+        const isRepeated = schema.kind === "repeated";
+        if (schema.kind === "map") {
+          const swiftKeyType = pbTypeToSwiftType({
+            customTypeMapping: config.customTypeMapping,
+            schema: config.schema,
+            typePath: schema.keyTypePath,
+          });
+          const swiftValueType = pbTypeToSwiftType({
+            customTypeMapping: config.customTypeMapping,
+            schema: config.schema,
+            typePath: schema.valueTypePath,
+          });
+          const swiftValueName = getSwiftFullName({
+            schema: config.schema,
+            typePath: schema.valueTypePath,
+          });
+          const valueKind = config.schema.types[schema.valueTypePath!]?.kind;
+          if (valueKind === "message") {
+            return [
+              `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: &self.${swiftName}) }()\n`,
+            ].join("");
+          }
+          if (valueKind === "enum") {
+            return [
+              `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufEnumMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: &self.${swiftName}) }()\n`,
+            ].join("");
+          }
           return [
-            // @TODO(hyp3rflow): SwiftProtobuf.ProtobufString
-            `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.${swiftName}) }()\n`,
+            `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.Protobuf${swiftKeyType}, SwiftProtobuf.Protobuf${swiftValueType}>.self, value: &self.${swiftName}) }()\n`,
           ].join("");
         }
         return [
           `      case ${fieldNumber}: try { try decoder.decode${
             isRepeated ? "Repeated" : "Singular"
-          }${swiftType}Field(value: &self.${swiftName}) }()\n`,
+          }${swiftProtobufType}Field(value: &self.${swiftName}) }()\n`,
         ].join("");
       },
     ),
@@ -580,57 +650,117 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
   return [
     `extension ${config.swiftFullName}: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {\n`,
     `  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {\n`,
-    `    switch fieldNumber {\n`,
     ...config.message.fields.map(
       ({
         fieldNumber,
         swiftName,
-        swiftType,
-        schema: { kind },
+        swiftProtobufType,
+        schema,
+        default: defaultValue,
       }) => {
-        const isRepeated = kind === "repeated";
-        if (kind === "map") {
-          return [
-            // @TODO(hyp3rflow): SwiftProtobuf.ProtobufString
-            `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.${swiftName}) }()\n`,
-          ].join("");
+        const buffer: string[] = [];
+        const isRepeated = schema.kind === "repeated";
+        if (isRepeated) {
+          buffer.push(
+            `    if !self.${swiftName}.isEmpty {\n`,
+            `      try visitor.visitPacked${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+            `    }\n`,
+          );
+        } else if (schema.kind === "map") {
+          const swiftKeyType = pbTypeToSwiftType({
+            customTypeMapping: config.customTypeMapping,
+            schema: config.schema,
+            typePath: schema.keyTypePath,
+          });
+          const swiftValueType = pbTypeToSwiftType({
+            customTypeMapping: config.customTypeMapping,
+            schema: config.schema,
+            typePath: schema.valueTypePath,
+          });
+          const swiftValueName = getSwiftFullName({
+            schema: config.schema,
+            typePath: schema.valueTypePath,
+          });
+          buffer.push(
+            `    if !self.${swiftName}.isEmpty {\n`,
+          );
+          const valueKind = config.schema.types[schema.valueTypePath!]?.kind;
+          if (valueKind === "message") {
+            buffer.push(
+              `      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+            );
+          } else if (valueKind === "enum") {
+            buffer.push(
+              `      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufEnumMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+            );
+          } else {
+            buffer.push(
+              `      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.Protobuf${swiftKeyType}, SwiftProtobuf.Protobuf${swiftValueType}>.self, value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+            );
+          }
+          buffer.push(
+            `    }\n`,
+          );
+        } else {
+          if (
+            (swiftProtobufType === "Message" ||
+              swiftProtobufType === "Enum")
+          ) {
+            const type = config.schema.types[schema.typePath!];
+            if (type.kind === "enum") {
+              buffer.push(
+                `    if self.${swiftName} != .${
+                  toCamelCase(type.fields[0].name)
+                } {\n`,
+                `      try visitor.visitSingular${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+                `    }\n`,
+              );
+            } else if (type.kind === "message") {
+              buffer.push(
+                `    try { if let v = self._${swiftName} {\n`,
+                `      try visitor.visitSingularMessageField(value: v, fieldNumber: ${fieldNumber})\n`,
+                `    } }()\n`,
+              );
+            }
+          } else {
+            buffer.push(
+              `    if self.${swiftName} != ${defaultValue} {\n`,
+              `      try visitor.visitSingular${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+              `    }\n`,
+            );
+          }
         }
-        return [
-          `      case ${fieldNumber}: try { try decoder.decode${
-            isRepeated ? "Repeated" : "Singular"
-          }${swiftType}Field(value: &self.${swiftName}) }()\n`,
-        ].join("");
+        return buffer.join("");
       },
     ),
-    ...config.message.oneofFields.map(
-      ({
-        swiftName: parentSwiftName,
-        fields,
-      }) => {
-        return fields.map(({
-          fieldNumber,
-          swiftName,
-          swiftType,
-          schema: { kind },
-        }) => {
-          const isRepeated = kind === "repeated";
-          return [
-            `      case ${fieldNumber}: try {\n`,
-            `        var v: ${swiftType}?\n`,
-            `        try decoder.decode${
-              isRepeated ? "Repeated" : "Singular"
-            }${swiftType}Field(value: &v)\n`,
-            `        if let v = v {\n`,
-            `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
-            `          self.${parentSwiftName} = .${swiftName}(v)\n`,
-            `        }\n`,
-            `      }()\n`,
-          ].join("");
-        }).join("");
-      },
-    ),
-    `      default: break\n`,
-    `    }\n`,
+    // ...config.message.oneofFields.map(
+    //   ({
+    //     swiftName: parentSwiftName,
+    //     fields,
+    //   }) => {
+    //     return fields.map(({
+    //       fieldNumber,
+    //       swiftName,
+    //       swiftType,
+    //       schema: { kind },
+    //     }) => {
+    //       const isRepeated = kind === "repeated";
+    //       return [
+    //         `      case ${fieldNumber}: try {\n`,
+    //         `        var v: ${swiftType}?\n`,
+    //         `        try decoder.decode${
+    //           isRepeated ? "Repeated" : "Singular"
+    //         }${swiftType}Field(value: &v)\n`,
+    //         `        if let v = v {\n`,
+    //         `          if self.${parentSwiftName} != nil {try decoder.handleConflictingOneOf()}\n`,
+    //         `          self.${parentSwiftName} = .${swiftName}(v)\n`,
+    //         `        }\n`,
+    //         `      }()\n`,
+    //       ].join("");
+    //     }).join("");
+    //   },
+    // ),
+    `    try unknownFields.traverse(visitor: &visitor)\n`,
     `  }\n`,
     `}\n`,
   ].join("");
@@ -672,12 +802,12 @@ function isGetEnumCodeConfig(
 
 export interface PbTypeToSwiftTypeConfig {
   customTypeMapping: CustomTypeMapping;
-  messages: GenMessagesConfig;
+  schema: schema.Schema;
   typePath?: string;
 }
 export function pbTypeToSwiftType({
   customTypeMapping,
-  messages,
+  schema,
   typePath,
 }: PbTypeToSwiftTypeConfig): string {
   if (!typePath) return "Unknown";
@@ -687,9 +817,7 @@ export function pbTypeToSwiftType({
   if (typePath in customTypeMapping) {
     return customTypeMapping[typePath].swiftType;
   }
-  // @TODO(hyp3rflow)
-  console.log("pbTypeToSwiftType", "TODO: fallback");
-  return toSwiftName(typePath);
+  return getSwiftFullName({ schema, typePath });
 }
 
 type ScalarToCodeTable = { [typePath in ScalarValueTypePath]: string };
