@@ -47,7 +47,7 @@ export function encodeJson(value: $.google.protobuf.SourceCodeInfo): unknown {
 
 export function decodeJson(value: any): $.google.protobuf.SourceCodeInfo {
   const result = getDefaultValue();
-  result.location = value.location.map((value: any) => decodeJson_1(value)) ?? [];
+  result.location = value.location?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

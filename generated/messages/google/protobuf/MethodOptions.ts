@@ -68,7 +68,7 @@ export function decodeJson(value: any): $.google.protobuf.MethodOptions {
   const result = getDefaultValue();
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
   if (value.idempotencyLevel !== undefined) result.idempotencyLevel = jsonValueToTsValueFns.enum(value.idempotencyLevel) as IdempotencyLevel;
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

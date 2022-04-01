@@ -54,7 +54,7 @@ export function encodeJson(value: $.google.protobuf.GeneratedCodeInfo.Annotation
 
 export function decodeJson(value: any): $.google.protobuf.GeneratedCodeInfo.Annotation {
   const result = getDefaultValue();
-  result.path = value.path.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.path = value.path?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   if (value.sourceFile !== undefined) result.sourceFile = jsonValueToTsValueFns.string(value.sourceFile);
   if (value.begin !== undefined) result.begin = jsonValueToTsValueFns.int32(value.begin);
   if (value.end !== undefined) result.end = jsonValueToTsValueFns.int32(value.end);

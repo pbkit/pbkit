@@ -140,7 +140,7 @@ export function decodeJson(value: any): $.google.protobuf.FileOptions {
   if (value.phpGenericServices !== undefined) result.phpGenericServices = jsonValueToTsValueFns.bool(value.phpGenericServices);
   if (value.phpMetadataNamespace !== undefined) result.phpMetadataNamespace = jsonValueToTsValueFns.string(value.phpMetadataNamespace);
   if (value.rubyPackage !== undefined) result.rubyPackage = jsonValueToTsValueFns.string(value.rubyPackage);
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

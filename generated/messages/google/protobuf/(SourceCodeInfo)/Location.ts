@@ -57,11 +57,11 @@ export function encodeJson(value: $.google.protobuf.SourceCodeInfo.Location): un
 
 export function decodeJson(value: any): $.google.protobuf.SourceCodeInfo.Location {
   const result = getDefaultValue();
-  result.path = value.path.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
-  result.span = value.span.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.path = value.path?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.span = value.span?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   if (value.leadingComments !== undefined) result.leadingComments = jsonValueToTsValueFns.string(value.leadingComments);
   if (value.trailingComments !== undefined) result.trailingComments = jsonValueToTsValueFns.string(value.trailingComments);
-  result.leadingDetachedComments = value.leadingDetachedComments.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
+  result.leadingDetachedComments = value.leadingDetachedComments?.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
   return result;
 }
 

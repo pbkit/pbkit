@@ -47,7 +47,7 @@ export function encodeJson(value: $.google.protobuf.FileDescriptorSet): unknown 
 
 export function decodeJson(value: any): $.google.protobuf.FileDescriptorSet {
   const result = getDefaultValue();
-  result.file = value.file.map((value: any) => decodeJson_1(value)) ?? [];
+  result.file = value.file?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

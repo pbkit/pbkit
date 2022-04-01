@@ -79,10 +79,10 @@ export function encodeJson(value: $.google.protobuf.EnumDescriptorProto): unknow
 export function decodeJson(value: any): $.google.protobuf.EnumDescriptorProto {
   const result = getDefaultValue();
   if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
-  result.value = value.value.map((value: any) => decodeJson_1(value)) ?? [];
+  result.value = value.value?.map((value: any) => decodeJson_1(value)) ?? [];
   if (value.options !== undefined) result.options = decodeJson_2(value.options);
-  result.reservedRange = value.reservedRange.map((value: any) => decodeJson_3(value)) ?? [];
-  result.reservedName = value.reservedName.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
+  result.reservedRange = value.reservedRange?.map((value: any) => decodeJson_3(value)) ?? [];
+  result.reservedName = value.reservedName?.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
   return result;
 }
 

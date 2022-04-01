@@ -60,7 +60,7 @@ export function decodeJson(value: any): $.google.protobuf.EnumOptions {
   const result = getDefaultValue();
   if (value.allowAlias !== undefined) result.allowAlias = jsonValueToTsValueFns.bool(value.allowAlias);
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

@@ -68,7 +68,7 @@ export function decodeJson(value: any): $.google.protobuf.MessageOptions {
   if (value.noStandardDescriptorAccessor !== undefined) result.noStandardDescriptorAccessor = jsonValueToTsValueFns.bool(value.noStandardDescriptorAccessor);
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = jsonValueToTsValueFns.bool(value.mapEntry);
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

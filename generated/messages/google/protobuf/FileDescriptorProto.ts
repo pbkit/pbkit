@@ -123,15 +123,15 @@ export function decodeJson(value: any): $.google.protobuf.FileDescriptorProto {
   const result = getDefaultValue();
   if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
   if (value.package !== undefined) result.package = jsonValueToTsValueFns.string(value.package);
-  result.dependency = value.dependency.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
-  result.messageType = value.messageType.map((value: any) => decodeJson_1(value)) ?? [];
-  result.enumType = value.enumType.map((value: any) => decodeJson_2(value)) ?? [];
-  result.service = value.service.map((value: any) => decodeJson_3(value)) ?? [];
-  result.extension = value.extension.map((value: any) => decodeJson_4(value)) ?? [];
+  result.dependency = value.dependency?.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
+  result.messageType = value.messageType?.map((value: any) => decodeJson_1(value)) ?? [];
+  result.enumType = value.enumType?.map((value: any) => decodeJson_2(value)) ?? [];
+  result.service = value.service?.map((value: any) => decodeJson_3(value)) ?? [];
+  result.extension = value.extension?.map((value: any) => decodeJson_4(value)) ?? [];
   if (value.options !== undefined) result.options = decodeJson_5(value.options);
   if (value.sourceCodeInfo !== undefined) result.sourceCodeInfo = decodeJson_6(value.sourceCodeInfo);
-  result.publicDependency = value.publicDependency.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
-  result.weakDependency = value.weakDependency.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.publicDependency = value.publicDependency?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
+  result.weakDependency = value.weakDependency?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   if (value.syntax !== undefined) result.syntax = jsonValueToTsValueFns.string(value.syntax);
   return result;
 }

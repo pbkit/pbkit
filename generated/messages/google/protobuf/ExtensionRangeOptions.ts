@@ -47,7 +47,7 @@ export function encodeJson(value: $.google.protobuf.ExtensionRangeOptions): unkn
 
 export function decodeJson(value: any): $.google.protobuf.ExtensionRangeOptions {
   const result = getDefaultValue();
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

@@ -89,7 +89,7 @@ export function decodeJson(value: any): $.google.protobuf.FieldOptions {
   if (value.lazy !== undefined) result.lazy = jsonValueToTsValueFns.bool(value.lazy);
   if (value.jstype !== undefined) result.jstype = jsonValueToTsValueFns.enum(value.jstype) as JSType;
   if (value.weak !== undefined) result.weak = jsonValueToTsValueFns.bool(value.weak);
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 

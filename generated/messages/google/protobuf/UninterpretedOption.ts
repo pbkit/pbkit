@@ -70,7 +70,7 @@ export function encodeJson(value: $.google.protobuf.UninterpretedOption): unknow
 
 export function decodeJson(value: any): $.google.protobuf.UninterpretedOption {
   const result = getDefaultValue();
-  result.name = value.name.map((value: any) => decodeJson_1(value)) ?? [];
+  result.name = value.name?.map((value: any) => decodeJson_1(value)) ?? [];
   if (value.identifierValue !== undefined) result.identifierValue = jsonValueToTsValueFns.string(value.identifierValue);
   if (value.positiveIntValue !== undefined) result.positiveIntValue = jsonValueToTsValueFns.uint64(value.positiveIntValue);
   if (value.negativeIntValue !== undefined) result.negativeIntValue = jsonValueToTsValueFns.int64(value.negativeIntValue);

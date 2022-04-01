@@ -66,7 +66,7 @@ export function encodeJson(value: $.google.protobuf.ServiceDescriptorProto): unk
 export function decodeJson(value: any): $.google.protobuf.ServiceDescriptorProto {
   const result = getDefaultValue();
   if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
-  result.method = value.method.map((value: any) => decodeJson_1(value)) ?? [];
+  result.method = value.method?.map((value: any) => decodeJson_1(value)) ?? [];
   if (value.options !== undefined) result.options = decodeJson_2(value.options);
   return result;
 }

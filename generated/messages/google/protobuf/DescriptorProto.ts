@@ -122,15 +122,15 @@ export function encodeJson(value: $.google.protobuf.DescriptorProto): unknown {
 export function decodeJson(value: any): $.google.protobuf.DescriptorProto {
   const result = getDefaultValue();
   if (value.name !== undefined) result.name = jsonValueToTsValueFns.string(value.name);
-  result.field = value.field.map((value: any) => decodeJson_1(value)) ?? [];
-  result.nestedType = value.nestedType.map((value: any) => decodeJson_2(value)) ?? [];
-  result.enumType = value.enumType.map((value: any) => decodeJson_3(value)) ?? [];
-  result.extensionRange = value.extensionRange.map((value: any) => decodeJson_4(value)) ?? [];
-  result.extension = value.extension.map((value: any) => decodeJson_1(value)) ?? [];
+  result.field = value.field?.map((value: any) => decodeJson_1(value)) ?? [];
+  result.nestedType = value.nestedType?.map((value: any) => decodeJson_2(value)) ?? [];
+  result.enumType = value.enumType?.map((value: any) => decodeJson_3(value)) ?? [];
+  result.extensionRange = value.extensionRange?.map((value: any) => decodeJson_4(value)) ?? [];
+  result.extension = value.extension?.map((value: any) => decodeJson_1(value)) ?? [];
   if (value.options !== undefined) result.options = decodeJson_5(value.options);
-  result.oneofDecl = value.oneofDecl.map((value: any) => decodeJson_6(value)) ?? [];
-  result.reservedRange = value.reservedRange.map((value: any) => decodeJson_7(value)) ?? [];
-  result.reservedName = value.reservedName.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
+  result.oneofDecl = value.oneofDecl?.map((value: any) => decodeJson_6(value)) ?? [];
+  result.reservedRange = value.reservedRange?.map((value: any) => decodeJson_7(value)) ?? [];
+  result.reservedName = value.reservedName?.map((value: any) => jsonValueToTsValueFns.string(value)) ?? [];
   return result;
 }
 

@@ -47,7 +47,7 @@ export function encodeJson(value: $.google.protobuf.OneofOptions): unknown {
 
 export function decodeJson(value: any): $.google.protobuf.OneofOptions {
   const result = getDefaultValue();
-  result.uninterpretedOption = value.uninterpretedOption.map((value: any) => decodeJson_1(value)) ?? [];
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
 
