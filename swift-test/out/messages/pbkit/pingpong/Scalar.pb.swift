@@ -167,47 +167,188 @@ extension Pbkit_Pingpong_Scalar: SwiftProtobuf.Message, SwiftProtobuf._MessageIm
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.int64) }()
       case 5: try { try decoder.decodeSingularUInt32Field(value: &self.uint32) }()
       case 6: try { try decoder.decodeSingularUInt64Field(value: &self.uint64) }()
-      case 7: try { try decoder.decodeSingularInt32Field(value: &self.sint32) }()
-      case 8: try { try decoder.decodeSingularInt64Field(value: &self.sint64) }()
-      case 9: try { try decoder.decodeSingularUInt32Field(value: &self.fixed32) }()
-      case 10: try { try decoder.decodeSingularUInt64Field(value: &self.fixed64) }()
-      case 11: try { try decoder.decodeSingularInt32Field(value: &self.sfixed32) }()
-      case 12: try { try decoder.decodeSingularInt64Field(value: &self.sfixed64) }()
+      case 7: try { try decoder.decodeSingularSInt32Field(value: &self.sint32) }()
+      case 8: try { try decoder.decodeSingularSInt64Field(value: &self.sint64) }()
+      case 9: try { try decoder.decodeSingularFixed32Field(value: &self.fixed32) }()
+      case 10: try { try decoder.decodeSingularFixed64Field(value: &self.fixed64) }()
+      case 11: try { try decoder.decodeSingularSFixed32Field(value: &self.sfixed32) }()
+      case 12: try { try decoder.decodeSingularSFixed64Field(value: &self.sfixed64) }()
       case 13: try { try decoder.decodeSingularBoolField(value: &self.bool) }()
       case 14: try { try decoder.decodeSingularStringField(value: &self.string) }()
-      case 15: try { try decoder.decodeSingularDataField(value: &self.bytes) }()
+      case 15: try { try decoder.decodeSingularBytesField(value: &self.bytes) }()
       case 16: try { try decoder.decodeRepeatedDoubleField(value: &self.rdouble) }()
       case 17: try { try decoder.decodeRepeatedFloatField(value: &self.rfloat) }()
       case 18: try { try decoder.decodeRepeatedInt32Field(value: &self.rint32) }()
       case 19: try { try decoder.decodeRepeatedInt64Field(value: &self.rint64) }()
       case 20: try { try decoder.decodeRepeatedUInt32Field(value: &self.ruint32) }()
       case 21: try { try decoder.decodeRepeatedUInt64Field(value: &self.ruint64) }()
-      case 22: try { try decoder.decodeRepeatedInt32Field(value: &self.rsint32) }()
-      case 23: try { try decoder.decodeRepeatedInt64Field(value: &self.rsint64) }()
-      case 24: try { try decoder.decodeRepeatedUInt32Field(value: &self.rfixed32) }()
-      case 25: try { try decoder.decodeRepeatedUInt64Field(value: &self.rfixed64) }()
-      case 26: try { try decoder.decodeRepeatedInt32Field(value: &self.rsfixed32) }()
-      case 27: try { try decoder.decodeRepeatedInt64Field(value: &self.rsfixed64) }()
+      case 22: try { try decoder.decodeRepeatedSInt32Field(value: &self.rsint32) }()
+      case 23: try { try decoder.decodeRepeatedSInt64Field(value: &self.rsint64) }()
+      case 24: try { try decoder.decodeRepeatedFixed32Field(value: &self.rfixed32) }()
+      case 25: try { try decoder.decodeRepeatedFixed64Field(value: &self.rfixed64) }()
+      case 26: try { try decoder.decodeRepeatedSFixed32Field(value: &self.rsfixed32) }()
+      case 27: try { try decoder.decodeRepeatedSFixed64Field(value: &self.rsfixed64) }()
       case 28: try { try decoder.decodeRepeatedBoolField(value: &self.rbool) }()
       case 29: try { try decoder.decodeRepeatedStringField(value: &self.rstring) }()
-      case 30: try { try decoder.decodeRepeatedDataField(value: &self.rbytes) }()
-      case 31: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mdouble) }()
-      case 32: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mfloat) }()
-      case 33: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mint32) }()
-      case 34: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mint64) }()
-      case 35: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.muint32) }()
-      case 36: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.muint64) }()
-      case 37: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.msint32) }()
-      case 38: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.msint64) }()
-      case 39: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mfixed32) }()
-      case 40: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mfixed64) }()
-      case 41: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.msfixed32) }()
-      case 42: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.msfixed64) }()
-      case 43: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mbool) }()
-      case 44: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mstring) }()
-      case 45: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.mbytes) }()
+      case 30: try { try decoder.decodeRepeatedBytesField(value: &self.rbytes) }()
+      case 31: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufDouble>.self, value: &self.mdouble) }()
+      case 32: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufFloat>.self, value: &self.mfloat) }()
+      case 33: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt32>.self, value: &self.mint32) }()
+      case 34: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt64>.self, value: &self.mint64) }()
+      case 35: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt32>.self, value: &self.muint32) }()
+      case 36: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt64>.self, value: &self.muint64) }()
+      case 37: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt32>.self, value: &self.msint32) }()
+      case 38: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt64>.self, value: &self.msint64) }()
+      case 39: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt32>.self, value: &self.mfixed32) }()
+      case 40: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt64>.self, value: &self.mfixed64) }()
+      case 41: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt32>.self, value: &self.msfixed32) }()
+      case 42: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt64>.self, value: &self.msfixed64) }()
+      case 43: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufBool>.self, value: &self.mbool) }()
+      case 44: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: &self.mstring) }()
+      case 45: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufData>.self, value: &self.mbytes) }()
       default: break
       }
     }
+  }
+}
+
+extension Pbkit_Pingpong_Scalar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.double != 0 {
+      try visitor.visitSingularDoubleField(value: self.double, fieldNumber: 1)
+    }
+    if self.float != 0 {
+      try visitor.visitSingularFloatField(value: self.float, fieldNumber: 2)
+    }
+    if self.int32 != 0 {
+      try visitor.visitSingularInt32Field(value: self.int32, fieldNumber: 3)
+    }
+    if self.int64 != 0 {
+      try visitor.visitSingularInt64Field(value: self.int64, fieldNumber: 4)
+    }
+    if self.uint32 != 0 {
+      try visitor.visitSingularUInt32Field(value: self.uint32, fieldNumber: 5)
+    }
+    if self.uint64 != 0 {
+      try visitor.visitSingularUInt64Field(value: self.uint64, fieldNumber: 6)
+    }
+    if self.sint32 != 0 {
+      try visitor.visitSingularSInt32Field(value: self.sint32, fieldNumber: 7)
+    }
+    if self.sint64 != 0 {
+      try visitor.visitSingularSInt64Field(value: self.sint64, fieldNumber: 8)
+    }
+    if self.fixed32 != 0 {
+      try visitor.visitSingularFixed32Field(value: self.fixed32, fieldNumber: 9)
+    }
+    if self.fixed64 != 0 {
+      try visitor.visitSingularFixed64Field(value: self.fixed64, fieldNumber: 10)
+    }
+    if self.sfixed32 != 0 {
+      try visitor.visitSingularSFixed32Field(value: self.sfixed32, fieldNumber: 11)
+    }
+    if self.sfixed64 != 0 {
+      try visitor.visitSingularSFixed64Field(value: self.sfixed64, fieldNumber: 12)
+    }
+    if self.bool != false {
+      try visitor.visitSingularBoolField(value: self.bool, fieldNumber: 13)
+    }
+    if self.string != String() {
+      try visitor.visitSingularStringField(value: self.string, fieldNumber: 14)
+    }
+    if self.bytes != Data() {
+      try visitor.visitSingularBytesField(value: self.bytes, fieldNumber: 15)
+    }
+    if !self.rdouble.isEmpty {
+      try visitor.visitPackedDoubleField(value: self.rdouble, fieldNumber: 16)
+    }
+    if !self.rfloat.isEmpty {
+      try visitor.visitPackedFloatField(value: self.rfloat, fieldNumber: 17)
+    }
+    if !self.rint32.isEmpty {
+      try visitor.visitPackedInt32Field(value: self.rint32, fieldNumber: 18)
+    }
+    if !self.rint64.isEmpty {
+      try visitor.visitPackedInt64Field(value: self.rint64, fieldNumber: 19)
+    }
+    if !self.ruint32.isEmpty {
+      try visitor.visitPackedUInt32Field(value: self.ruint32, fieldNumber: 20)
+    }
+    if !self.ruint64.isEmpty {
+      try visitor.visitPackedUInt64Field(value: self.ruint64, fieldNumber: 21)
+    }
+    if !self.rsint32.isEmpty {
+      try visitor.visitPackedSInt32Field(value: self.rsint32, fieldNumber: 22)
+    }
+    if !self.rsint64.isEmpty {
+      try visitor.visitPackedSInt64Field(value: self.rsint64, fieldNumber: 23)
+    }
+    if !self.rfixed32.isEmpty {
+      try visitor.visitPackedFixed32Field(value: self.rfixed32, fieldNumber: 24)
+    }
+    if !self.rfixed64.isEmpty {
+      try visitor.visitPackedFixed64Field(value: self.rfixed64, fieldNumber: 25)
+    }
+    if !self.rsfixed32.isEmpty {
+      try visitor.visitPackedSFixed32Field(value: self.rsfixed32, fieldNumber: 26)
+    }
+    if !self.rsfixed64.isEmpty {
+      try visitor.visitPackedSFixed64Field(value: self.rsfixed64, fieldNumber: 27)
+    }
+    if !self.rbool.isEmpty {
+      try visitor.visitPackedBoolField(value: self.rbool, fieldNumber: 28)
+    }
+    if !self.rstring.isEmpty {
+      try visitor.visitPackedStringField(value: self.rstring, fieldNumber: 29)
+    }
+    if !self.rbytes.isEmpty {
+      try visitor.visitPackedBytesField(value: self.rbytes, fieldNumber: 30)
+    }
+    if !self.mdouble.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufDouble>.self, value: self.mdouble, fieldNumber: 31)
+    }
+    if !self.mfloat.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufFloat>.self, value: self.mfloat, fieldNumber: 32)
+    }
+    if !self.mint32.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt32>.self, value: self.mint32, fieldNumber: 33)
+    }
+    if !self.mint64.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt64>.self, value: self.mint64, fieldNumber: 34)
+    }
+    if !self.muint32.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt32>.self, value: self.muint32, fieldNumber: 35)
+    }
+    if !self.muint64.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt64>.self, value: self.muint64, fieldNumber: 36)
+    }
+    if !self.msint32.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt32>.self, value: self.msint32, fieldNumber: 37)
+    }
+    if !self.msint64.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt64>.self, value: self.msint64, fieldNumber: 38)
+    }
+    if !self.mfixed32.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt32>.self, value: self.mfixed32, fieldNumber: 39)
+    }
+    if !self.mfixed64.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufUInt64>.self, value: self.mfixed64, fieldNumber: 40)
+    }
+    if !self.msfixed32.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt32>.self, value: self.msfixed32, fieldNumber: 41)
+    }
+    if !self.msfixed64.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufInt64>.self, value: self.msfixed64, fieldNumber: 42)
+    }
+    if !self.mbool.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufBool>.self, value: self.mbool, fieldNumber: 43)
+    }
+    if !self.mstring.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: self.mstring, fieldNumber: 44)
+    }
+    if !self.mbytes.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufData>.self, value: self.mbytes, fieldNumber: 45)
+    }
+    try unknownFields.traverse(visitor: &visitor)
   }
 }

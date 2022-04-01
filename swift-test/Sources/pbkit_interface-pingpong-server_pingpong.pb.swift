@@ -81,7 +81,14 @@ public struct Pbkit_Pingpong_Ping {
 
   public var merong: Pbkit_Pingpong_Enum = .abCDeF
 
-  public var pongs: [Pbkit_Pingpong_Pong] = []
+  public var pongs: Pbkit_Pingpong_Pong {
+    get {return _pongs ?? Pbkit_Pingpong_Pong()}
+    set {_pongs = newValue}
+  }
+  /// Returns true if `pongs` has been explicitly set.
+  public var hasPongs: Bool {return self._pongs != nil}
+  /// Clears the value of `pongs`. Subsequent reads from it will return its default value.
+  public mutating func clearPongs() {self._pongs = nil}
 
   public var strings: [String] = []
 
@@ -176,6 +183,15 @@ public struct Pbkit_Pingpong_Ping {
 
     public var a: String = String()
 
+    public var b: Pbkit_Pingpong_Ping.Yahoo.TripleNested {
+      get {return _b ?? Pbkit_Pingpong_Ping.Yahoo.TripleNested()}
+      set {_b = newValue}
+    }
+    /// Returns true if `b` has been explicitly set.
+    public var hasB: Bool {return self._b != nil}
+    /// Clears the value of `b`. Subsequent reads from it will return its default value.
+    public mutating func clearB() {self._b = nil}
+
     public var unknownFields = SwiftProtobuf.UnknownStorage()
 
     public enum TripleNestedEnum: SwiftProtobuf.Enum {
@@ -214,9 +230,13 @@ public struct Pbkit_Pingpong_Ping {
     }
 
     public init() {}
+
+    fileprivate var _b: Pbkit_Pingpong_Ping.Yahoo.TripleNested? = nil
   }
 
   public init() {}
+
+  fileprivate var _pongs: Pbkit_Pingpong_Pong? = nil
 }
 
 #if swift(>=4.2)
@@ -317,7 +337,7 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       switch fieldNumber {
       case 1: try { try decoder.decodeRepeatedEnumField(value: &self.babo) }()
       case 2: try { try decoder.decodeSingularEnumField(value: &self.merong) }()
-      case 3: try { try decoder.decodeRepeatedMessageField(value: &self.pongs) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self._pongs) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.strings) }()
       case 5: try { try decoder.decodeRepeatedInt32Field(value: &self.int32S) }()
       case 6: try { try decoder.decodeRepeatedBytesField(value: &self.bytess) }()
@@ -357,9 +377,9 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
     if self.merong != .abCDeF {
       try visitor.visitSingularEnumField(value: self.merong, fieldNumber: 2)
     }
-    if !self.pongs.isEmpty {
-      try visitor.visitRepeatedMessageField(value: self.pongs, fieldNumber: 3)
-    }
+    try { if let v = self._pongs {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
     if !self.strings.isEmpty {
       try visitor.visitRepeatedStringField(value: self.strings, fieldNumber: 4)
     }
@@ -398,7 +418,7 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public static func ==(lhs: Pbkit_Pingpong_Ping, rhs: Pbkit_Pingpong_Ping) -> Bool {
     if lhs.babo != rhs.babo {return false}
     if lhs.merong != rhs.merong {return false}
-    if lhs.pongs != rhs.pongs {return false}
+    if lhs._pongs != rhs._pongs {return false}
     if lhs.strings != rhs.strings {return false}
     if lhs.int32S != rhs.int32S {return false}
     if lhs.bytess != rhs.bytess {return false}
@@ -423,6 +443,7 @@ extension Pbkit_Pingpong_Ping.Yahoo: SwiftProtobuf.Message, SwiftProtobuf._Messa
   public static let protoMessageName: String = Pbkit_Pingpong_Ping.protoMessageName + ".Yahoo"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .same(proto: "a"),
+    2: .same(proto: "b"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -432,20 +453,29 @@ extension Pbkit_Pingpong_Ping.Yahoo: SwiftProtobuf.Message, SwiftProtobuf._Messa
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularStringField(value: &self.a) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._b) }()
       default: break
       }
     }
   }
 
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    // The use of inline closures is to circumvent an issue where the compiler
+    // allocates stack space for every if/case branch local when no optimizations
+    // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
+    // https://github.com/apple/swift-protobuf/issues/1182
     if !self.a.isEmpty {
       try visitor.visitSingularStringField(value: self.a, fieldNumber: 1)
     }
+    try { if let v = self._b {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Pbkit_Pingpong_Ping.Yahoo, rhs: Pbkit_Pingpong_Ping.Yahoo) -> Bool {
     if lhs.a != rhs.a {return false}
+    if lhs._b != rhs._b {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

@@ -25,20 +25,20 @@ public struct Pbkit_Pingpong_BB {
   // `Message` and `Message+*Additions` files in the SwiftProtobuf library for
   // methods supported on all messages.
 
-  public var a: Pbkit_Pingpong_Pong {
-    get {return _a ?? Pbkit_Pingpong_Pong()}
-    set {_a = newValue}
+  public var aabCDeF: Pbkit_Pingpong_Pong {
+    get {return _aabCDeF ?? Pbkit_Pingpong_Pong()}
+    set {_aabCDeF = newValue}
   }
-  /// Returns true if `a` has been explicitly set.
-  public var hasA: Bool {return self._a != nil}
-  /// Clears the value of `a`. Subsequent reads from it will return its default value.
-  public mutating func clearA() {self._a = nil}
+  /// Returns true if `aabCDeF` has been explicitly set.
+  public var hasAabCDeF: Bool {return self._aabCDeF != nil}
+  /// Clears the value of `aabCDeF`. Subsequent reads from it will return its default value.
+  public mutating func clearAabCDeF() {self._aabCDeF = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
-  fileprivate var _a: Pbkit_Pingpong_Pong? = nil
+  fileprivate var _aabCDeF: Pbkit_Pingpong_Pong? = nil
 }
 
 #if swift(>=5.5) && canImport(_Concurrency)
@@ -52,7 +52,7 @@ fileprivate let _protobuf_package = "pbkit.pingpong"
 extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
   public static let protoMessageName: String = _protobuf_package + ".BB"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "a"),
+    1: .standard(proto: "aab_cDeF"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -61,7 +61,7 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
       // allocates stack space for every case branch when no optimizations are
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularMessageField(value: &self._a) }()
+      case 1: try { try decoder.decodeSingularMessageField(value: &self._aabCDeF) }()
       default: break
       }
     }
@@ -72,14 +72,14 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     // allocates stack space for every if/case branch local when no optimizations
     // are enabled. https://github.com/apple/swift-protobuf/issues/1034 and
     // https://github.com/apple/swift-protobuf/issues/1182
-    try { if let v = self._a {
+    try { if let v = self._aabCDeF {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Pbkit_Pingpong_BB, rhs: Pbkit_Pingpong_BB) -> Bool {
-    if lhs._a != rhs._a {return false}
+    if lhs._aabCDeF != rhs._aabCDeF {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

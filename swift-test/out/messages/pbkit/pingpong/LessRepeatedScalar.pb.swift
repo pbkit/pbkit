@@ -77,17 +77,68 @@ extension Pbkit_Pingpong_LessRepeatedScalar: SwiftProtobuf.Message, SwiftProtobu
       case 19: try { try decoder.decodeRepeatedInt64Field(value: &self.rint64) }()
       case 20: try { try decoder.decodeRepeatedUInt32Field(value: &self.ruint32) }()
       case 21: try { try decoder.decodeRepeatedUInt64Field(value: &self.ruint64) }()
-      case 22: try { try decoder.decodeRepeatedInt32Field(value: &self.rsint32) }()
-      case 23: try { try decoder.decodeRepeatedInt64Field(value: &self.rsint64) }()
-      case 24: try { try decoder.decodeRepeatedUInt32Field(value: &self.rfixed32) }()
-      case 25: try { try decoder.decodeRepeatedUInt64Field(value: &self.rfixed64) }()
-      case 26: try { try decoder.decodeRepeatedInt32Field(value: &self.rsfixed32) }()
-      case 27: try { try decoder.decodeRepeatedInt64Field(value: &self.rsfixed64) }()
+      case 22: try { try decoder.decodeRepeatedSInt32Field(value: &self.rsint32) }()
+      case 23: try { try decoder.decodeRepeatedSInt64Field(value: &self.rsint64) }()
+      case 24: try { try decoder.decodeRepeatedFixed32Field(value: &self.rfixed32) }()
+      case 25: try { try decoder.decodeRepeatedFixed64Field(value: &self.rfixed64) }()
+      case 26: try { try decoder.decodeRepeatedSFixed32Field(value: &self.rsfixed32) }()
+      case 27: try { try decoder.decodeRepeatedSFixed64Field(value: &self.rsfixed64) }()
       case 28: try { try decoder.decodeRepeatedBoolField(value: &self.rbool) }()
       case 29: try { try decoder.decodeRepeatedStringField(value: &self.rstring) }()
-      case 30: try { try decoder.decodeRepeatedDataField(value: &self.rbytes) }()
+      case 30: try { try decoder.decodeRepeatedBytesField(value: &self.rbytes) }()
       default: break
       }
     }
+  }
+}
+
+extension Pbkit_Pingpong_LessRepeatedScalar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.rdouble.isEmpty {
+      try visitor.visitPackedDoubleField(value: self.rdouble, fieldNumber: 16)
+    }
+    if !self.rfloat.isEmpty {
+      try visitor.visitPackedFloatField(value: self.rfloat, fieldNumber: 17)
+    }
+    if !self.rint32.isEmpty {
+      try visitor.visitPackedInt32Field(value: self.rint32, fieldNumber: 18)
+    }
+    if !self.rint64.isEmpty {
+      try visitor.visitPackedInt64Field(value: self.rint64, fieldNumber: 19)
+    }
+    if !self.ruint32.isEmpty {
+      try visitor.visitPackedUInt32Field(value: self.ruint32, fieldNumber: 20)
+    }
+    if !self.ruint64.isEmpty {
+      try visitor.visitPackedUInt64Field(value: self.ruint64, fieldNumber: 21)
+    }
+    if !self.rsint32.isEmpty {
+      try visitor.visitPackedSInt32Field(value: self.rsint32, fieldNumber: 22)
+    }
+    if !self.rsint64.isEmpty {
+      try visitor.visitPackedSInt64Field(value: self.rsint64, fieldNumber: 23)
+    }
+    if !self.rfixed32.isEmpty {
+      try visitor.visitPackedFixed32Field(value: self.rfixed32, fieldNumber: 24)
+    }
+    if !self.rfixed64.isEmpty {
+      try visitor.visitPackedFixed64Field(value: self.rfixed64, fieldNumber: 25)
+    }
+    if !self.rsfixed32.isEmpty {
+      try visitor.visitPackedSFixed32Field(value: self.rsfixed32, fieldNumber: 26)
+    }
+    if !self.rsfixed64.isEmpty {
+      try visitor.visitPackedSFixed64Field(value: self.rsfixed64, fieldNumber: 27)
+    }
+    if !self.rbool.isEmpty {
+      try visitor.visitPackedBoolField(value: self.rbool, fieldNumber: 28)
+    }
+    if !self.rstring.isEmpty {
+      try visitor.visitPackedStringField(value: self.rstring, fieldNumber: 29)
+    }
+    if !self.rbytes.isEmpty {
+      try visitor.visitPackedBytesField(value: self.rbytes, fieldNumber: 30)
+    }
+    try unknownFields.traverse(visitor: &visitor)
   }
 }

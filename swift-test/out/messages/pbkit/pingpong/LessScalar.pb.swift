@@ -77,17 +77,68 @@ extension Pbkit_Pingpong_LessScalar: SwiftProtobuf.Message, SwiftProtobuf._Messa
       case 4: try { try decoder.decodeSingularInt64Field(value: &self.int64) }()
       case 5: try { try decoder.decodeSingularUInt32Field(value: &self.uint32) }()
       case 6: try { try decoder.decodeSingularUInt64Field(value: &self.uint64) }()
-      case 7: try { try decoder.decodeSingularInt32Field(value: &self.sint32) }()
-      case 8: try { try decoder.decodeSingularInt64Field(value: &self.sint64) }()
-      case 9: try { try decoder.decodeSingularUInt32Field(value: &self.fixed32) }()
-      case 10: try { try decoder.decodeSingularUInt64Field(value: &self.fixed64) }()
-      case 11: try { try decoder.decodeSingularInt32Field(value: &self.sfixed32) }()
-      case 12: try { try decoder.decodeSingularInt64Field(value: &self.sfixed64) }()
+      case 7: try { try decoder.decodeSingularSInt32Field(value: &self.sint32) }()
+      case 8: try { try decoder.decodeSingularSInt64Field(value: &self.sint64) }()
+      case 9: try { try decoder.decodeSingularFixed32Field(value: &self.fixed32) }()
+      case 10: try { try decoder.decodeSingularFixed64Field(value: &self.fixed64) }()
+      case 11: try { try decoder.decodeSingularSFixed32Field(value: &self.sfixed32) }()
+      case 12: try { try decoder.decodeSingularSFixed64Field(value: &self.sfixed64) }()
       case 13: try { try decoder.decodeSingularBoolField(value: &self.bool) }()
       case 14: try { try decoder.decodeSingularStringField(value: &self.string) }()
-      case 15: try { try decoder.decodeSingularDataField(value: &self.bytes) }()
+      case 15: try { try decoder.decodeSingularBytesField(value: &self.bytes) }()
       default: break
       }
     }
+  }
+}
+
+extension Pbkit_Pingpong_LessScalar: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if self.double != 0 {
+      try visitor.visitSingularDoubleField(value: self.double, fieldNumber: 1)
+    }
+    if self.float != 0 {
+      try visitor.visitSingularFloatField(value: self.float, fieldNumber: 2)
+    }
+    if self.int32 != 0 {
+      try visitor.visitSingularInt32Field(value: self.int32, fieldNumber: 3)
+    }
+    if self.int64 != 0 {
+      try visitor.visitSingularInt64Field(value: self.int64, fieldNumber: 4)
+    }
+    if self.uint32 != 0 {
+      try visitor.visitSingularUInt32Field(value: self.uint32, fieldNumber: 5)
+    }
+    if self.uint64 != 0 {
+      try visitor.visitSingularUInt64Field(value: self.uint64, fieldNumber: 6)
+    }
+    if self.sint32 != 0 {
+      try visitor.visitSingularSInt32Field(value: self.sint32, fieldNumber: 7)
+    }
+    if self.sint64 != 0 {
+      try visitor.visitSingularSInt64Field(value: self.sint64, fieldNumber: 8)
+    }
+    if self.fixed32 != 0 {
+      try visitor.visitSingularFixed32Field(value: self.fixed32, fieldNumber: 9)
+    }
+    if self.fixed64 != 0 {
+      try visitor.visitSingularFixed64Field(value: self.fixed64, fieldNumber: 10)
+    }
+    if self.sfixed32 != 0 {
+      try visitor.visitSingularSFixed32Field(value: self.sfixed32, fieldNumber: 11)
+    }
+    if self.sfixed64 != 0 {
+      try visitor.visitSingularSFixed64Field(value: self.sfixed64, fieldNumber: 12)
+    }
+    if self.bool != false {
+      try visitor.visitSingularBoolField(value: self.bool, fieldNumber: 13)
+    }
+    if self.string != String() {
+      try visitor.visitSingularStringField(value: self.string, fieldNumber: 14)
+    }
+    if self.bytes != Data() {
+      try visitor.visitSingularBytesField(value: self.bytes, fieldNumber: 15)
+    }
+    try unknownFields.traverse(visitor: &visitor)
   }
 }

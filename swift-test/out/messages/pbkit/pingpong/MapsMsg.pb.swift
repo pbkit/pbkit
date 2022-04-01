@@ -7,40 +7,33 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
   typealias Version = _2
 }
 
-public struct Pbkit_Pingpong_Pong {
-  public var a: String = String()
-
+public struct Pbkit_Pingpong_MapsMsg {
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 }
 
 #if swift(>=5.5) && canImport(_Concurrency)
-extension Pbkit_Pingpong_Pong: @unchecked Sendable {}
+extension Pbkit_Pingpong_MapsMsg: @unchecked Sendable {}
 #endif
 
-extension Pbkit_Pingpong_Pong: SwiftProtobuf._ProtoNameProviding {
+extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "a"),
   ]
 }
 
-extension Pbkit_Pingpong_Pong: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularStringField(value: &self.a) }()
       default: break
       }
     }
   }
 }
 
-extension Pbkit_Pingpong_Pong: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+extension Pbkit_Pingpong_MapsMsg: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
   public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
-    if self.a != String() {
-      try visitor.visitSingularStringField(value: self.a, fieldNumber: 1)
-    }
     try unknownFields.traverse(visitor: &visitor)
   }
 }

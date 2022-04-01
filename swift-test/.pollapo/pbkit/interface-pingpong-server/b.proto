@@ -5,5 +5,5 @@ package pbkit.pingpong;
 import "pbkit/interface-pingpong-server/pingpong.proto";
 
 message BB {
-  pbkit.pingpong.Pong a = 1;
+  pbkit.pingpong.Pong aab_cDeF = 1;
 }

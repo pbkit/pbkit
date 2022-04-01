@@ -8,7 +8,16 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 }
 
 public struct Pbkit_Pingpong_BB {
-  public var a: Pbkit_Pingpong_Pong
+  fileprivate var _aabCDeF: Pbkit_Pingpong_Pong? = nil
+
+  public var aabCDeF: Pbkit_Pingpong_Pong {
+    get {return _aabCDeF ?? Pbkit_Pingpong_Pong()}
+    set {_aabCDeF = newValue}
+  }
+
+  public var hasAabCdeF: Bool {return self._aabCDeF != nil}
+
+  public mutating func clearAabCdeF() {self._aabCDeF = nil}
 
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
@@ -21,7 +30,7 @@ extension Pbkit_Pingpong_BB: @unchecked Sendable {}
 
 extension Pbkit_Pingpong_BB: SwiftProtobuf._ProtoNameProviding {
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
-    1: .same(proto: "a"),
+    1: .same(proto: "aab_cDeF"),
   ]
 }
 
@@ -29,9 +38,18 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try { try decoder.decodeSingularPbkit_Pingpong_PongField(value: &self.a) }()
+      case 1: try { try decoder.decodeSingularMessageField(value: &self.aabCDeF) }()
       default: break
       }
     }
+  }
+}
+
+extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    try { if let v = self._aabCDeF {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
+    } }()
+    try unknownFields.traverse(visitor: &visitor)
   }
 }

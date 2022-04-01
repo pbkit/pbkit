@@ -12,7 +12,16 @@ public struct Pbkit_Pingpong_Ping {
 
   public var merong: Pbkit_Pingpong_Enum = .abCDeF
 
-  public var pongs: [Pbkit_Pingpong_Pong] = []
+  fileprivate var _pongs: Pbkit_Pingpong_Pong? = nil
+
+  public var pongs: Pbkit_Pingpong_Pong {
+    get {return _pongs ?? Pbkit_Pingpong_Pong()}
+    set {_pongs = newValue}
+  }
+
+  public var hasPongs: Bool {return self._pongs != nil}
+
+  public mutating func clearPongs() {self._pongs = nil}
 
   public var strings: [String] = []
 
@@ -99,16 +108,16 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
     while let fieldNumber = try decoder.nextFieldNumber() {
       switch fieldNumber {
-      case 1: try { try decoder.decodeRepeatedPbkit_Pingpong_EnumField(value: &self.babo) }()
-      case 2: try { try decoder.decodeSingularPbkit_Pingpong_EnumField(value: &self.merong) }()
-      case 3: try { try decoder.decodeRepeatedPbkit_Pingpong_PongField(value: &self.pongs) }()
+      case 1: try { try decoder.decodeRepeatedEnumField(value: &self.babo) }()
+      case 2: try { try decoder.decodeSingularEnumField(value: &self.merong) }()
+      case 3: try { try decoder.decodeSingularMessageField(value: &self.pongs) }()
       case 4: try { try decoder.decodeRepeatedStringField(value: &self.strings) }()
       case 5: try { try decoder.decodeRepeatedInt32Field(value: &self.int32S) }()
-      case 6: try { try decoder.decodeRepeatedDataField(value: &self.bytess) }()
+      case 6: try { try decoder.decodeRepeatedBytesField(value: &self.bytess) }()
       case 7: try { try decoder.decodeRepeatedBoolField(value: &self.bools) }()
       case 8: try { try decoder.decodeRepeatedFloatField(value: &self.floats) }()
       case 9: try { try decoder.decodeRepeatedDoubleField(value: &self.doubles) }()
-      case 12: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<TODO, TODO>.self, value: &self.maps) }()
+      case 12: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: &self.maps) }()
       case 10: try {
         var v: String?
         try decoder.decodeSingularStringField(value: &v)
@@ -128,5 +137,41 @@ extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImpl
       default: break
       }
     }
+  }
+}
+
+extension Pbkit_Pingpong_Ping: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {
+  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {
+    if !self.babo.isEmpty {
+      try visitor.visitPackedEnumField(value: self.babo, fieldNumber: 1)
+    }
+    if self.merong != .abCDeF {
+      try visitor.visitSingularEnumField(value: self.merong, fieldNumber: 2)
+    }
+    try { if let v = self._pongs {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 3)
+    } }()
+    if !self.strings.isEmpty {
+      try visitor.visitPackedStringField(value: self.strings, fieldNumber: 4)
+    }
+    if !self.int32S.isEmpty {
+      try visitor.visitPackedInt32Field(value: self.int32S, fieldNumber: 5)
+    }
+    if !self.bytess.isEmpty {
+      try visitor.visitPackedBytesField(value: self.bytess, fieldNumber: 6)
+    }
+    if !self.bools.isEmpty {
+      try visitor.visitPackedBoolField(value: self.bools, fieldNumber: 7)
+    }
+    if !self.floats.isEmpty {
+      try visitor.visitPackedFloatField(value: self.floats, fieldNumber: 8)
+    }
+    if !self.doubles.isEmpty {
+      try visitor.visitPackedDoubleField(value: self.doubles, fieldNumber: 9)
+    }
+    if !self.maps.isEmpty {
+      try visitor.visitMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.ProtobufString, SwiftProtobuf.ProtobufString>.self, value: self.maps, fieldNumber: 12)
+    }
+    try unknownFields.traverse(visitor: &visitor)
   }
 }
