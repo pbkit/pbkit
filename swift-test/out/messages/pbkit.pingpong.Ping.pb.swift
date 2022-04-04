@@ -10,7 +10,7 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 public struct Pbkit_Pingpong_Ping {
   public var babo: [Pbkit_Pingpong_Enum] = []
 
-  public var merong: Pbkit_Pingpong_Enum = .abCDeF
+  public var merong: Pbkit_Pingpong_Enum = .init()
 
   fileprivate var _pongs: Pbkit_Pingpong_Pong? = nil
 
@@ -195,7 +195,7 @@ extension Pbkit_Pingpong_Ping {
     if !self.babo.isEmpty {
       try visitor.visitRepeatedEnumField(value: self.babo, fieldNumber: 1)
     }
-    if self.merong != .abCDeF {
+    if self.merong != .init() {
       try visitor.visitSingularEnumField(value: self.merong, fieldNumber: 2)
     }
     try { if let v = self._pongs {

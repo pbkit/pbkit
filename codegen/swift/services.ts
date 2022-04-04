@@ -62,7 +62,12 @@ function* genService({
   services,
 }: GenServiceConfig): Generator<CodeEntry> {
   const serviceName = typePath.split(".").slice(1).join(".");
-  const serviceSwiftName = toSwiftName(typePath);
+  const fragments = typePath.split(".").slice(1);
+  const serviceSwiftName = fragments.map((fragment, index) =>
+    fragments.length === index + 1
+      ? fragment.charAt(0).toUpperCase() + fragment.slice(1)
+      : toCamelCase(fragment, true)
+  ).join("_");
   const getCodeConfig: GetCodeConfig = {
     type,
     schema,
@@ -136,7 +141,7 @@ const getProtocolCode: GetCodeFn = ({
       });
       return [
         "\n",
-        `  func ${toCamelCase(rpcName)}(\n`,
+        `  func ${toSimpleCamelCase(rpcName)}(\n`,
         `    _ request: ${reqType},\n`,
         `    callOptions: CallOptions?\n`,
         `  ) -> UnaryCall<${reqType}, ${resType}>\n`, // @TODO(hyp3rflow): add other call type
@@ -168,7 +173,7 @@ const getProtocolExtensionCode: GetCodeFn = ({
       });
       return [
         "\n",
-        `  public func ${toCamelCase(rpcName)}(\n`,
+        `  public func ${toSimpleCamelCase(rpcName)}(\n`,
         `    _ request: ${reqType},\n`,
         `    callOptions: CallOptions? = nil\n`,
         `  ) -> UnaryCall<${reqType}, ${resType}> {\n`,
@@ -245,7 +250,7 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
           typePath: rpc.resType.typePath,
         });
         return `\n  func ${
-          toCamelCase(rpcName)
+          toSimpleCamelCase(rpcName)
         }(request: ${reqType}, context: StatusOnlyCallContext) -> EventLoopFuture<${resType}>\n`;
       },
     ).join(""),
@@ -281,10 +286,10 @@ const getProviderExtensionCode: GetCodeFn = (
         `        requestDeserializer: ProtobufDeserializer<${reqType}>(),\n`,
         `        responseSerializer: ProtobufSerializer<${resType}>(),\n`,
         `        interceptors: self.interceptors?.make${
-          toCamelCase(rpcName, true)
+          toSimpleUpperCase(rpcName)
         }Interceptors() ?? [],\n`,
         `        userFunction: self.${
-          toCamelCase(rpcName)
+          toSimpleCamelCase(rpcName)
         }(request:context:)\n`,
         "      )\n\n",
       ].join("");
@@ -310,9 +315,17 @@ const getFactoryProtocolCode: GetCodeFn = ({ schema, type, swiftName }) => {
         typePath: rpc.resType.typePath,
       });
       return `\n  func make${
-        toCamelCase(rpcName, true)
+        toSimpleUpperCase(rpcName)
       }Interceptors() -> [ServerInterceptor<${reqType}, ${resType}>]\n`;
     }).join(""),
     `}\n`,
   ].join("");
 };
+
+function toSimpleUpperCase(str: string) {
+  return str[0].toUpperCase() + str.slice(1);
+}
+
+function toSimpleCamelCase(str: string) {
+  return str[0].toLowerCase() + str.slice(1);
+}

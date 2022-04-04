@@ -1,5 +1,7 @@
 import { range } from "./range.ts";
 
+const appreviations = ["url", "http", "https", "id"];
+
 // https://github.com/apple/swift-protobuf/blob/8784605093f1464b3a52d3e89568008217ddccdb/Sources/SwiftProtobufPluginLibrary/NamingUtils.swift#L278
 export function toCamelCase(str: string, initialUpperCase?: boolean) {
   let result = "";
@@ -44,6 +46,8 @@ export function toCamelCase(str: string, initialUpperCase?: boolean) {
     let currentAsString = current;
     if (!result.length && !initialUpperCase) {
       // nothing.
+    } else if (appreviations.includes(currentAsString)) {
+      currentAsString = currentAsString.toUpperCase();
     } else {
       currentAsString = uppercaseFirstCharacter(currentAsString);
     }
@@ -364,14 +368,46 @@ function sanitizeTypeName(str: string, disambiguator: string) {
 }
 
 // https://github.com/apple/swift-protobuf/blob/8784605093f1464b3a52d3e89568008217ddccdb/Sources/SwiftProtobufPluginLibrary/NamingUtils.swift#L490
-export function sanitizeFieldName(fieldName: string, basedOn?: string) {
+export function sanitizeFieldName(fieldName: string, _basedOn?: string) {
+  const basedOn = _basedOn ?? fieldName;
+  if (basedOn.startsWith("clear") && isCharAtUpperCase(basedOn, 5)) {
+    return fieldName + "_p";
+  }
+  if (basedOn.startsWith("has") && isCharAtUpperCase(basedOn, 3)) {
+    return fieldName + "_p";
+  }
   if (reservedFieldNames.includes(basedOn ?? fieldName)) {
     return fieldName + "_p";
-  } else if (
-    (basedOn == null || basedOn === fieldName) &&
-    quotableFieldNames.includes(fieldName)
-  ) {
+  }
+  if (basedOn === fieldName && quotableFieldNames.includes(fieldName)) {
     return `\`${fieldName}\``;
   }
   return fieldName;
+  function isCharAtUpperCase(str: string, index: number) {
+    if (str.length <= index) return false;
+    return str.charAt(index) === str.charAt(index).toUpperCase();
+  }
+}
+
+export function prefixStripper(name: string, prefix: string) {
+  let curr = 0;
+  let stripIndex = 0;
+  for (const char of name) {
+    if (char === "_") {
+      stripIndex++;
+      continue;
+    }
+    if (
+      curr < prefix.length && char.toLowerCase() === prefix[curr].toLowerCase()
+    ) {
+      stripIndex++;
+      curr++;
+      continue;
+    }
+    break;
+  }
+  if (curr === prefix.length && curr < name.length - 1) {
+    return name.substring(stripIndex);
+  }
+  return name;
 }

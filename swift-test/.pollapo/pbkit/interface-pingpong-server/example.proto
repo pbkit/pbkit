@@ -8,6 +8,8 @@ service ExampleService {
   rpc PingPong(BB) returns (BB) {}
   
   rpc PingPong2(BB) returns (A) {}
+
+  rpc PPingPPPong3(A) returns (A) {}
 }
 
 service ExampleV2service {

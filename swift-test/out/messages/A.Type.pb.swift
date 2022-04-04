@@ -10,19 +10,19 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 extension A {
   public enum TypeEnum: SwiftProtobuf.Enum {
     public typealias RawValue = Int
-    case typeA // = 0
-    case typeB // = 1
+    case a // = 0
+    case b // = 1
     case self_ // = 2
     case UNRECOGNIZED(Int)
   
     public init() {
-      self = .typeA
+      self = .a
     }
   
     public init?(rawValue: Int) {
       switch rawValue {
-      case 0: self = .typeA
-      case 1: self = .typeB
+      case 0: self = .a
+      case 1: self = .b
       case 2: self = .self_
       default: self = .UNRECOGNIZED(rawValue)
       }
@@ -30,8 +30,8 @@ extension A {
   
     public var rawValue: Int {
       switch self {
-      case .typeA: return 0
-      case .typeB: return 1
+      case .a: return 0
+      case .b: return 1
       case .self_: return 2
       case .UNRECOGNIZED(let value): return value
       }
@@ -44,8 +44,8 @@ extension A {
 extension A.TypeEnum: CaseIterable {
   public static var allCases: [A.TypeEnum] {
     return [
-      .typeA,
-      .typeB,
+      .a,
+      .b,
       .self_,
     ]
   }

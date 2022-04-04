@@ -5,6 +5,7 @@ import genServices from "./services.ts";
 import {
   sanitizeEnumName,
   sanitizeMessageName,
+  toCamelCase,
 } from "./swift-protobuf/name.ts";
 
 // @TODO(dups)
@@ -46,7 +47,6 @@ async function* genBuildUnit(
   const messages = unit.messages ?? { outDir: "messages" };
   const services = unit.services ?? { outDir: "services" };
   const customTypeMapping: CustomTypeMapping = {
-    // ...getWellKnownTypeMapping({ messages }),
     ..._customTypeMapping,
   };
   yield* genMessages(schema, {
@@ -63,10 +63,6 @@ async function* genBuildUnit(
 export interface CustomTypeMapping {
   [typePath: string]: {
     swiftType: string;
-    getWireValueToSwiftValueCode: GetFieldCodeFn;
-    getSwiftValueToWireValueCode: GetFieldCodeFn;
-    getSwiftValueToJsonValueCode: GetFieldCodeFn;
-    getJsonValueToSwiftValueCode: GetFieldCodeFn;
   };
 }
 
@@ -131,7 +127,16 @@ export function getSwiftFullName(
   })();
   // @TODO(hyp3rflow): Sanitize only message name, not just package path.
   if (!parentTypePath) {
-    return sanitizedRelativeTypeName;
+    const fragments = relativeTypePath.split(".").slice(1);
+    const result = fragments.map((fragment, index) =>
+      fragments.length === index + 1
+        ? fragment.charAt(0).toUpperCase() + fragment.slice(1)
+        : toCamelCase(fragment, true)
+    ).join("_");
+    if (typePath.startsWith(".google.protobuf")) {
+      return "SwiftProtobuf." + result;
+    }
+    return result;
   }
   return getSwiftFullName({ schema, typePath: parentTypePath }) +
     `.${sanitizedRelativeTypeName}`;

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package pbkit.enum;
+
+enum AWESOME {
+  A_WE_SOME_B_C = 0;
+  AWESOMEE_C_D = 1;
+  AWESOME_E_F = 2;
+}
