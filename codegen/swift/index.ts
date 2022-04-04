@@ -2,6 +2,10 @@ import * as schema from "../../core/schema/model.ts";
 import { CodeEntry } from "../index.ts";
 import genMessages, { Field } from "./messages.ts";
 import genServices from "./services.ts";
+import {
+  sanitizeEnumName,
+  sanitizeMessageName,
+} from "./swift-protobuf/name.ts";
 
 // @TODO(dups)
 export type GenConfig = {
@@ -113,9 +117,24 @@ export function getSwiftFullName(
     schema,
     typePath,
   });
-  if (!parentTypePath) return toSwiftName(relativeTypePath);
+  const sanitizedRelativeTypeName = (() => {
+    const relativeType = schema.types[typePath];
+    if (relativeType) {
+      switch (relativeType.kind) {
+        case "message":
+          return sanitizeMessageName(toSwiftName(relativeTypePath));
+        case "enum":
+          return sanitizeEnumName(toSwiftName(relativeTypePath));
+      }
+    }
+    return toSwiftName(relativeTypePath);
+  })();
+  // @TODO(hyp3rflow): Sanitize only message name, not just package path.
+  if (!parentTypePath) {
+    return sanitizedRelativeTypeName;
+  }
   return getSwiftFullName({ schema, typePath: parentTypePath }) +
-    `.${toSwiftName(relativeTypePath)}`;
+    `.${sanitizedRelativeTypeName}`;
 }
 
 interface GetTypePathConfig {

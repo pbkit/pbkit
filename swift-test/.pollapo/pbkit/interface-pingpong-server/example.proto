@@ -7,7 +7,7 @@ import "pbkit/interface-pingpong-server/b.proto";
 service ExampleService {
   rpc PingPong(BB) returns (BB) {}
   
-  rpc PingPong2(BB) returns (BB) {}
+  rpc PingPong2(BB) returns (A) {}
 }
 
 service ExampleV2service {

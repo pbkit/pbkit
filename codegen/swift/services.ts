@@ -9,7 +9,7 @@ import {
   getSwiftFullName,
   toSwiftName,
 } from "./index.ts";
-import { toCamelCase } from "./swift-protobuf/case.ts";
+import { toCamelCase } from "./swift-protobuf/name.ts";
 
 export interface GenConfig {
   customTypeMapping: CustomTypeMapping;
@@ -41,7 +41,7 @@ export function getFilePath(
 ): string {
   return join(
     services.outDir,
-    typePath.replace(/^\./, "").replaceAll(".", "/") + ext,
+    typePath.replace(/^\./, "") + ext,
   );
 }
 
@@ -214,7 +214,8 @@ const getClientCode: GetCodeFn = ({ swiftName }) => {
   return [
     `public final class ${swiftName}Client: ${swiftName}ClientProtocol {\n`,
     `  public let channel: GRPCChannel\n`,
-    `  public let interceptors: ${swiftName}ClientInterceptorFactoryProtocol?\n`,
+    `  public var defaultCallOptions: CallOptions\n`,
+    `  public var interceptors: ${swiftName}ClientInterceptorFactoryProtocol?\n`,
     "\n",
     "  public init(\n",
     "    channel: GRPCChannel,\n",
@@ -243,7 +244,9 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
           schema,
           typePath: rpc.resType.typePath,
         });
-        return `\n  func ${rpcName}(request: ${reqType}, context: StatusOnlyCallContext) -> EventLoopFuture<${resType}>\n`;
+        return `\n  func ${
+          toCamelCase(rpcName)
+        }(request: ${reqType}, context: StatusOnlyCallContext) -> EventLoopFuture<${resType}>\n`;
       },
     ).join(""),
     `}\n`,
@@ -275,9 +278,11 @@ const getProviderExtensionCode: GetCodeFn = (
         `    case "${rpcName}":\n`,
         `      return UnaryServerHandler(\n`,
         "        context: context,\n",
-        `        requestDeserializer: ProtobufDeserializer<${resType}>(),\n`,
-        `        responseSerializer: ProtobufSerializer<${reqType}>(),\n`,
-        `        interceptors: self.interceptors?.make${rpcName}Interceptors() ?? [],\n`,
+        `        requestDeserializer: ProtobufDeserializer<${reqType}>(),\n`,
+        `        responseSerializer: ProtobufSerializer<${resType}>(),\n`,
+        `        interceptors: self.interceptors?.make${
+          toCamelCase(rpcName, true)
+        }Interceptors() ?? [],\n`,
         `        userFunction: self.${
           toCamelCase(rpcName)
         }(request:context:)\n`,
@@ -305,7 +310,7 @@ const getFactoryProtocolCode: GetCodeFn = ({ schema, type, swiftName }) => {
         typePath: rpc.resType.typePath,
       });
       return `\n  func make${
-        toCamelCase(rpcName)
+        toCamelCase(rpcName, true)
       }Interceptors() -> [ServerInterceptor<${reqType}, ${resType}>]\n`;
     }).join(""),
     `}\n`,
