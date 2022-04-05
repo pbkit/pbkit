@@ -34,11 +34,21 @@ public struct Pbkit_Pingpong_BB {
   /// Clears the value of `aabCDeF`. Subsequent reads from it will return its default value.
   public mutating func clearAabCDeF() {self._aabCDeF = nil}
 
+  public var description_p: Pbkit_Pingpong_Pong {
+    get {return _description_p ?? Pbkit_Pingpong_Pong()}
+    set {_description_p = newValue}
+  }
+  /// Returns true if `description_p` has been explicitly set.
+  public var hasDescription_p: Bool {return self._description_p != nil}
+  /// Clears the value of `description_p`. Subsequent reads from it will return its default value.
+  public mutating func clearDescription_p() {self._description_p = nil}
+
   public var unknownFields = SwiftProtobuf.UnknownStorage()
 
   public init() {}
 
   fileprivate var _aabCDeF: Pbkit_Pingpong_Pong? = nil
+  fileprivate var _description_p: Pbkit_Pingpong_Pong? = nil
 }
 
 #if swift(>=5.5) && canImport(_Concurrency)
@@ -53,6 +63,7 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
   public static let protoMessageName: String = _protobuf_package + ".BB"
   public static let _protobuf_nameMap: SwiftProtobuf._NameMap = [
     1: .standard(proto: "aab_cDeF"),
+    2: .same(proto: "description"),
   ]
 
   public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {
@@ -62,6 +73,7 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
       // enabled. https://github.com/apple/swift-protobuf/issues/1034
       switch fieldNumber {
       case 1: try { try decoder.decodeSingularMessageField(value: &self._aabCDeF) }()
+      case 2: try { try decoder.decodeSingularMessageField(value: &self._description_p) }()
       default: break
       }
     }
@@ -75,11 +87,15 @@ extension Pbkit_Pingpong_BB: SwiftProtobuf.Message, SwiftProtobuf._MessageImplem
     try { if let v = self._aabCDeF {
       try visitor.visitSingularMessageField(value: v, fieldNumber: 1)
     } }()
+    try { if let v = self._description_p {
+      try visitor.visitSingularMessageField(value: v, fieldNumber: 2)
+    } }()
     try unknownFields.traverse(visitor: &visitor)
   }
 
   public static func ==(lhs: Pbkit_Pingpong_BB, rhs: Pbkit_Pingpong_BB) -> Bool {
     if lhs._aabCDeF != rhs._aabCDeF {return false}
+    if lhs._description_p != rhs._description_p {return false}
     if lhs.unknownFields != rhs.unknownFields {return false}
     return true
   }

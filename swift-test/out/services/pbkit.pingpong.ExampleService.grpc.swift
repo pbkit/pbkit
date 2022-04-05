@@ -15,6 +15,11 @@ public protocol Pbkit_Pingpong_ExampleServiceClientProtocol: GRPCClient {
     _ request: Pbkit_Pingpong_BB,
     callOptions: CallOptions?
   ) -> UnaryCall<Pbkit_Pingpong_BB, Pbkit_Pingpong_A>
+
+  func pPingPPPong3(
+    _ request: Pbkit_Pingpong_A,
+    callOptions: CallOptions?
+  ) -> UnaryCall<Pbkit_Pingpong_A, Pbkit_Pingpong_A>
 }
 
 extension Pbkit_Pingpong_ExampleServiceClientProtocol {
@@ -45,12 +50,26 @@ extension Pbkit_Pingpong_ExampleServiceClientProtocol {
       interceptors: self.interceptors?.makePingPong2Interceptors() ?? []
     )
   }
+
+  public func pPingPPPong3(
+    _ request: Pbkit_Pingpong_A,
+    callOptions: CallOptions? = nil
+  ) -> UnaryCall<Pbkit_Pingpong_A, Pbkit_Pingpong_A> {
+    return self.makeUnaryCall(
+      path: "/pbkit.pingpong.ExampleService/PPingPPPong3",
+      request: request,
+      callOptions: callOptions ?? self.defaultCallOptions,
+      interceptors: self.interceptors?.makePPingPPPong3Interceptors() ?? []
+    )
+  }
 }
 
 public protocol Pbkit_Pingpong_ExampleServiceClientInterceptorFactoryProtocol {
   func makePingPongInterceptors() -> [ClientInterceptor<Pbkit_Pingpong_BB, Pbkit_Pingpong_BB>]
 
   func makePingPong2Interceptors() -> [ClientInterceptor<Pbkit_Pingpong_BB, Pbkit_Pingpong_A>]
+
+  func makePPingPPPong3Interceptors() -> [ClientInterceptor<Pbkit_Pingpong_A, Pbkit_Pingpong_A>]
 }
 
 public final class Pbkit_Pingpong_ExampleServiceClient: Pbkit_Pingpong_ExampleServiceClientProtocol {
@@ -75,6 +94,8 @@ public protocol Pbkit_Pingpong_ExampleServiceProvider: CallHandlerProvider {
   func pingPong(request: Pbkit_Pingpong_BB, context: StatusOnlyCallContext) -> EventLoopFuture<Pbkit_Pingpong_BB>
 
   func pingPong2(request: Pbkit_Pingpong_BB, context: StatusOnlyCallContext) -> EventLoopFuture<Pbkit_Pingpong_A>
+
+  func pPingPPPong3(request: Pbkit_Pingpong_A, context: StatusOnlyCallContext) -> EventLoopFuture<Pbkit_Pingpong_A>
 }
 
 extension Pbkit_Pingpong_ExampleServiceProvider {
@@ -103,6 +124,15 @@ extension Pbkit_Pingpong_ExampleServiceProvider {
         userFunction: self.pingPong2(request:context:)
       )
 
+    case "PPingPPPong3":
+      return UnaryServerHandler(
+        context: context,
+        requestDeserializer: ProtobufDeserializer<Pbkit_Pingpong_A>(),
+        responseSerializer: ProtobufSerializer<Pbkit_Pingpong_A>(),
+        interceptors: self.interceptors?.makePPingPPPong3Interceptors() ?? [],
+        userFunction: self.pPingPPPong3(request:context:)
+      )
+
     default:
       return nil
     }
@@ -113,4 +143,6 @@ public protocol Pbkit_Pingpong_ExampleServiceServerInterceptorFactoryProtocol {
   func makePingPongInterceptors() -> [ServerInterceptor<Pbkit_Pingpong_BB, Pbkit_Pingpong_BB>]
 
   func makePingPong2Interceptors() -> [ServerInterceptor<Pbkit_Pingpong_BB, Pbkit_Pingpong_A>]
+
+  func makePPingPPPong3Interceptors() -> [ServerInterceptor<Pbkit_Pingpong_A, Pbkit_Pingpong_A>]
 }

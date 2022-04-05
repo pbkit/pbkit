@@ -6,4 +6,6 @@ import "pbkit/interface-pingpong-server/pingpong.proto";
 
 message BB {
   pbkit.pingpong.Pong aab_cDeF = 1;
+
+  pbkit.pingpong.Pong description = 2;
 }
