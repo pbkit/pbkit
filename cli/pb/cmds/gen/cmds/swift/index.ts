@@ -28,7 +28,7 @@ export default new Command()
     "Out directory",
     { default: "out" },
   )
-  .description("Generate typescript library.")
+  .description("Generate swift library which is dependent on SwiftProtobuf")
   .action(async (options: Options, entryPath: string[]) => {
     const entryPaths = entryPath ?? [".pollapo"];
     const protoPaths = options.protoPath ?? [];
