@@ -14,6 +14,7 @@ export interface Options {
 
 export interface File {
   parseResult?: ParseResult;
+  importPath: string;
   syntax: "proto2" | "proto3";
   package: string;
   imports: Import[];
