@@ -99,6 +99,10 @@ interface GetSwiftFullNameConfig {
   schema: schema.Schema;
   typePath?: string;
 }
+/**
+ * Returns SwiftFullName of typePath.
+ * @example .package.example.Nested.Something.Message -> Package_Example_Nested.Something.Message
+ */
 export function getSwiftFullName(
   config: { schema: schema.Schema; typePath: string },
 ): string;
