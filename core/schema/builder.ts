@@ -39,19 +39,22 @@ export interface BuildConfig {
   files: string[];
 }
 export async function build(config: BuildConfig): Promise<Schema> {
+  return connect(await extract(gather(config)));
+}
+
+export interface FileInfo {
+  filePath: string;
+  parseResult: ParseResult;
+  file: File;
+}
+export async function extract(files: AsyncIterable<FileInfo>) {
   const result: Schema = {
     files: {},
     types: {},
     extends: {},
     services: {},
   };
-  const absoluteFilePathMapping: AbsoluteFilePathMapping = {};
-  const iterFileResults = iterFiles(
-    config.files,
-    config.loader,
-    absoluteFilePathMapping,
-  );
-  for await (const { filePath, parseResult, file } of iterFileResults) {
+  for await (const { filePath, parseResult, file } of files) {
     result.files[filePath] = file;
     const typePath = file.package ? "." + file.package : "";
     const statements = parseResult.ast.statements;
@@ -67,19 +70,28 @@ export async function build(config: BuildConfig): Promise<Schema> {
     }
     // TODO: extends
   }
-  // resolve imports
-  for (const file of Object.values(result.files)) {
+  return result;
+}
+
+export function connect(schema: Schema): Schema {
+  const importPathToFilePath: {
+    [importPath: string]: string /* filePath */;
+  } = {};
+  for (const [filePath, { importPath }] of Object.entries(schema.files)) {
+    if (importPath in importPathToFilePath) continue;
+    importPathToFilePath[importPath] = filePath;
+  }
+  for (const file of Object.values(schema.files)) {
     for (const entry of file.imports) {
-      if (entry.importPath in absoluteFilePathMapping) {
-        entry.filePath = absoluteFilePathMapping[entry.importPath];
+      if (entry.importPath in importPathToFilePath) {
+        entry.filePath = importPathToFilePath[entry.importPath];
       }
     }
   }
-  // resolve types
-  for (const [filePath, file] of Object.entries(result.files)) {
-    const resolveTypePath = getResolveTypePathFn(result, filePath);
+  for (const [filePath, file] of Object.entries(schema.files)) {
+    const resolveTypePath = getResolveTypePathFn(schema, filePath);
     for (const typePath of file.typePaths) {
-      const type = result.types[typePath];
+      const type = schema.types[typePath];
       if (type.kind === "enum") continue;
       for (const field of Object.values(type.fields)) {
         if (field.kind === "map") {
@@ -103,7 +115,7 @@ export async function build(config: BuildConfig): Promise<Schema> {
       }
     }
     for (const servicePath of file.servicePaths) {
-      const service = result.services[servicePath];
+      const service = schema.services[servicePath];
       for (const rpc of Object.values(service.rpcs)) {
         const reqTypePath = resolveTypePath(
           rpc.reqType.type,
@@ -118,39 +130,32 @@ export async function build(config: BuildConfig): Promise<Schema> {
       }
     }
   }
-  return result;
+  return schema;
 }
 
-interface AbsoluteFilePathMapping {
-  [filePath: string]: string;
+export interface GatherConfig {
+  files: string[];
+  loader: Loader;
 }
-
-interface IterFileResult {
-  filePath: string;
-  parseResult: ParseResult;
-  file: File;
-}
-async function* iterFiles(
-  files: string[],
-  loader: Loader,
-  absoluteFilePathMapping: AbsoluteFilePathMapping,
-): AsyncGenerator<IterFileResult> {
+export async function* gather(
+  { files, loader }: GatherConfig,
+): AsyncGenerator<FileInfo> {
   const queue = [...files];
-  const visited: { [filePath: string]: true } = {};
+  const visited: { [importPath: string]: true } = {};
   const loaded: { [filePath: string]: true } = {};
   while (queue.length) {
-    const filePath = queue.pop()!;
-    if (visited[filePath]) continue;
-    visited[filePath] = true;
-    const loadResult = await loader.load(filePath);
+    const importPath = queue.pop()!;
+    if (visited[importPath]) continue;
+    visited[importPath] = true;
+    const loadResult = await loader.load(importPath);
     if (!loadResult) continue;
-    absoluteFilePathMapping[filePath] = loadResult.absolutePath;
     if (loaded[loadResult.absolutePath]) continue;
     loaded[loadResult.absolutePath] = true;
     const parseResult = parse(loadResult.data);
     const statements = parseResult.ast.statements;
     const file: File = {
       parseResult,
+      importPath,
       syntax: getSyntax(statements),
       package: getPackage(statements),
       imports: getImports(statements),
