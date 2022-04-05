@@ -8,15 +8,14 @@ import {
   toCamelCase,
 } from "./swift-protobuf/name.ts";
 
-// @TODO(dups)
 export type GenConfig = {
-  messages?: GenMessagesConfig;
-  services?: GenServicesConfig;
+  messages: GenMessagesConfig;
+  services: GenServicesConfig;
   customTypeMapping?: CustomTypeMapping;
 };
 export default function gen(
   schema: schema.Schema,
-  config: GenConfig = {},
+  config: GenConfig,
 ) {
   const { messages, services, customTypeMapping } = config;
   const units = [{ schema, messages, services }];
@@ -25,8 +24,8 @@ export default function gen(
 
 export interface GenUnit {
   schema: schema.Schema;
-  messages?: GenMessagesConfig;
-  services?: GenServicesConfig;
+  messages: GenMessagesConfig;
+  services: GenServicesConfig;
 }
 export interface GenAllConfig {
   units: GenUnit[];
@@ -44,8 +43,8 @@ async function* genBuildUnit(
   _customTypeMapping?: CustomTypeMapping,
 ): AsyncGenerator<CodeEntry> {
   const { schema } = unit;
-  const messages = unit.messages ?? { outDir: "messages" };
-  const services = unit.services ?? { outDir: "services" };
+  const messages = unit.messages;
+  const services = unit.services;
   const customTypeMapping: CustomTypeMapping = {
     ..._customTypeMapping,
   };
