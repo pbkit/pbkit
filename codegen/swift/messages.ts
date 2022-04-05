@@ -29,6 +29,7 @@ export default function* gen(
 ): Generator<CodeEntry> {
   const { messages, customTypeMapping } = config;
   for (const [typePath, type] of Object.entries(schema.types)) {
+    // Dependent on SwiftProtobuf's well-known types codegen (ex. .google.protobuf.Timestamp)
     if (typePath.startsWith(".google.protobuf")) continue;
     switch (type.kind) {
       case "enum":
@@ -213,6 +214,9 @@ function* genMessage(
     swiftName,
     swiftFullName,
     parentSwiftFullName,
+    getSwiftType(typePath?: string) {
+      return pbTypeToSwiftType({ customTypeMapping, schema, typePath });
+    },
   };
   const typeDefCode = getMessageTypeDefCode(getCodeConfig);
   const decodeMessageCode = getDecodeMessageCode(getCodeConfig);
@@ -363,6 +367,7 @@ interface GetMessageCodeConfig extends GetCodeConfig {
   message: Message;
   schema: schema.Schema;
   customTypeMapping: CustomTypeMapping;
+  getSwiftType(typePath?: string): string;
 }
 interface GetEnumCodeConfig extends GetCodeConfig {
   enum: Enum;
@@ -492,7 +497,7 @@ const getMessageTypeDefCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
               `  public var ${fieldSwiftName}: ${swiftType} {\n`,
               `    get {\n`,
               `      if case .${fieldSwiftName}(let v)? = ${sanitizedSwiftName} {return v}\n`,
-              `      return .init()\n`, // @CHECK(hyp3rflow): is it okay?
+              `      return .init()\n`,
               `    }\n`,
               `    set {${sanitizedSwiftName} = .${fieldSwiftName}(newValue)}\n`,
               `  }\n\n`,
@@ -578,6 +583,7 @@ const getNameMapCode: GetCodeFn<GetEnumCodeConfig | GetMessageCodeConfig> = (
 };
 
 const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
+  const { getSwiftType } = config;
   return [
     `extension ${config.swiftFullName}: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase {\n`,
     `  public mutating func decodeMessage<D: SwiftProtobuf.Decoder>(decoder: inout D) throws {\n`,
@@ -593,16 +599,8 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
       }) => {
         const isRepeated = schema.kind === "repeated";
         if (schema.kind === "map") {
-          const swiftKeyType = pbTypeToSwiftType({
-            customTypeMapping: config.customTypeMapping,
-            schema: config.schema,
-            typePath: schema.keyTypePath,
-          });
-          const swiftValueType = pbTypeToSwiftType({
-            customTypeMapping: config.customTypeMapping,
-            schema: config.schema,
-            typePath: schema.valueTypePath,
-          });
+          const swiftKeyType = getSwiftType(schema.keyTypePath);
+          const swiftValueType = getSwiftType(schema.valueTypePath);
           const swiftValueName = getSwiftFullName({
             schema: config.schema,
             typePath: schema.valueTypePath,
@@ -683,6 +681,7 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
 };
 
 const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
+  const { getSwiftType } = config;
   return [
     `extension ${config.swiftFullName} {\n`,
     `  public func traverse<V: SwiftProtobuf.Visitor>(visitor: inout V) throws {\n`,
@@ -712,16 +711,8 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
             );
           }
         } else if (schema.kind === "map") {
-          const swiftKeyType = pbTypeToSwiftType({
-            customTypeMapping: config.customTypeMapping,
-            schema: config.schema,
-            typePath: schema.keyTypePath,
-          });
-          const swiftValueType = pbTypeToSwiftType({
-            customTypeMapping: config.customTypeMapping,
-            schema: config.schema,
-            typePath: schema.valueTypePath,
-          });
+          const swiftKeyType = getSwiftType(schema.keyTypePath);
+          const swiftValueType = getSwiftType(schema.valueTypePath);
           const swiftValueName = getSwiftFullName({
             schema: config.schema,
             typePath: schema.valueTypePath,

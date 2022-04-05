@@ -376,7 +376,7 @@ export function sanitizeFieldName(fieldName: string, _basedOn?: string) {
   if (basedOn.startsWith("has") && isCharAtUpperCase(basedOn, 3)) {
     return fieldName + "_p";
   }
-  if (reservedFieldNames.includes(basedOn ?? fieldName)) {
+  if (reservedFieldNames.includes(basedOn)) {
     return fieldName + "_p";
   }
   if (basedOn === fieldName && quotableFieldNames.includes(fieldName)) {

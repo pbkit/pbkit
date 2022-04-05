@@ -178,10 +178,10 @@ const getProtocolExtensionCode: GetCodeFn = ({
         `    callOptions: CallOptions? = nil\n`,
         `  ) -> UnaryCall<${reqType}, ${resType}> {\n`,
         `    return self.makeUnaryCall(\n`,
-        `      path: "/${serviceName}/${rpcName}",\n`, // @TODO(hyp3rflow): rpcName? or toCamelCse(rpcName, true)
+        `      path: "/${serviceName}/${rpcName}",\n`,
         `      request: request,\n`,
         `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
-        `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? []\n`, // @TODO(hyp3rflow): rpcName? or toCamelCse(rpcName, true)
+        `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? []\n`,
         `    )\n`,
         `  }\n`,
       ].join("");
