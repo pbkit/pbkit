@@ -88,21 +88,14 @@ function* genService({
     filePath,
     new StringReader([
       importCode,
-      "\n",
       protocolCode,
-      "\n",
       extensionCode,
-      "\n",
       clientInterceptorFactoryProtocolCode,
-      "\n",
       clientCode,
-      "\n",
       providerCode,
-      "\n",
       providerExtensionCode,
-      "\n",
       factoryProtocolCode,
-    ].join("")),
+    ].join("\n")),
   ];
 }
 
