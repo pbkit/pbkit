@@ -26,11 +26,11 @@ async function save(outDir, files) {
 exports.default = save;
 
 async function saveOne(outPath, reader) {
-  const b = new Uint8Array(32 * 1024);
   let gotEOF = false;
   const writable = createWriteStream(outPath);
   try {
     while (!gotEOF) {
+      const b = new Uint8Array(32 * 1024);
       const result = await reader.read(b);
       if (result == null) {
         gotEOF = true;
