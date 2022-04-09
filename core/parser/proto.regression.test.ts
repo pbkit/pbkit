@@ -36,6 +36,7 @@ Deno.test("#44", () => {
 Deno.test("#45", () => {
   parse(`
     enum EnumWithLargeValue {
+      DEFAULT = 0;
       VALUE_MAX = 0x7fffffff;
     }
   `);
@@ -69,6 +70,7 @@ Deno.test("#55", () => {
   parse(`
     enum Foo {
       reserved 1;
+      BAR = 0;
     }
   `);
 });
