@@ -865,6 +865,16 @@ function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
     acceptEnumField,
     acceptEmpty,
   ]);
+  if (statements.reduce((acc, statement) =>  {
+    switch (statement.type) {
+      case "enum-field":
+        return statement.fieldNumber.value.text === "0" || acc;
+      default:
+        return false
+    }
+  }, false) === false) {
+    throw new Error("enum must have field for 0.");
+  }
   const bracketClose = parser.expect("}");
   return {
     ...mergeSpans([bracketOpen, bracketClose]),

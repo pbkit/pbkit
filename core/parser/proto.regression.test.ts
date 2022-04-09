@@ -1,3 +1,4 @@
+import { assertThrows } from "https://deno.land/std@0.134.0/testing/asserts.ts";
 import { parse } from "./proto.ts";
 
 Deno.test("#39", () => {
@@ -153,3 +154,19 @@ Deno.test("#172", () => {
     }
   `);
 });
+
+Deno.test("#194", () => {
+  assertThrows(
+    () => {
+      parse(String.raw`
+         enum Lorem {
+           IPSUM = 1;
+           DOLOR = 2;
+         }
+      `)
+    },
+    Error,
+    "0",
+  )
+})
+
