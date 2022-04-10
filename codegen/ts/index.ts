@@ -91,7 +91,6 @@ async function* genBuildUnit(
   yield* genServices(schema, {
     createImportBuffer,
     indexBuffer,
-    customTypeMapping,
     messages,
     services,
   });
