@@ -491,7 +491,7 @@ const getEncodeBinaryCode: GetCodeFn = ({
       if (schema.kind === "map") {
         return [
           "  {\n",
-          `    const fields = Object.entries(value.${tsName});\n`,
+          `    const fields = value.${tsName}.entries();\n`,
           "    for (const [key, value] of fields) {\n",
           "      result.push(\n",
           `        [${fieldNumber}, ${tsValueToWireValueCode}],\n`,
