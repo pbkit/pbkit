@@ -1045,6 +1045,24 @@ export function getDefaultWireValueToTsValueCode({
   }
 }
 
+export interface PbTypeToTsMessageTypeConfig {
+  addInternalImport: AddInternalImport;
+  messages: GenMessagesConfig;
+  here: string;
+  typePath?: string;
+}
+export function pbTypeToTsMessageType({
+  addInternalImport,
+  messages,
+  here,
+  typePath,
+}: PbTypeToTsMessageTypeConfig): string {
+  if (!typePath) return "unknown";
+  const from = getFilePath(typePath, messages);
+  const as = typePath.match(/[^.]+$/)?.[0]!;
+  return addInternalImport(here, from, "Type", as);
+}
+
 export interface PbTypeToTsTypeConfig {
   customTypeMapping: CustomTypeMapping;
   addInternalImport: AddInternalImport;

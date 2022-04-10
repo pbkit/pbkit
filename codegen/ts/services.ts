@@ -3,22 +3,17 @@ import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { join } from "../path.ts";
 import { CodeEntry } from "../index.ts";
-import {
-  CustomTypeMapping,
-  GenMessagesConfig,
-  GenServicesConfig,
-} from "./index.ts";
+import { GenMessagesConfig, GenServicesConfig } from "./index.ts";
 import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
 import { IndexBuffer } from "./index-buffer.ts";
 import {
   getFilePath as getMessageFilePath,
-  pbTypeToTsType,
+  pbTypeToTsMessageType,
 } from "./messages.ts";
 
 export interface GenConfig {
   createImportBuffer: CreateImportBufferFn;
   indexBuffer: IndexBuffer;
-  customTypeMapping: CustomTypeMapping;
   messages: GenMessagesConfig;
   services: GenServicesConfig;
 }
@@ -29,7 +24,6 @@ export default function* gen(
   const {
     createImportBuffer,
     indexBuffer,
-    customTypeMapping,
     messages,
     services,
   } = config;
@@ -43,7 +37,6 @@ export default function* gen(
       typePath,
       type,
       createImportBuffer,
-      customTypeMapping,
       messages,
       services,
     });
@@ -67,14 +60,12 @@ interface GenServiceConfig {
   typePath: string;
   type: Service;
   createImportBuffer: CreateImportBufferFn;
-  customTypeMapping: CustomTypeMapping;
   messages: GenMessagesConfig;
   services: GenServicesConfig;
 }
 function* genService({
   typePath,
   type,
-  customTypeMapping,
   createImportBuffer,
   messages,
   services,
@@ -82,14 +73,12 @@ function* genService({
   const filePath = getFilePath(typePath, services);
   const importBuffer = createImportBuffer({ reservedNames });
   const serviceTypeDefCode = getServiceTypeDefCode({
-    customTypeMapping,
     filePath,
     importBuffer,
     service: type,
     messages,
   });
   const methodDescriptorsCode = getMethodDescriptorsCode({
-    customTypeMapping,
     filePath,
     typePath,
     importBuffer,
@@ -113,22 +102,19 @@ function* genService({
 }
 
 interface GetServiceTypeDefCodeConfig {
-  customTypeMapping: CustomTypeMapping;
   filePath: string;
   importBuffer: ImportBuffer;
   messages: GenMessagesConfig;
   service: Service;
 }
 function getServiceTypeDefCode({
-  customTypeMapping,
   filePath,
   importBuffer,
   messages,
   service,
 }: GetServiceTypeDefCodeConfig) {
   function getTsType(typePath?: string) {
-    return pbTypeToTsType({
-      customTypeMapping,
+    return pbTypeToTsMessageType({
       addInternalImport: importBuffer.addInternalImport,
       messages,
       here: filePath,
@@ -160,7 +146,6 @@ function getServiceTypeDefCode({
 }
 
 interface GetMethodDescriptorsCodeConfig {
-  customTypeMapping: CustomTypeMapping;
   filePath: string;
   typePath: string;
   importBuffer: ImportBuffer;
@@ -168,7 +153,6 @@ interface GetMethodDescriptorsCodeConfig {
   messages: GenMessagesConfig;
 }
 function getMethodDescriptorsCode({
-  customTypeMapping,
   filePath,
   typePath,
   importBuffer,
@@ -176,8 +160,7 @@ function getMethodDescriptorsCode({
   messages,
 }: GetMethodDescriptorsCodeConfig) {
   function getTsType(typePath?: string) {
-    return pbTypeToTsType({
-      customTypeMapping,
+    return pbTypeToTsMessageType({
       addInternalImport: importBuffer.addInternalImport,
       messages,
       here: filePath,
