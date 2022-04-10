@@ -244,7 +244,7 @@ function* genMessage({
       fieldNumber: +fieldNumber,
       tsName: snakeToCamel(field.name),
       tsType: getFieldTypeCode(field),
-      isEnum: getFieldIsEnum(field),
+      isEnum: getFieldValueIsEnum(field),
       default: getFieldDefaultCode(field),
     };
   }
@@ -254,10 +254,12 @@ function* genMessage({
     const valueTypeName = toTsType(field.valueTypePath);
     return `Map<${keyTypeName}, ${valueTypeName}>`;
   }
-  function getFieldIsEnum(field: schema.MessageField): boolean {
-    if (field.kind === "map") return false;
-    if (!field.typePath) return false;
-    return schema.types[field.typePath]?.kind === "enum";
+  function getFieldValueIsEnum(field: schema.MessageField): boolean {
+    const typePath = (field.kind === "map")
+      ? field.valueTypePath
+      : field.typePath;
+    if (!typePath) return false;
+    return schema.types[typePath]?.kind === "enum";
   }
   function getFieldDefaultCode(field: schema.MessageField): string | undefined {
     if (field.kind === "repeated") return "[]";
@@ -938,7 +940,11 @@ export function getDefaultJsonValueToTsValueCode({
       return `${jsonValueToTsValueFns}.${typePath.substr(1)}(${jsonValue})`;
     }
     if (field.isEnum) {
-      return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${field.tsType}`;
+      if (schema.kind === "map") {
+        return `${jsonValueToTsValueFns}.enum(${jsonValue})`;
+      } else {
+        return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${field.tsType}`;
+      }
     }
     const decodeJson = importBuffer.addInternalImport(
       filePath,
