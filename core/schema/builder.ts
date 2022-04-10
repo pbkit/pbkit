@@ -16,6 +16,7 @@ import {
 } from "./eval-ast-constant.ts";
 import {
   Enum,
+  Extend,
   File,
   Group,
   Import,
@@ -166,6 +167,69 @@ export async function* gather(
     yield { filePath: loadResult.absolutePath, parseResult, file };
     queue.push(...file.imports.map(({ importPath }) => importPath));
   }
+}
+
+export function merge(older: Schema, newer: Schema): Schema {
+  const result = {
+    files: { ...older.files, ...newer.files },
+    types: { ...older.types, ...newer.types },
+    extends: { ...older.extends, ...newer.extends },
+    services: { ...older.services, ...newer.services },
+  };
+  { // types
+    const olderTypePaths = Object.keys(older.types);
+    const newerTypePaths = Object.keys(newer.types);
+    for (const typePath of intersect(olderTypePaths, newerTypePaths)) {
+      const olderType = older.types[typePath];
+      const newerType = newer.types[typePath];
+      result.types[typePath] = mergeType(olderType, newerType);
+    }
+  }
+  { // extends
+    const olderTypePaths = Object.keys(older.extends);
+    const newerTypePaths = Object.keys(newer.extends);
+    for (const typePath of intersect(olderTypePaths, newerTypePaths)) {
+      const olderExtends = older.extends[typePath];
+      const newerExtends = newer.extends[typePath];
+      result.extends[typePath] = mergeExtends(olderExtends, newerExtends);
+    }
+  }
+  { // services
+    const olderServicePaths = Object.keys(older.services);
+    const newerServicePaths = Object.keys(newer.services);
+    for (const servicePath of intersect(olderServicePaths, newerServicePaths)) {
+      const olderService = older.services[servicePath];
+      const newerService = newer.services[servicePath];
+      result.services[servicePath] = mergeService(olderService, newerService);
+    }
+  }
+  return result;
+}
+
+function mergeType(older: Type, newer: Type): Type {
+  if (older.kind !== newer.kind) return newer;
+  if (older.kind === "message") {
+    const _newer = newer as Message;
+    const result = { ..._newer };
+    return result; // TODO
+  } else {
+    const _newer = newer as Enum;
+    const result = { ..._newer };
+    result.fields = { ...older.fields, ..._newer.fields };
+    return result;
+  }
+}
+
+function mergeExtends(older: Extend[], newer: Extend[]): Extend[] {
+  return newer; // TODO
+}
+
+function mergeService(older: Service, newer: Service): Service {
+  return newer; // TODO
+}
+
+function intersect<T>(a: T[], b: T[]): T[] {
+  return a.filter((x) => b.includes(x));
 }
 
 function getSyntax(statements: ast.Statement[]): File["syntax"] {
