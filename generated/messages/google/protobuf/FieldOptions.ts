@@ -45,6 +45,7 @@ export declare namespace $.google.protobuf {
     lazy?: boolean;
     jstype?: JSType;
     weak?: boolean;
+    unverifiedLazy?: boolean;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -58,6 +59,7 @@ export function getDefaultValue(): $.google.protobuf.FieldOptions {
     lazy: false,
     jstype: "JS_NORMAL",
     weak: false,
+    unverifiedLazy: false,
     uninterpretedOption: [],
   };
 }
@@ -77,6 +79,7 @@ export function encodeJson(value: $.google.protobuf.FieldOptions): unknown {
   if (value.lazy !== undefined) result.lazy = tsValueToJsonValueFns.bool(value.lazy);
   if (value.jstype !== undefined) result.jstype = tsValueToJsonValueFns.enum(value.jstype);
   if (value.weak !== undefined) result.weak = tsValueToJsonValueFns.bool(value.weak);
+  if (value.unverifiedLazy !== undefined) result.unverifiedLazy = tsValueToJsonValueFns.bool(value.unverifiedLazy);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
@@ -89,6 +92,7 @@ export function decodeJson(value: any): $.google.protobuf.FieldOptions {
   if (value.lazy !== undefined) result.lazy = jsonValueToTsValueFns.bool(value.lazy);
   if (value.jstype !== undefined) result.jstype = jsonValueToTsValueFns.enum(value.jstype) as JSType;
   if (value.weak !== undefined) result.weak = jsonValueToTsValueFns.bool(value.weak);
+  if (value.unverifiedLazy !== undefined) result.unverifiedLazy = jsonValueToTsValueFns.bool(value.unverifiedLazy);
   result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
@@ -129,6 +133,12 @@ export function encodeBinary(value: $.google.protobuf.FieldOptions): Uint8Array 
     const tsValue = value.weak;
     result.push(
       [10, tsValueToWireValueFns.bool(tsValue)],
+    );
+  }
+  if (value.unverifiedLazy !== undefined) {
+    const tsValue = value.unverifiedLazy;
+    result.push(
+      [15, tsValueToWireValueFns.bool(tsValue)],
     );
   }
   for (const tsValue of value.uninterpretedOption) {
@@ -184,6 +194,13 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.FieldOptions
     const value = wireValueToTsValueFns.bool(wireValue);
     if (value === undefined) break field;
     result.weak = value;
+  }
+  field: {
+    const wireValue = wireFields.get(15);
+    if (wireValue === undefined) break field;
+    const value = wireValueToTsValueFns.bool(wireValue);
+    if (value === undefined) break field;
+    result.unverifiedLazy = value;
   }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);
