@@ -7,7 +7,7 @@ import {
   filterNodesByTypes,
   findNodeByType,
 } from "./ast-util.ts";
-import { isDocComment, parseDocComment } from "./doc-comment.ts";
+import { unwrap } from "./comment.ts";
 import {
   evalConstant,
   evalIntLit,
@@ -15,6 +15,7 @@ import {
   evalStrLit,
 } from "./eval-ast-constant.ts";
 import {
+  Description,
   Enum,
   Extend,
   File,
@@ -282,7 +283,7 @@ function* iterServices(
     const service: Service = {
       filePath,
       options: getOptions(statement.serviceBody.statements),
-      description: getDescription(statement.leadingComments),
+      description: getDescription(statement),
       rpcs: getRpcs(statement.serviceBody.statements),
     };
     yield [serviceTypePath, service];
@@ -298,7 +299,7 @@ function getRpcs(statements: ast.Statement[]): Service["rpcs"] {
       : {};
     rpcs[statement.rpcName.text] = {
       options,
-      description: getDescription(statement.leadingComments),
+      description: getDescription(statement),
       reqType: getRpcType(statement.reqType),
       resType: getRpcType(statement.resType),
     };
@@ -340,7 +341,7 @@ function getMessage(
   const message: Message = {
     kind: "message",
     filePath,
-    description: getDescription(statement.leadingComments),
+    description: getDescription(statement),
     ...getMessageBody(statements),
   };
   return [messageTypePath, message];
@@ -378,7 +379,7 @@ function* iterMessageFields(
     if (statement.type === "field") {
       const fieldNumber = evalIntLit(statement.fieldNumber);
       const fieldBase = {
-        description: getDescription(statement.leadingComments),
+        description: getDescription(statement),
         name: statement.fieldName.text,
         options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
         type: stringifyType(statement.fieldType),
@@ -403,7 +404,7 @@ function* iterMessageFields(
     } else if (statement.type === "map-field") {
       yield [evalIntLit(statement.fieldNumber), {
         kind: "map",
-        description: getDescription(statement.leadingComments),
+        description: getDescription(statement),
         name: statement.mapName.text,
         options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
         keyType: stringifyType(statement.keyType),
@@ -422,7 +423,7 @@ function* iterOneofFields(
     const fieldNumber = evalIntLit(statement.fieldNumber);
     yield [fieldNumber, {
       kind: "oneof",
-      description: getDescription(statement.leadingComments),
+      description: getDescription(statement),
       name: statement.fieldName.text,
       options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
       type: stringifyType(statement.fieldType),
@@ -439,7 +440,7 @@ function getGroup(statement: ast.Group): Group {
   }
   return {
     kind: statement.groupLabel.text as Group["kind"],
-    description: getDescription(statement.leadingComments),
+    description: getDescription(statement),
     fieldNumber: evalIntLit(statement.fieldNumber),
     ...getMessageBody(statements),
   };
@@ -455,7 +456,7 @@ function getEnum(
     kind: "enum",
     filePath,
     options: getOptions(statement.enumBody.statements),
-    description: getDescription(statement.leadingComments),
+    description: getDescription(statement),
     fields: getEnumFields(statement.enumBody.statements),
   };
   return [enumTypePath, _enum];
@@ -470,7 +471,7 @@ function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
   for (const statement of enumFieldStatements) {
     const fieldNumber = evalSignedIntLit(statement.fieldNumber);
     fields[fieldNumber] = {
-      description: getDescription(statement.leadingComments),
+      description: getDescription(statement),
       name: statement.fieldName.text,
       options: getOptions(statement.fieldOptions?.fieldOptionOrCommas),
     };
@@ -478,12 +479,20 @@ function getEnumFields(statements: ast.Statement[]): Enum["fields"] {
   return fields;
 }
 
-function getDescription(commentGroups: ast.CommentGroup[]): string {
-  const comments = commentGroups.flatMap(
-    (commentGroup) => commentGroup.comments,
-  );
-  const docComment = comments.find((comment) => isDocComment(comment.text));
-  return parseDocComment(docComment?.text ?? "");
+function getDescription(statement: ast.StatementBase): Description {
+  return {
+    leading: unwrapComments(statement.leadingComments),
+    trailing: unwrapComments(statement.trailingComments),
+    leadingDetached: unwrapComments(statement.leadingDetachedComments),
+  };
+  function unwrapComments(commentGroups: ast.CommentGroup[]) {
+    return commentGroups.map(
+      (commentGroup) =>
+        commentGroup.comments.map(
+          (comment) => unwrap(comment.text),
+        ).join("\n"),
+    );
+  }
 }
 
 export type ResolveTypePathFn = (

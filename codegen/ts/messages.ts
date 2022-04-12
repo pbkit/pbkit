@@ -95,7 +95,11 @@ function* genEnum(
 ): Generator<CodeEntry> {
   const filePath = getFilePath(typePath, messages);
   const fields = Object.entries<schema.EnumField>({
-    "0": { description: "", name: "UNSPECIFIED", options: {} },
+    "0": {
+      description: { leading: [], trailing: [], leadingDetached: [] },
+      name: "UNSPECIFIED",
+      options: {},
+    },
     ...type.fields,
   });
   yield [
