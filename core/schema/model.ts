@@ -34,10 +34,16 @@ interface TypeBase<TKind extends string> {
   kind: TKind;
   filePath: string;
   options: Options;
-  description: string;
+  description: Description;
 }
 interface FieldBase {
-  description: string;
+  description: Description;
+}
+
+export interface Description {
+  leading: string[];
+  trailing: string[];
+  leadingDetached: string[];
 }
 
 export interface Message extends TypeBase<"message"> {
@@ -51,7 +57,7 @@ export interface Message extends TypeBase<"message"> {
 export interface Group {
   kind: "required" | "optional" | "repeated";
   options: Options;
-  description: string;
+  description: Description;
   fieldNumber: number;
   fields: { [fieldNumber: number]: MessageField };
   groups: { [groupName: string]: Group };
@@ -63,7 +69,7 @@ export interface Group {
 export interface Extend {
   filePath: string;
   message: string;
-  description: string;
+  description: Description;
   fields: { [fieldNumber: number]: ExtendField };
   groups: { [groupName: string]: Group };
 }
@@ -131,13 +137,13 @@ export interface Range {
 export interface Service {
   filePath: string;
   options: Options;
-  description: string;
+  description: Description;
   rpcs: { [rpcName: string]: Rpc };
 }
 
 export interface Rpc {
   options: Options;
-  description: string;
+  description: Description;
   reqType: RpcType;
   resType: RpcType;
 }

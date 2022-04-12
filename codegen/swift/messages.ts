@@ -78,7 +78,7 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
   const packageName = getPackageName(schema.files, type.filePath);
   const fields = Object.entries<schema.EnumField>({
     "0": {
-      description: "",
+      description: {leading: [], trailing: [], leadingDetached: []},
       name: "UNSPECIFIED",
       options: {},
     },
