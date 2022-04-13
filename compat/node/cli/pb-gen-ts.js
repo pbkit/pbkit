@@ -5,7 +5,7 @@ const createLoader = require("../createLoader").default;
 const expandEntryPaths = require("../expandEntryPaths").default;
 const save = require("../save").default;
 const { vendorZipPath } = require("../zip-path");
-const { build } = require("../../core/schema/builder");
+const { build } = require("../../../core/schema/builder");
 const iterRuntimeFiles = require("../iterRuntimeFiles").default;
 
 run().catch((err) => console.error(err) && process.exit(1));
@@ -46,7 +46,7 @@ async function run() {
 }
 
 async function getGen() {
-  const module = "../../codegen/ts/index.mjs";
+  const module = "../../../codegen/ts/index.mjs";
   return (await import(module)).default;
 }
 

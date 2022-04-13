@@ -81,7 +81,7 @@ export default async function buildCore(config: BuildConfig) {
     }).status();
   }
   { // copy nodejs-specific files
-    const entries = walk("node", { includeDirs: false, exts: [".js"] });
+    const entries = walk("compat/node", { includeDirs: false, exts: [".js"] });
     for await (const { path: fromPath } of entries) {
       const toPath = join(config.dist, fromPath);
       await ensureDir(dirname(toPath));
@@ -114,8 +114,8 @@ export function getPackageJson(config: NameAndVersion) {
       url: "git+https://github.com/pbkit/pbkit.git",
     },
     bin: {
-      "pb-gen-ts": "node/cli/pb-gen-ts.js",
-      "pb-gen-ts-bundle": "node/cli/pb-gen-ts-bundle.js",
+      "pb-gen-ts": "compat/node/cli/pb-gen-ts.js",
+      "pb-gen-ts-bundle": "compat/node/cli/pb-gen-ts-bundle.js",
     },
     preferUnplugged: true,
     dependencies: {
