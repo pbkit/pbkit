@@ -6,8 +6,12 @@ import {
   Service,
   Type,
 } from "../../core/schema/model.ts";
-import { Type as FileDescriptorSet } from "../../generated/messages/google/protobuf/FileDescriptorSet.ts";
-import { Type as FileDescriptorProto } from "../../generated/messages/google/protobuf/FileDescriptorProto.ts";
+import {
+  EnumDescriptorProto,
+  EnumValueOptions,
+  FileDescriptorProto,
+  FileDescriptorSet,
+} from "../../generated/messages/google/protobuf/index.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -29,7 +33,7 @@ export function convertSchemaToFileDescriptorSet(
       package: file.package,
       dependency: [], // TODO
       messageType: [], // TODO
-      enumType: [], // TODO
+      enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
       service: [], // TODO
       extension: [], // TODO
       options: undefined, // TODO
@@ -41,6 +45,40 @@ export function convertSchemaToFileDescriptorSet(
     result.file.push(fileDescriptorProto);
   }
   return result;
+}
+
+function convertEnumToEnumDescriptorProto(
+  enumType: TypeTree<Enum>,
+): EnumDescriptorProto {
+  const name = enumType.baseName;
+  const value: EnumDescriptorProto["value"] = [];
+  for (const [fieldNumber, field] of Object.entries(enumType.type.fields)) {
+    const name = field.name;
+    const number = Number(fieldNumber);
+    const options: EnumValueOptions = {
+      uninterpretedOption: [], // TODO
+    };
+    if ("deprecated" in field.options) {
+      options.deprecated = Boolean(field.options.deprecated);
+    }
+    value.push({ name, number, options });
+  }
+  const options: EnumDescriptorProto["options"] = {
+    uninterpretedOption: [], // TODO
+  };
+  if ("allow_alias" in enumType.type.options) {
+    options.allowAlias = Boolean(enumType.type.options["allow_alias"]);
+  }
+  if ("deprecated" in enumType.type.options) {
+    options.deprecated = Boolean(enumType.type.options["deprecated"]);
+  }
+  return {
+    name,
+    value: [],
+    options,
+    reservedRange: [], // TODO
+    reservedName: [], // TODO
+  };
 }
 
 interface TypeTree<T extends Type = Type> {
