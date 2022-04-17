@@ -2,16 +2,23 @@ import {
   Enum,
   File,
   Message,
+  MessageField,
   Schema,
   Service,
   Type,
 } from "../../core/schema/model.ts";
 import {
+  DescriptorProto,
   EnumDescriptorProto,
   EnumValueOptions,
+  FieldDescriptorProto,
   FileDescriptorProto,
   FileDescriptorSet,
 } from "../../generated/messages/google/protobuf/index.ts";
+import {
+  Label as FieldLabel,
+  Type as FieldType,
+} from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -32,7 +39,9 @@ export function convertSchemaToFileDescriptorSet(
       name: file.importPath,
       package: file.package,
       dependency: [], // TODO
-      messageType: [], // TODO
+      messageType: messageTypes.map((messageType) =>
+        convertMessageToDescriptorProto({ schema, messageType })
+      ),
       enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
       service: [], // TODO
       extension: [], // TODO
@@ -45,6 +54,143 @@ export function convertSchemaToFileDescriptorSet(
     result.file.push(fileDescriptorProto);
   }
   return result;
+}
+
+interface ConvertMessageToDescriptorProtoConfig {
+  schema: Schema;
+  messageType: TypeTree<Message>;
+}
+function convertMessageToDescriptorProto(
+  config: ConvertMessageToDescriptorProtoConfig,
+): DescriptorProto {
+  const { schema, messageType } = config;
+  const name = messageType.baseName;
+  const nestedTypes = messageType.children.filter(isMessageTypeTree);
+  const enumTypes = messageType.children.filter(isEnumTypeTree);
+  const fieldDescriptorProtos: DescriptorProto["field"] = [];
+  const oneofMap = new Map<string, number>();
+  for (const [fieldNumber, field] of Object.entries(messageType.type.fields)) {
+    if (field.kind === "map") continue; // TODO
+    const options: FieldDescriptorProto["options"] = {
+      // TODO
+      uninterpretedOption: [], // TODO
+    };
+    const fieldDescriptorProto: FieldDescriptorProto = {
+      name: field.name,
+      extendee: undefined, // TODO
+      number: Number(fieldNumber),
+      label: getFieldLabel(field),
+      type: getFieldType(schema, field),
+      typeName: field.typePath || field.type,
+      defaultValue: "default" in field.options
+        ? String(field.options["default"])
+        : undefined,
+      options,
+      oneofIndex: undefined,
+      jsonName: undefined, // TODO
+      proto3Optional: undefined, // TODO
+    };
+    if (field.kind === "oneof") {
+      if (!oneofMap.has(field.oneof)) oneofMap.set(field.oneof, oneofMap.size);
+      fieldDescriptorProto.oneofIndex = oneofMap.get(field.oneof);
+    }
+    fieldDescriptorProtos.push(fieldDescriptorProto);
+  }
+  const oneofDecl: DescriptorProto["oneofDecl"] = Array.from(
+    oneofMap.keys(),
+  ).map(
+    (name) => ({ name }),
+  );
+  const options: DescriptorProto["options"] = {
+    uninterpretedOption: [], // TODO
+  };
+  if ("message_set_wire_format" in messageType.type.options) {
+    options.messageSetWireFormat = Boolean(
+      messageType.type.options["message_set_wire_format"],
+    );
+  }
+  if ("no_standard_descriptor_accessor" in messageType.type.options) {
+    options.noStandardDescriptorAccessor = Boolean(
+      messageType.type.options["no_standard_descriptor_accessor"],
+    );
+  }
+  if ("deprecated" in messageType.type.options) {
+    options.deprecated = Boolean(messageType.type.options["deprecated"]);
+  }
+  return {
+    name,
+    field: fieldDescriptorProtos,
+    nestedType: nestedTypes.map(
+      (messageType) => convertMessageToDescriptorProto({ schema, messageType }),
+    ),
+    enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
+    extensionRange: [], // TODO
+    extension: [], // TODO
+    options,
+    oneofDecl,
+    reservedRange: [], // TODO
+    reservedName: [], // TODO
+  };
+}
+
+function getFieldLabel(field: MessageField): FieldLabel {
+  switch (field.kind) {
+    case "optional":
+      return "LABEL_OPTIONAL";
+    case "required":
+      return "LABEL_REQUIRED";
+    case "repeated":
+      return "LABEL_REPEATED";
+    default:
+      return "UNSPECIFIED";
+  }
+}
+
+function getFieldType(schema: Schema, field: MessageField): FieldType {
+  if (field.kind === "map") return "TYPE_MESSAGE"; // TODO
+  if (!field.typePath) return "UNSPECIFIED";
+  if (schema.types[field.typePath]) {
+    switch (schema.types[field.typePath].kind) {
+      case "message":
+        return "TYPE_MESSAGE";
+      case "enum":
+        return "TYPE_ENUM";
+    }
+  }
+  switch (field.typePath) {
+    case ".double":
+      return "TYPE_DOUBLE";
+    case ".float":
+      return "TYPE_FLOAT";
+    case ".int64":
+      return "TYPE_INT64";
+    case ".uint64":
+      return "TYPE_UINT64";
+    case ".int32":
+      return "TYPE_INT32";
+    case ".fixed64":
+      return "TYPE_FIXED64";
+    case ".fixed32":
+      return "TYPE_FIXED32";
+    case ".bool":
+      return "TYPE_BOOL";
+    case ".string":
+      return "TYPE_STRING";
+    case ".bytes":
+      return "TYPE_BYTES";
+    case ".uint32":
+      return "TYPE_UINT32";
+    case ".sfixed32":
+      return "TYPE_SFIXED32";
+    case ".sfixed64":
+      return "TYPE_SFIXED64";
+    case ".sint32":
+      return "TYPE_SINT32";
+    case ".sint64":
+      return "TYPE_SINT64";
+    default:
+      return "UNSPECIFIED";
+  }
 }
 
 function convertEnumToEnumDescriptorProto(
