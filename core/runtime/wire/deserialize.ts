@@ -14,6 +14,8 @@ export default function deserialize(uint8array: Uint8Array): WireMessage {
     const type = (key & 0b111) as WireType;
     const fieldNumber = key >>> 3;
     switch (type) {
+      default:
+        throw new Error(`Unknown wire type ${type}`);
       case WireType.Varint: {
         const [len, value] = decode(
           new DataView(uint8array.buffer, offset + idx),
