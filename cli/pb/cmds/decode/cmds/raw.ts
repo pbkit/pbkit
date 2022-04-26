@@ -14,5 +14,5 @@ export default new Command()
     const stdin = await readAll(Deno.stdin);
     const wireMessage = deserialize(stdin);
     const text = encodeSchemaless(wireMessage);
-    await writeAll(Deno.stderr, new TextEncoder().encode(text));
+    await writeAll(Deno.stdout, new TextEncoder().encode(text));
   });
