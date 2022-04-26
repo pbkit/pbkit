@@ -24,12 +24,12 @@ export default new Command()
     "Specify the directory in which to search for imports.",
     { collect: true },
   )
-  .option("--ast", "Include parse result to JSON")
+  .option("--ast", "Include parse result to output")
   .option(
     "--space <value:number>",
     "The number of space characters to use as white space for indenting.",
   )
-  .description("Generate json.")
+  .description("Generate pbkit style schema representation.")
   .action(async (options: Options, protoFiles: string[] = []) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
