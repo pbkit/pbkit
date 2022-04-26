@@ -1,5 +1,6 @@
-import { WireMessage, WireType } from "../../core/runtime/wire/index.ts";
+import { Field, WireMessage, WireType } from "../../core/runtime/wire/index.ts";
 import deserialize from "../../core/runtime/wire/deserialize.ts";
+import { wireValueToTsValueFns } from "../../core/runtime/wire/scalar.ts";
 import { Schema } from "../../core/schema/model.ts";
 
 export interface TypeInfo {
@@ -41,15 +42,20 @@ function printFields(
         case "map": // TODO
           continue iter;
         default: {
-          if (!field.typePath) continue iter;
-          // handle scalar
-          const fieldType = schema.types[field.typePath];
+          const { name, typePath } = field;
+          if (!typePath) continue iter;
+          if (scalarToStringTable[typePath]) {
+            const value = scalarToStringTable[typePath](wireField);
+            if (value === undefined) continue iter;
+            unknown = false;
+            printer.println(`${name}: ${value}`);
+          }
+          const fieldType = schema.types[typePath];
           if (!fieldType) continue iter;
           switch (fieldType.kind) {
             case "message": {
               if (wireField.type !== WireType.LengthDelimited) continue iter;
               unknown = false;
-              const { name, typePath } = field;
               printer.println(`${name} {`);
               printer.indent();
               printFields(
@@ -66,7 +72,7 @@ function printFields(
               const enumField = fieldType.fields[wireField.value[0]];
               if (!enumField) continue iter;
               unknown = false;
-              printer.println(`${field.name}: ${enumField.name}`);
+              printer.println(`${name}: ${enumField.name}`);
               break;
             }
           }
@@ -143,6 +149,88 @@ export function decode(text: string, typeInfo: TypeInfo): WireMessage {
 export function decodeSchemaless(text: string): WireMessage {
   return []; // TODO
 }
+
+interface ScalarToStringTable {
+  [typePath: string]: (field: Field) => string | undefined;
+}
+const scalarToStringTable: ScalarToStringTable = {
+  ".double": (v) => {
+    const value = wireValueToTsValueFns.double(v);
+    if (value === undefined) return;
+    if (isNaN(value)) return "nan";
+    return String(value);
+  },
+  ".float": (v) => {
+    const value = wireValueToTsValueFns.float(v);
+    if (value === undefined) return;
+    if (isNaN(value)) return "nan";
+    return String(value);
+  },
+  ".int32": (v) => {
+    const value = wireValueToTsValueFns.int32(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".int64": (v) => {
+    const value = wireValueToTsValueFns.int64(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".uint32": (v) => {
+    const value = wireValueToTsValueFns.uint32(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".uint64": (v) => {
+    const value = wireValueToTsValueFns.uint64(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".sint32": (v) => {
+    const value = wireValueToTsValueFns.sint32(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".sint64": (v) => {
+    const value = wireValueToTsValueFns.sint64(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".fixed32": (v) => {
+    const value = wireValueToTsValueFns.fixed32(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".fixed64": (v) => {
+    const value = wireValueToTsValueFns.fixed64(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".sfixed32": (v) => {
+    const value = wireValueToTsValueFns.sfixed32(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".sfixed64": (v) => {
+    const value = wireValueToTsValueFns.sfixed64(v);
+    if (value === undefined) return;
+    return String(value);
+  },
+  ".bool": (v) => {
+    if (v.type !== WireType.Varint) return;
+    return String(Boolean(v.value[0]));
+  },
+  ".string": (v) => {
+    const value = wireValueToTsValueFns.string(v);
+    if (value === undefined) return;
+    return JSON.stringify(value);
+  },
+  ".bytes": (v) => {
+    const value = wireValueToTsValueFns.bytes(v);
+    if (value === undefined) return;
+    return JSON.stringify(value);
+  },
+};
 
 interface Printer {
   indent(): void;
