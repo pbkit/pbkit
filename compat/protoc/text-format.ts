@@ -8,13 +8,76 @@ export interface TypeInfo {
 }
 
 export function encode(wireMessage: WireMessage, typeInfo: TypeInfo): string {
-  return ""; // TODO
+  const printer = createPrinter();
+  printFields(printer, wireMessage, typeInfo);
+  return printer.finish();
 }
 
 export function encodeSchemaless(wireMessage: WireMessage): string {
   const printer = createPrinter();
   printUnknownFields(printer, wireMessage);
   return printer.finish();
+}
+
+function printFields(
+  printer: Printer,
+  wireMessage: WireMessage,
+  typeInfo: TypeInfo,
+) {
+  const unknownFields: WireMessage = [];
+  const { schema } = typeInfo;
+  const type = schema.types[typeInfo.typePath];
+  if (!type || type.kind === "enum") {
+    return printUnknownFields(printer, wireMessage);
+  }
+  iter:
+  for (const item of wireMessage) {
+    let unknown = true;
+    try {
+      const [fieldNumber, wireField] = item;
+      const field = type.fields[fieldNumber];
+      if (!field) continue iter;
+      switch (field.kind) {
+        case "map": // TODO
+          continue iter;
+        default: {
+          if (!field.typePath) continue iter;
+          // handle scalar
+          const fieldType = schema.types[field.typePath];
+          if (!fieldType) continue iter;
+          switch (fieldType.kind) {
+            case "message": {
+              if (wireField.type !== WireType.LengthDelimited) continue iter;
+              unknown = false;
+              const { name, typePath } = field;
+              printer.println(`${name} {`);
+              printer.indent();
+              printFields(
+                printer,
+                deserialize(wireField.value),
+                { schema, typePath },
+              );
+              printer.dedent();
+              printer.println("}");
+              break;
+            }
+            case "enum": {
+              if (wireField.type !== WireType.Varint) continue iter;
+              const enumField = fieldType.fields[wireField.value[0]];
+              if (!enumField) continue iter;
+              unknown = false;
+              printer.println(`${field.name}: ${enumField.name}`);
+              break;
+            }
+          }
+        }
+      }
+    } finally {
+      if (unknown) unknownFields.push(item);
+      unknown = true;
+    }
+  }
+  if (unknownFields.length) printUnknownFields(printer, unknownFields);
 }
 
 function printUnknownFields(
