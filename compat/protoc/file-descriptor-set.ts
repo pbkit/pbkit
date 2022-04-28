@@ -255,9 +255,9 @@ function typePathsToTypeTreeArray(
   function typePathToTypeTree(typePath: string): TypeTree {
     const type = types[typePath];
     const baseName = getBaseName(typePath);
-    const children = childrenTable[typePath].map(
+    const children = childrenTable[typePath]?.map(
       (childTypePath) => typePathToTypeTree(childTypePath),
-    );
+    ) ?? [];
     return { baseName, typePath, type, children };
   }
   for (const root of roots) result.push(typePathToTypeTree(root));

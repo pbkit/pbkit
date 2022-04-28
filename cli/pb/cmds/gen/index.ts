@@ -1,4 +1,5 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import fileDescriptorSet from "./cmds/file-descriptor-set.ts";
 import schema from "./cmds/schema.ts";
 import swift from "./cmds/swift/index.ts";
 import ts from "./cmds/ts/index.ts";
@@ -10,6 +11,7 @@ command
     command.showHelp();
     Deno.exit(0);
   })
+  .command("file-descriptor-set", fileDescriptorSet)
   .command("schema", schema)
   .command("swift", swift)
   .command("ts", ts);
