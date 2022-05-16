@@ -120,7 +120,7 @@ const getProtocolCode: GetCodeFn = ({
   swiftName,
 }) => {
   return [
-    `public protocol ${swiftName}ClientProtocol: GRPCClient {\n`,
+    `internal protocol ${swiftName}ClientProtocol: GRPCClient {\n`,
     `  var serviceName: String { get }\n`,
     `  var interceptors: ${swiftName}ClientInterceptorFactoryProtocol? { get }\n`,
     Object.entries(type.rpcs).map(([rpcName, rpc]) => {
@@ -175,23 +175,57 @@ const getProtocolExtensionCode: GetCodeFn = ({
       const rpcCallType = getSwiftRpcCallType(rpc);
       return [
         "\n",
-        `  public func ${toSimpleCamelCase(rpcName)}(\n`,
-
-        rpcCallType === "UnaryCall" ||
-          rpcCallType === "ServerStreamingCall"
-          ? `    _ request: ${reqType},\n`
-          : "",
-        `    callOptions: CallOptions? = nil`,
-        rpcCallType === "ServerStreamingCall" ||
-          rpcCallType === "BidirectionalStreamingCall"
-          ? `,\n    handler: @escaping (${resType}) -> Void`
-          : "",
-        `\n  ) -> ${rpcCallType}<${reqType}, ${resType}> {\n`,
-        `    return self.make${rpcCallType}(\n`,
-        `      path: "/${serviceName}/${rpcName}",\n`,
-        `      request: request,\n`,
-        `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
-        `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? []\n`,
+        `  internal func ${toSimpleCamelCase(rpcName)}(\n`,
+        (() => {
+          switch (rpcCallType) {
+            case "UnaryCall":
+              return [
+                `    _ request: ${reqType},\n`,
+                `    callOptions: CallOptions? = nil\n`,
+                `  ) -> ${rpcCallType}<${reqType}, ${resType}> {\n`,
+                `    return self.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      request: request,\n`,
+                `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
+                `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? []\n`,
+              ].join("");
+            case "ServerStreamingCall":
+              return [
+                `    _ request: ${reqType},\n`,
+                `    callOptions: CallOptions? = nil,\n`,
+                `    handler: @escaping (${resType}) -> Void\n`,
+                `  ) -> ${rpcCallType}<${reqType}, ${resType}> {\n`,
+                `    return self.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      request: request,\n`,
+                `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
+                `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? [],\n`,
+                `      handler: handler\n`,
+              ].join("");
+            case "ClientStreamingCall":
+              return [
+                `    callOptions: CallOptions? = nil\n`,
+                `  ) -> ${rpcCallType}<${reqType}, ${resType}> {\n`,
+                `    return self.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
+                `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? []\n`,
+              ].join("");
+            case "BidirectionalStreamingCall":
+              return [
+                `    callOptions: CallOptions? = nil,\n`,
+                `    handler: @escaping (${resType}) -> Void\n`,
+                `  ) -> ${rpcCallType}<${reqType}, ${resType}> {\n`,
+                `    return self.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
+                `      interceptors: self.interceptors?.make${rpcName}Interceptors() ?? [],\n`,
+                `      handler: handler\n`,
+              ].join("");
+            default:
+              return "";
+          }
+        })(),
         `    )\n`,
         `  }\n`,
       ].join("");
@@ -276,7 +310,7 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
           case "bidi":
             return `\n  func ${
               toSimpleCamelCase(rpcName)
-            }(context: StreamingResponseCallContext<${resType}>) -> EventLoopFuture<StreamEvent<${reqType}>) -> Void>\n`;
+            }(context: StreamingResponseCallContext<${resType}>) -> EventLoopFuture<(StreamEvent<${reqType}>) -> Void>\n`;
         }
       },
     ).join(""),
