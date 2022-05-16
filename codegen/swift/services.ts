@@ -1,5 +1,5 @@
 import { StringReader } from "https://deno.land/std@0.122.0/io/readers.ts";
-import { Schema, Service } from "../../core/schema/model.ts";
+import { Rpc, Schema, Service } from "../../core/schema/model.ts";
 import { CodeEntry } from "../index.ts";
 import { join } from "../path.ts";
 import {
@@ -132,12 +132,20 @@ const getProtocolCode: GetCodeFn = ({
         schema,
         typePath: rpc.resType.typePath,
       });
+      const rpcCallType = getSwiftRpcCallType(rpc);
       return [
         "\n",
         `  func ${toSimpleCamelCase(rpcName)}(\n`,
-        `    _ request: ${reqType},\n`,
-        `    callOptions: CallOptions?\n`,
-        `  ) -> UnaryCall<${reqType}, ${resType}>\n`, // @TODO(hyp3rflow): add other call type
+        rpcCallType === "UnaryCall" ||
+          rpcCallType === "ServerStreamingCall"
+          ? `    _ request: ${reqType},\n`
+          : "",
+        `    callOptions: CallOptions?`,
+        rpcCallType === "ServerStreamingCall" ||
+          rpcCallType === "BidirectionalStreamingCall"
+          ? `,\n    handler: @escaping (${resType}) -> Void`
+          : "",
+        `\n  ) -> ${rpcCallType}<${reqType}, ${resType}>\n`,
       ].join("");
     }).join(""),
     `}\n`,
@@ -164,13 +172,22 @@ const getProtocolExtensionCode: GetCodeFn = ({
         schema,
         typePath: rpc.resType.typePath,
       });
+      const rpcCallType = getSwiftRpcCallType(rpc);
       return [
         "\n",
         `  public func ${toSimpleCamelCase(rpcName)}(\n`,
-        `    _ request: ${reqType},\n`,
-        `    callOptions: CallOptions? = nil\n`,
-        `  ) -> UnaryCall<${reqType}, ${resType}> {\n`,
-        `    return self.makeUnaryCall(\n`,
+
+        rpcCallType === "UnaryCall" ||
+          rpcCallType === "ServerStreamingCall"
+          ? `    _ request: ${reqType},\n`
+          : "",
+        `    callOptions: CallOptions? = nil`,
+        rpcCallType === "ServerStreamingCall" ||
+          rpcCallType === "BidirectionalStreamingCall"
+          ? `,\n    handler: @escaping (${resType}) -> Void`
+          : "",
+        `\n  ) -> ${rpcCallType}<${reqType}, ${resType}> {\n`,
+        `    return self.make${rpcCallType}(\n`,
         `      path: "/${serviceName}/${rpcName}",\n`,
         `      request: request,\n`,
         `      callOptions: callOptions ?? self.defaultCallOptions,\n`,
@@ -242,9 +259,25 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
           schema,
           typePath: rpc.resType.typePath,
         });
-        return `\n  func ${
-          toSimpleCamelCase(rpcName)
-        }(request: ${reqType}, context: StatusOnlyCallContext) -> EventLoopFuture<${resType}>\n`;
+        const rpcCallType = getRpcCallType(rpc);
+        switch (rpcCallType) {
+          case "unary":
+            return `\n  func ${
+              toSimpleCamelCase(rpcName)
+            }(request: ${reqType}, context: StatusOnlyCallContext) -> EventLoopFuture<${resType}>\n`;
+          case "client":
+            return `\n  func ${
+              toSimpleCamelCase(rpcName)
+            }(context: UnaryResponseCallContext<${resType}>) -> EventLoopFuture<(StreamEvent<${reqType}>) -> Void>\n`;
+          case "server":
+            return `\n  func ${
+              toSimpleCamelCase(rpcName)
+            }(request: ${reqType}, context: StreamingResponseCallContext<${resType}>) -> EventLoopFuture<GRPCStatus>\n`;
+          case "bidi":
+            return `\n  func ${
+              toSimpleCamelCase(rpcName)
+            }(context: StreamingResponseCallContext<${resType}>) -> EventLoopFuture<StreamEvent<${reqType}>) -> Void>\n`;
+        }
       },
     ).join(""),
     `}\n`,
@@ -272,18 +305,24 @@ const getProviderExtensionCode: GetCodeFn = (
         schema,
         typePath: rpc.resType.typePath,
       });
+      const rpcHandlerType = getSwiftRpcHandlerType(rpc);
       return [
         `    case "${rpcName}":\n`,
-        `      return UnaryServerHandler(\n`,
+        `      return ${rpcHandlerType}(\n`,
         "        context: context,\n",
         `        requestDeserializer: ProtobufDeserializer<${reqType}>(),\n`,
         `        responseSerializer: ProtobufSerializer<${resType}>(),\n`,
         `        interceptors: self.interceptors?.make${
           toSimpleUpperCase(rpcName)
         }Interceptors() ?? [],\n`,
-        `        userFunction: self.${
-          toSimpleCamelCase(rpcName)
-        }(request:context:)\n`,
+        rpcHandlerType === "ClientStreamingServerHandler" ||
+          rpcHandlerType === "BidirectionalStreamingServerHandler"
+          ? `        observerFactory: self.${
+            toSimpleCamelCase(rpcName)
+          }(context:)\n`
+          : `        userFunction: self.${
+            toSimpleCamelCase(rpcName)
+          }(request:context:)\n`,
         "      )\n\n",
       ].join("");
     }).join(""),
@@ -294,6 +333,51 @@ const getProviderExtensionCode: GetCodeFn = (
     "}\n",
   ].join("");
 };
+
+type RpcCallType = "unary" | "server" | "client" | "bidi";
+function getRpcCallType({ reqType, resType }: Rpc): RpcCallType {
+  if (reqType.stream) {
+    if (resType.stream) return "bidi";
+    return "client";
+  }
+  if (resType.stream) return "server";
+  return "unary";
+}
+type SwiftRpcCallType =
+  | "UnaryCall"
+  | "ServerStreamingCall"
+  | "ClientStreamingCall"
+  | "BidirectionalStreamingCall";
+function getSwiftRpcCallType(rpc: Rpc): SwiftRpcCallType {
+  switch (getRpcCallType(rpc)) {
+    case "unary":
+      return "UnaryCall";
+    case "client":
+      return "ClientStreamingCall";
+    case "server":
+      return "ServerStreamingCall";
+    case "bidi":
+      return "BidirectionalStreamingCall";
+  }
+}
+
+type SwiftRpcHandlerType =
+  | "UnaryServerHandler"
+  | "ServerStreamingServerHandler"
+  | "ClientStreamingServerHandler"
+  | "BidirectionalStreamingServerHandler";
+function getSwiftRpcHandlerType(rpc: Rpc): SwiftRpcHandlerType {
+  switch (getRpcCallType(rpc)) {
+    case "unary":
+      return "UnaryServerHandler";
+    case "client":
+      return "ClientStreamingServerHandler";
+    case "server":
+      return "ServerStreamingServerHandler";
+    case "bidi":
+      return "BidirectionalStreamingServerHandler";
+  }
+}
 
 const getFactoryProtocolCode: GetCodeFn = ({ schema, type, swiftName }) => {
   return [
