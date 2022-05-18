@@ -1009,7 +1009,7 @@ export function getDefaultWireValueToTsValueCode({
     return [
       "(() => { ",
       `if (wireValue.type !== ${WireType}.LengthDelimited) { return; } `,
-      `const { 0: key, 1: value } = Object.fromEntries(${deserialize}(wireValue.value)); `,
+      `const { 1: key, 2: value } = Object.fromEntries(${deserialize}(wireValue.value)); `,
       "if (key === undefined || value === undefined) return; ",
       `return [${keyTypePathCode}, ${valueTypePathCode}] as const;`,
       "})()",
