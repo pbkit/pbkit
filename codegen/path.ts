@@ -43,6 +43,7 @@ export function dirname(path: string): string {
   return path.slice(0, end);
 }
 
+const protocolRegex = /^\w+:\/\//;
 export function join(...paths: string[]): string {
   if (paths.length === 0) return ".";
   let joined: string | undefined;
@@ -55,6 +56,13 @@ export function join(...paths: string[]): string {
     }
   }
   if (!joined) return ".";
+  if (protocolRegex.test(joined)) {
+    let protocol: string;
+    const normalized = normalize(
+      joined.replace(protocolRegex, (p) => ((protocol = p), "")),
+    );
+    return protocol! + normalized;
+  }
   return normalize(joined);
 }
 
