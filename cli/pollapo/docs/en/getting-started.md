@@ -56,6 +56,16 @@ git clone git@github.com:pbkit/pbkit.git
 deno install -n pollapo -A --unstable pbkit/cli/pollapo/entrypoint.ts
 ```
 
+### Run by Deno run
+
+```sh
+# from GitHub source of main branch
+deno run -A --unstable https://raw.githubusercontent.com/pbkit/pbkit/main/cli/pollapo/entrypoint.ts install
+
+# from local source
+deno run -A --unstable $PBKIT_REPO_ROOT/cli/pollapo/entrypoint.ts install
+```
+
 ## Usage
 
 ### Login
