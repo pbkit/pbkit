@@ -14,6 +14,7 @@ export interface GhHost {
 }
 
 export function getDefaultGhConfigPath(configFile = ".") {
+  // TODO: https://github.com/cli/cli/blob/58cb773/internal/config/config_file.go#L24-L28
   if (Deno.build.os === "windows" && Deno.env.get("AppData")) {
     return path.join(Deno.env.get("AppData")!, "GitHub CLI", configFile);
   } else {
