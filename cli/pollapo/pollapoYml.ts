@@ -192,7 +192,18 @@ export async function* cacheDeps(
       const commitHash = await fetchingCommitHash;
       queue.push({ ...dep, rev: commitHash });
       await unlink(dep);
-      await link(dep, commitHash);
+      try {
+        await link(dep, commitHash);
+      } catch (err) {
+        if (Deno.build.os === "windows") {
+          console.log(
+            "Failed to symlink. Please run the command as administrator.",
+          );
+        } else {
+          console.log("Failed to symlink.");
+        }
+        Deno.exit(1);
+      }
     } else {
       const downloading = download(dep);
       yield { type: "download", dep, promise: downloading };
