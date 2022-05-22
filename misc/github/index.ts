@@ -14,8 +14,11 @@ export interface GhHost {
 }
 
 export function getDefaultGhConfigPath(configFile = ".") {
-  const ghConfigPath = path.resolve(getHomeDir(), ".config/gh", configFile);
-  return ghConfigPath;
+  if (Deno.build.os === "windows" && Deno.env.get("AppData")) {
+    return path.join(Deno.env.get("AppData")!, "GitHub CLI", configFile);
+  } else {
+    return path.resolve(getHomeDir(), ".config", "gh", configFile);
+  }
 }
 
 export async function readGhHosts(
