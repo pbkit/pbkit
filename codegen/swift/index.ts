@@ -86,7 +86,9 @@ export interface GenMessagesConfig {
 }
 export interface GenServicesConfig {
   outDir: string;
+  genTypes: ServiceType[];
 }
+export type ServiceType = "grpc" | "wrp";
 
 export function toSwiftName(typePath: string) {
   return typePath.split(".").slice(1).map((fragment) =>
