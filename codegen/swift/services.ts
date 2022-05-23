@@ -105,16 +105,16 @@ function* genService({
         return;
       }
       case "wrp": {
-        const wrpProviderCode = getWrpProviderCode(getCodeConfig);
-        const wrpProviderExtensionCode = getWrpProviderExtensionCode(
+        const providerCode = getWrpProviderCode(getCodeConfig);
+        const providerExtensionCode = getWrpProviderExtensionCode(
           getCodeConfig,
         );
         yield [
           filePath,
           new StringReader([
             importCode,
-            wrpProviderCode,
-            wrpProviderExtensionCode,
+            providerCode,
+            providerExtensionCode,
           ].join("\n")),
         ];
         return;
