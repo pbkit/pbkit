@@ -2,7 +2,7 @@ import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";
-import gen from "../../../../../../codegen/swift/index.ts";
+import gen, { ServiceType } from "../../../../../../codegen/swift/index.ts";
 import { getVendorDir } from "../../../../config.ts";
 import expandEntryPaths from "../../expandEntryPaths.ts";
 
@@ -11,6 +11,8 @@ interface Options {
   protoPath?: string[];
   messagesDir: string;
   servicesDir: string;
+  grpcService?: boolean;
+  wrpService?: boolean;
   outDir: string;
 }
 
@@ -41,6 +43,14 @@ export default new Command()
     "Out directory",
     { default: "out" },
   )
+  .option(
+    "--grpc-service",
+    "Generate gRPC service codes.",
+  )
+  .option(
+    "--wrp-service",
+    "Generate service codes for wrp (webview/worker request protocol)",
+  )
   .description("Generate swift library which is dependent on SwiftProtobuf.")
   .action(async (options: Options, protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
@@ -52,11 +62,20 @@ export default new Command()
       ...protoFiles,
     ];
     const schema = await build({ loader, files });
+    const serviceType = (() => {
+      const types: ServiceType[] = [];
+      if (options.grpcService) types.push("grpc");
+      if (options.wrpService) types.push("wrp");
+      return types;
+    })();
     await save(
       options.outDir,
       gen(schema, {
         messages: { outDir: options.messagesDir.trim() },
-        services: { outDir: options.servicesDir.trim() },
+        services: {
+          outDir: options.servicesDir.trim(),
+          genTypes: serviceType,
+        },
       }),
     );
   });

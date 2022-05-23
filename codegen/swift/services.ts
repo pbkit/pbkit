@@ -7,6 +7,7 @@ import {
   GenMessagesConfig,
   GenServicesConfig,
   getSwiftFullName,
+  ServiceType,
   toSwiftName,
 } from "./index.ts";
 import { toCamelCase } from "./swift-protobuf/name.ts";
@@ -37,11 +38,12 @@ export default function* gen(
 export function getFilePath(
   typePath: string,
   services: GenServicesConfig,
-  ext = ".grpc.swift",
+  genType: ServiceType,
+  ext = "swift",
 ): string {
   return join(
     services.outDir,
-    typePath.replace(/^\./, "") + ext,
+    [typePath.replace(/^\./, ""), genType, ext].join("."),
   );
 }
 
@@ -74,42 +76,63 @@ function* genService({
     serviceName,
     swiftName: serviceSwiftName,
   };
-  const filePath = getFilePath(typePath, services);
-  const importCode = getImportCode();
-  const protocolCode = getProtocolCode(getCodeConfig);
-  const extensionCode = getProtocolExtensionCode(getCodeConfig);
-  const clientInterceptorFactoryProtocolCode =
-    getClientInterceptorFactoryProtocolCode(getCodeConfig);
-  const clientCode = getClientCode(getCodeConfig);
-  const providerCode = getProviderCode(getCodeConfig);
-  const wrpProviderCode = getWrpProviderCode(getCodeConfig);
-  const providerExtensionCode = getProviderExtensionCode(getCodeConfig);
-  const wrpProviderExtensionCode = getWrpProviderExtensionCode(getCodeConfig);
-  const factoryProtocolCode = getFactoryProtocolCode(getCodeConfig);
-  yield [
-    filePath,
-    new StringReader([
-      importCode,
-      protocolCode,
-      extensionCode,
-      clientInterceptorFactoryProtocolCode,
-      clientCode,
-      providerCode,
-      wrpProviderCode,
-      providerExtensionCode,
-      wrpProviderExtensionCode,
-      factoryProtocolCode,
-    ].join("\n")),
-  ];
+  for (const genType of services.genTypes) {
+    const filePath = getFilePath(typePath, services, genType);
+    const importCode = getImportCode(genType);
+    switch (genType) {
+      case "grpc": {
+        const protocolCode = getProtocolCode(getCodeConfig);
+        const extensionCode = getProtocolExtensionCode(getCodeConfig);
+        const clientInterceptorFactoryProtocolCode =
+          getClientInterceptorFactoryProtocolCode(getCodeConfig);
+        const clientCode = getClientCode(getCodeConfig);
+        const providerCode = getProviderCode(getCodeConfig);
+        const providerExtensionCode = getProviderExtensionCode(getCodeConfig);
+        const factoryProtocolCode = getFactoryProtocolCode(getCodeConfig);
+        yield [
+          filePath,
+          new StringReader([
+            importCode,
+            protocolCode,
+            extensionCode,
+            clientInterceptorFactoryProtocolCode,
+            clientCode,
+            providerCode,
+            providerExtensionCode,
+            factoryProtocolCode,
+          ].join("\n")),
+        ];
+        return;
+      }
+      case "wrp": {
+        const wrpProviderCode = getWrpProviderCode(getCodeConfig);
+        const wrpProviderExtensionCode = getWrpProviderExtensionCode(
+          getCodeConfig,
+        );
+        yield [
+          filePath,
+          new StringReader([
+            importCode,
+            wrpProviderCode,
+            wrpProviderExtensionCode,
+          ].join("\n")),
+        ];
+        return;
+      }
+    }
+  }
 }
 
-function getImportCode() {
-  return [
-    `import GRPC\n`,
-    `import NIO\n`,
-    `import SwiftProtobuf\n`,
-    `import Wrp\n`,
-  ].join("");
+function getImportCode(type: ServiceType) {
+  switch (type) {
+    case "grpc":
+      return getSwiftImportCode(["GRPC", "SwiftProtobuf", "NIO"]);
+    case "wrp":
+      return getSwiftImportCode(["GRPC", "SwiftProtobuf", "Wrp"]);
+  }
+  function getSwiftImportCode(deps: string[]) {
+    return deps.map((dep) => `import ${dep}\n`).join("");
+  }
 }
 
 interface GetCodeConfig {
@@ -399,7 +422,7 @@ const getWrpProviderExtensionCode: GetCodeFn = (
   { schema, type, swiftName, serviceName },
 ) => {
   return [
-    `extension ${swiftName}WrpgProvider {\n`,
+    `extension ${swiftName}WrpProvider {\n`,
     `  public var serviceName: Substring { return "${serviceName}" }\n\n`,
     `  public var methodNames: [Substring] { return [${
       Object.entries(type.rpcs).map(([rpcName]) => `"${rpcName}"`).join(", ")
