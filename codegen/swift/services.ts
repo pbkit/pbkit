@@ -82,7 +82,9 @@ function* genService({
     getClientInterceptorFactoryProtocolCode(getCodeConfig);
   const clientCode = getClientCode(getCodeConfig);
   const providerCode = getProviderCode(getCodeConfig);
+  const wrpProviderCode = getWrpProviderCode(getCodeConfig);
   const providerExtensionCode = getProviderExtensionCode(getCodeConfig);
+  const wrpProviderExtensionCode = getWrpProviderExtensionCode(getCodeConfig);
   const factoryProtocolCode = getFactoryProtocolCode(getCodeConfig);
   yield [
     filePath,
@@ -93,7 +95,9 @@ function* genService({
       clientInterceptorFactoryProtocolCode,
       clientCode,
       providerCode,
+      wrpProviderCode,
       providerExtensionCode,
+      wrpProviderExtensionCode,
       factoryProtocolCode,
     ].join("\n")),
   ];
@@ -104,6 +108,7 @@ function getImportCode() {
     `import GRPC\n`,
     `import NIO\n`,
     `import SwiftProtobuf\n`,
+    `import Wrp\n`,
   ].join("");
 }
 
@@ -318,6 +323,28 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
   ].join("");
 };
 
+const getWrpProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
+  return [
+    `public protocol ${swiftName}WrpProvider: WrpHandlerProvider {\n`,
+    Object.entries(type.rpcs).map(
+      ([rpcName, rpc]) => {
+        const reqType = getSwiftFullName({
+          schema,
+          typePath: rpc.reqType.typePath,
+        });
+        const resType = getSwiftFullName({
+          schema,
+          typePath: rpc.resType.typePath,
+        });
+        return `\n  func ${
+          toSimpleCamelCase(rpcName)
+        }(request: AsyncStream<${reqType}>, context: MethodHandlerContext<${resType}>) async\n`;
+      },
+    ).join(""),
+    `}\n`,
+  ].join("");
+};
+
 const getProviderExtensionCode: GetCodeFn = (
   { schema, type, swiftName, serviceName },
 ) => {
@@ -357,6 +384,49 @@ const getProviderExtensionCode: GetCodeFn = (
           : `        userFunction: self.${
             toSimpleCamelCase(rpcName)
           }(request:context:)\n`,
+        "      )\n\n",
+      ].join("");
+    }).join(""),
+    `    default:\n`,
+    `      return nil\n`,
+    `    }\n`,
+    "  }\n",
+    "}\n",
+  ].join("");
+};
+
+const getWrpProviderExtensionCode: GetCodeFn = (
+  { schema, type, swiftName, serviceName },
+) => {
+  return [
+    `extension ${swiftName}WrpgProvider {\n`,
+    `  public var serviceName: Substring { return "${serviceName}" }\n\n`,
+    `  public var methodNames: [Substring] { return [${
+      Object.entries(type.rpcs).map(([rpcName]) => `"${rpcName}"`).join(", ")
+    }] }\n\n`,
+    "  public func handle(\n",
+    "    method name: Substring,\n",
+    "    context: WrpRequestContext\n",
+    "  ) -> WrpServerHandlerProtocol? {\n",
+    "    switch name {\n",
+    Object.entries(type.rpcs).map(([rpcName, rpc]) => {
+      const reqType = getSwiftFullName({
+        schema,
+        typePath: rpc.reqType.typePath,
+      });
+      const resType = getSwiftFullName({
+        schema,
+        typePath: rpc.resType.typePath,
+      });
+      return [
+        `    case "${rpcName}":\n`,
+        `      return WrpServerHandler(\n`,
+        "        context: context,\n",
+        `        requestDeserializer: ProtobufDeserializer<${reqType}>(),\n`,
+        `        responseSerializer: ProtobufSerializer<${resType}>(),\n`,
+        `        userFunction: self.${
+          toSimpleCamelCase(rpcName)
+        }(request:context:)\n`,
         "      )\n\n",
       ].join("");
     }).join(""),
