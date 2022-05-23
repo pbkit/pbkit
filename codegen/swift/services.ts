@@ -348,7 +348,7 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
 
 const getWrpProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
   return [
-    `public protocol ${swiftName}WrpProvider: WrpHandlerProvider {\n`,
+    `public protocol ${swiftName}WrpProvider: WrpHandlerProvider {`,
     Object.entries(type.rpcs).map(
       ([rpcName, rpc]) => {
         const reqType = getSwiftFullName({
