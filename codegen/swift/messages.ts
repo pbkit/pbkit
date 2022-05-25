@@ -78,7 +78,7 @@ function* genEnum(config: GenEnumConfig): Generator<CodeEntry> {
   const packageName = getPackageName(schema.files, type.filePath);
   const fields = Object.entries<schema.EnumField>({
     "0": {
-      description: {leading: [], trailing: [], leadingDetached: []},
+      description: { leading: [], trailing: [], leadingDetached: [] },
       name: "UNSPECIFIED",
       options: {},
     },
@@ -608,24 +608,24 @@ const getDecodeMessageCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
           const valueKind = config.schema.types[schema.valueTypePath!]?.kind;
           if (valueKind === "message") {
             return [
-              `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: &self.${swiftName}) }()\n`,
+              `      case ${fieldNumber}: try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMessageMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: &self.${swiftName})\n`,
             ].join("");
           }
           if (valueKind === "enum") {
             return [
-              `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufEnumMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: &self.${swiftName}) }()\n`,
+              `      case ${fieldNumber}: try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufEnumMap<SwiftProtobuf.Protobuf${swiftKeyType}, ${swiftValueName}>.self, value: &self.${swiftName})\n`,
             ].join("");
           }
           return [
-            `      case ${fieldNumber}: try { try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.Protobuf${swiftKeyType}, SwiftProtobuf.Protobuf${swiftValueType}>.self, value: &self.${swiftName}) }()\n`,
+            `      case ${fieldNumber}: try decoder.decodeMapField(fieldType: SwiftProtobuf._ProtobufMap<SwiftProtobuf.Protobuf${swiftKeyType}, SwiftProtobuf.Protobuf${swiftValueType}>.self, value: &self.${swiftName})\n`,
           ].join("");
         }
         return [
-          `      case ${fieldNumber}: try { try decoder.decode${
+          `      case ${fieldNumber}: try decoder.decode${
             isRepeated ? "Repeated" : "Singular"
           }${swiftProtobufType}Field(value: &self.${
             !isRepeated && isMessage ? "_" : ""
-          }${swiftName}) }()\n`,
+          }${swiftName})\n`,
         ].join("");
       },
     ),

@@ -109,10 +109,18 @@ function* genService({
         const providerExtensionCode = getWrpProviderExtensionCode(
           getCodeConfig,
         );
+        const clientCode = getWrpClientCode(getCodeConfig);
+        const clientProtocolCode = getWrpClientProtocolCode(getCodeConfig);
+        const clientProtocolExtensionCode = getWrpClientProtocolExtensionCode(
+          getCodeConfig,
+        );
         yield [
           filePath,
           new StringReader([
             importCode,
+            clientCode,
+            clientProtocolCode,
+            clientProtocolExtensionCode,
             providerCode,
             providerExtensionCode,
           ].join("\n")),
@@ -180,6 +188,41 @@ const getProtocolCode: GetCodeFn = ({
   ].join("");
 };
 
+const getWrpClientProtocolCode: GetCodeFn = ({
+  type,
+  schema,
+  swiftName,
+}) => {
+  return [
+    `internal protocol ${swiftName}WrpClientProtocol {\n`,
+    `  var client: WrpClient { get }\n`,
+    Object.entries(type.rpcs).map(([rpcName, rpc]) => {
+      const reqType = getSwiftFullName({
+        schema,
+        typePath: rpc.reqType.typePath,
+      });
+      const resType = getSwiftFullName({
+        schema,
+        typePath: rpc.resType.typePath,
+      });
+      const requestType = rpc.reqType.stream
+        ? `AsyncStream<${reqType}>`
+        : reqType;
+      const responseType = rpc.resType.stream
+        ? `WrpStreamingResponse<${resType}>`
+        : `WrpUnaryResponse<${resType}>`;
+      return [
+        "\n",
+        `  func ${toSimpleCamelCase(rpcName)}(\n`,
+        `    _ request: ${requestType},\n`,
+        `    callOptions: WrpClientCallOptions?`,
+        `\n  ) throws -> ${responseType}\n`,
+      ].join("");
+    }).join(""),
+    `}\n`,
+  ].join("");
+};
+
 const getProtocolExtensionCode: GetCodeFn = ({
   schema,
   type,
@@ -187,7 +230,7 @@ const getProtocolExtensionCode: GetCodeFn = ({
   serviceName,
 }) => {
   return [
-    `extension ${swiftName}ClientProtocol {\n`,
+    `extension ${swiftName}WrpClientProtocol {\n`,
     `  public var serviceName: String {\n`,
     `    return "${serviceName}"\n`,
     `  }\n`,
@@ -262,6 +305,82 @@ const getProtocolExtensionCode: GetCodeFn = ({
   ].join("");
 };
 
+const getWrpClientProtocolExtensionCode: GetCodeFn = ({
+  schema,
+  type,
+  swiftName,
+  serviceName,
+}) => {
+  return [
+    `extension ${swiftName}WrpClientProtocol {`,
+    Object.entries(type.rpcs).map(([rpcName, rpc]) => {
+      const reqType = getSwiftFullName({
+        schema,
+        typePath: rpc.reqType.typePath,
+      });
+      const resType = getSwiftFullName({
+        schema,
+        typePath: rpc.resType.typePath,
+      });
+      const rpcCallType = getSwiftRpcCallType(rpc);
+      const requestType = rpc.reqType.stream
+        ? `AsyncStream<${reqType}>`
+        : reqType;
+      const responseType = rpc.resType.stream
+        ? "WrpStreamingResponse"
+        : "WrpUnaryResponse";
+      return [
+        `\n  internal func ${toSimpleCamelCase(rpcName)}(\n`,
+        (() => {
+          switch (rpcCallType) {
+            case "UnaryCall":
+              return [
+                `    _ request: ${requestType},\n`,
+                `    callOptions: WrpClientCallOptions? = nil\n`,
+                `  ) throws -> ${responseType}<${resType}> {\n`,
+                `    return try self.client.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      request: request\n`,
+              ].join("");
+            case "ServerStreamingCall":
+              return [
+                `    _ request: ${requestType},\n`,
+                `    callOptions: WrpClientCallOptions? = nil\n`,
+                `  ) throws -> ${responseType}<${resType}> {\n`,
+                `    return try self.client.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      request: request\n`,
+              ].join("");
+            case "ClientStreamingCall":
+              return [
+                `    _ request: ${requestType},\n`,
+                `    callOptions: WrpClientCallOptions? = nil\n`,
+                `  ) throws -> ${responseType}<${resType}> {\n`,
+                `    return try self.client.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      request: request\n`,
+              ].join("");
+            case "BidirectionalStreamingCall":
+              return [
+                `    _ request: ${requestType},\n`,
+                `    callOptions: WrpClientCallOptions? = nil\n`,
+                `  ) throws -> ${responseType}<${resType}> {\n`,
+                `    return try self.client.make${rpcCallType}(\n`,
+                `      path: "/${serviceName}/${rpcName}",\n`,
+                `      request: request\n`,
+              ].join("");
+            default:
+              return "";
+          }
+        })(),
+        `    )\n`,
+        `  }\n`,
+      ].join("");
+    }).join(""),
+    `}\n`,
+  ].join("");
+};
+
 const getClientInterceptorFactoryProtocolCode: GetCodeFn = ({
   schema,
   type,
@@ -302,6 +421,20 @@ const getClientCode: GetCodeFn = ({ swiftName }) => {
     "    self.channel = channel\n",
     "    self.defaultCallOptions = defaultCallOptions\n",
     "    self.interceptors = interceptors\n",
+    "  }\n",
+    "}\n",
+  ].join("");
+};
+
+const getWrpClientCode: GetCodeFn = ({ swiftName }) => {
+  return [
+    `public final class ${swiftName}WrpClient: ${swiftName}WrpClientProtocol {\n`,
+    `  public let client: WrpClient\n`,
+    "\n",
+    "  public init(\n",
+    "    client: WrpClient\n",
+    "  ) {\n",
+    "    self.client = client\n",
     "  }\n",
     "}\n",
   ].join("");
