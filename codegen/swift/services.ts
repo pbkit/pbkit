@@ -246,7 +246,7 @@ const getProtocolExtensionCode: GetCodeFn = ({
       const rpcCallType = getSwiftRpcCallType(rpc);
       return [
         "\n",
-        `  internal func ${toSimpleCamelCase(rpcName)}(\n`,
+        `  func ${toSimpleCamelCase(rpcName)}(\n`,
         (() => {
           switch (rpcCallType) {
             case "UnaryCall":
@@ -330,7 +330,7 @@ const getWrpClientProtocolExtensionCode: GetCodeFn = ({
         ? "WrpStreamingResponse"
         : "WrpUnaryResponse";
       return [
-        `\n  internal func ${toSimpleCamelCase(rpcName)}(\n`,
+        `\n  func ${toSimpleCamelCase(rpcName)}(\n`,
         (() => {
           switch (rpcCallType) {
             case "UnaryCall":
@@ -481,7 +481,7 @@ const getProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
 
 const getWrpProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
   return [
-    `public protocol ${swiftName}WrpProvider: WrpHandlerProvider {`,
+    `public protocol ${swiftName}WrpProvider: WrpServiceProdiver {`,
     Object.entries(type.rpcs).map(
       ([rpcName, rpc]) => {
         const reqType = getSwiftFullName({
@@ -494,7 +494,7 @@ const getWrpProviderCode: GetCodeFn = ({ schema, type, swiftName }) => {
         });
         return `\n  func ${
           toSimpleCamelCase(rpcName)
-        }(request: AsyncStream<${reqType}>, context: MethodHandlerContext<${resType}>) async\n`;
+        }(request: AsyncStream<${reqType}>, context: WrpRequestContext<${resType}>) async\n`;
       },
     ).join(""),
     `}\n`,
@@ -555,15 +555,15 @@ const getWrpProviderExtensionCode: GetCodeFn = (
   { schema, type, swiftName, serviceName },
 ) => {
   return [
-    `extension ${swiftName}WrpProvider {\n`,
-    `  public var serviceName: Substring { return "${serviceName}" }\n\n`,
-    `  public var methodNames: [Substring] { return [${
+    `public extension ${swiftName}WrpProvider {\n`,
+    `  var serviceName: Substring { return "${serviceName}" }\n\n`,
+    `  var methodNames: [Substring] { return [${
       Object.entries(type.rpcs).map(([rpcName]) => `"${rpcName}"`).join(", ")
     }] }\n\n`,
-    "  public func handle(\n",
+    "  func handle(\n",
     "    method name: Substring,\n",
-    "    context: WrpRequestContext\n",
-    "  ) -> WrpServerHandlerProtocol? {\n",
+    "    context: WrpRequestHandlerContext\n",
+    "  ) -> WrpRequestHandlerProtocol? {\n",
     "    switch name {\n",
     Object.entries(type.rpcs).map(([rpcName, rpc]) => {
       const reqType = getSwiftFullName({
@@ -576,7 +576,7 @@ const getWrpProviderExtensionCode: GetCodeFn = (
       });
       return [
         `    case "${rpcName}":\n`,
-        `      return WrpServerHandler(\n`,
+        `      return WrpRequestHandler(\n`,
         "        context: context,\n",
         `        requestDeserializer: ProtobufDeserializer<${reqType}>(),\n`,
         `        responseSerializer: ProtobufSerializer<${resType}>(),\n`,
