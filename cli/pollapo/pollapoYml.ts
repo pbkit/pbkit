@@ -200,7 +200,7 @@ export async function* cacheDeps(
             "Failed to symlink. Please run the command as administrator.",
           );
         } else {
-          console.log("Failed to symlink.");
+          console.error(red("Failed to symlink"))
         }
         Deno.exit(1);
       }
