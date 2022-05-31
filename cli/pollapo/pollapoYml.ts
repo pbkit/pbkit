@@ -200,9 +200,8 @@ export async function* cacheDeps(
           if (err?.message?.includes("(os error 1314)")) {
             throw new PollapoWindowsPrivilegeNotHeldError();
           }
-        } else {
-          throw err;
         }
+        throw err;
       }
     } else {
       const downloading = download(dep);
