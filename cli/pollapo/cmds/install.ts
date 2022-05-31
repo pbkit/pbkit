@@ -36,6 +36,7 @@ import {
   lock,
   parseDep,
   PollapoRootLockTable,
+  PollapoWindowsPrivilegeNotHeldError,
   PollapoYml,
   PollapoYmlMalformedError,
   PollapoYmlNotFoundError,
@@ -120,7 +121,8 @@ export default new Command()
         err instanceof GithubRepoNotFoundError ||
         err instanceof PollapoUnauthorizedError ||
         err instanceof PollapoYmlMalformedError ||
-        err instanceof PollapoYmlNotFoundError
+        err instanceof PollapoYmlNotFoundError ||
+        err instanceof PollapoWindowsPrivilegeNotHeldError
       ) {
         await println(red("error"));
         await println(err.message);

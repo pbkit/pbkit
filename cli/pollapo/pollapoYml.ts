@@ -196,13 +196,13 @@ export async function* cacheDeps(
         await link(dep, commitHash);
       } catch (err) {
         if (Deno.build.os === "windows") {
-          console.log(
-            "Failed to symlink. Please run the command as administrator.",
-          );
+          // https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--1300-1699-
+          if (err?.message?.includes("(os error 1314)")) {
+            throw new PollapoWindowsPrivilegeNotHeldError();
+          }
         } else {
-          console.error(red("Failed to symlink"))
+          throw err;
         }
-        Deno.exit(1);
       }
     } else {
       const downloading = download(dep);
@@ -256,6 +256,14 @@ export async function* cacheDeps(
       Deno.writeFile(zipPath, zip),
       Deno.writeTextFile(ymlPath, pollapoYmlText),
     ]);
+  }
+}
+
+export class PollapoWindowsPrivilegeNotHeldError extends Error {
+  constructor() {
+    super(
+      "A required privilege is not held by the client. Please run the command as administrator.",
+    );
   }
 }
 
