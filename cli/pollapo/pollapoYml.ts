@@ -192,7 +192,18 @@ export async function* cacheDeps(
       const commitHash = await fetchingCommitHash;
       queue.push({ ...dep, rev: commitHash });
       await unlink(dep);
-      await link(dep, commitHash);
+      try {
+        await link(dep, commitHash);
+      } catch (err) {
+        if (Deno.build.os === "windows") {
+          // https://docs.microsoft.com/en-us/windows/win32/debug/system-error-codes--1300-1699-
+          if (err?.message?.includes("(os error 1314)")) {
+            throw new PollapoWindowsPrivilegeNotHeldError();
+          }
+        } else {
+          throw err;
+        }
+      }
     } else {
       const downloading = download(dep);
       yield { type: "download", dep, promise: downloading };
@@ -245,6 +256,14 @@ export async function* cacheDeps(
       Deno.writeFile(zipPath, zip),
       Deno.writeTextFile(ymlPath, pollapoYmlText),
     ]);
+  }
+}
+
+export class PollapoWindowsPrivilegeNotHeldError extends Error {
+  constructor() {
+    super(
+      "A required privilege is not held by the client. Please run the command as administrator.",
+    );
   }
 }
 
