@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "setup": "deno run -A ../cli/pb/entrypoint.ts gen ts --entry-path data -o data/gen",
+    "bench": "deno bench --unstable --allow-read --allow-env --no-check"
+  }
+}
