@@ -33,12 +33,29 @@ interface ServerCapabilities {
   definitionProvider?: boolean; // @TODO: Add Support for DefinitionOptions
   typeDefinitionProvider?: boolean; // @TODO: Add Support for TypeDefinitionRegistrationOptions
   implementationProvider?: boolean; // @TODO: Add Support for ImplementationRegistrationOptions
+  semanticTokensProvider?: SemanticTokensOptions; // @TODO: Add Support for SemanticTokensRegistrationOptions
   referencesProvider?: boolean;
   workspace?: {
     workspaceFolders?: {
       supported?: boolean;
     };
   };
+}
+
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensOptions
+ */
+interface SemanticTokensOptions extends WorkDoneProgressParams {
+  legend: SemanticTokensLegend;
+  range?: boolean;
+  full?: boolean | { delta?: boolean };
+}
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensLegend
+ */
+interface SemanticTokensLegend {
+  tokenTypes: string[];
+  tokenModifiers: string[];
 }
 
 /**
@@ -99,6 +116,36 @@ export interface Hover {
    * that is used to visualize a hover, e.g. by changing the background color.
    */
   range?: Range;
+}
+
+/**
+ * Requesting semantic tokens for a whole file
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensParams
+ */
+export interface SematicTokenParams
+  extends WorkDoneProgressParams, PartialResultParams {
+  /**
+   * The text document.
+   */
+  textDocument: TextDocumentIdentifier;
+}
+
+/**
+ * @docs https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokens
+ */
+export interface SemanticTokens {
+  /**
+   * An optional result id. If provided and clients support delta updating
+   * the client will include the result id in the next semantic token request.
+   * A server can then instead of computing all semantic tokens again simply
+   * send a delta.
+   */
+  resultId?: string;
+
+  /**
+   * The actual tokens.
+   */
+  data: uinteger[];
 }
 
 /**
