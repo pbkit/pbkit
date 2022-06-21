@@ -10,11 +10,23 @@ import {
 
 export interface ParseResult<T = ast.Proto> {
   ast: T;
-  parser: RecursiveDescentParser;
+  parser: ProtoParser;
+  comments: ast.Comment[];
 }
 
+export type ProtoParser = RecursiveDescentParser<ProtoParserEvent>;
+interface ProtoParserEvent {
+  comment: ast.Comment;
+}
+
+const createProtoParser = createRecursiveDescentParser as (
+  ...args: Parameters<typeof createRecursiveDescentParser>
+) => ProtoParser;
+
 export function parse(text: string): ParseResult {
-  const parser = createRecursiveDescentParser(text);
+  const comments: ast.Comment[] = [];
+  const parser = createProtoParser(text);
+  parser.on("comment", (comment) => comments.push(comment));
   const statements = acceptStatements<ast.TopLevelStatement>(parser, [
     acceptSyntax,
     acceptImport,
@@ -27,13 +39,13 @@ export function parse(text: string): ParseResult {
     acceptEmpty,
   ]);
   const ast: ast.Proto = { statements };
-  return { ast, parser };
+  return { ast, parser, comments };
 }
 
 export function parseConstant(text: string): ParseResult<ast.Constant> {
-  const parser = createRecursiveDescentParser(text);
+  const parser = createProtoParser(text);
   const constant = expectConstant(parser);
-  return { ast: constant, parser };
+  return { ast: constant, parser, comments: [] };
 }
 
 function mergeSpans(spans: (undefined | Span | (undefined | Span)[])[]): Span {
@@ -51,7 +63,7 @@ function mergeSpans(spans: (undefined | Span | (undefined | Span)[])[]): Span {
 }
 
 interface AcceptFn<T> {
-  (parser: RecursiveDescentParser): T | undefined;
+  (parser: ProtoParser): T | undefined;
 }
 
 function acceptPatternAndThen<T>(
@@ -74,7 +86,7 @@ function choice<T>(acceptFns: AcceptFn<T>[]): AcceptFn<T> {
   };
 }
 
-function many<T>(parser: RecursiveDescentParser, acceptFn: AcceptFn<T>): T[] {
+function many<T>(parser: ProtoParser, acceptFn: AcceptFn<T>): T[] {
   const nodes: T[] = [];
   let node: ReturnType<typeof acceptFn>;
   while (node = acceptFn(parser)) nodes.push(node);
@@ -101,7 +113,7 @@ type AcceptComplexSequenceResult<
 function acceptComplexSequence<
   T extends readonly (readonly [string, AcceptFn<any>])[],
 >(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   expectFnSeq: T,
   escapePattern?: Pattern,
 ): AcceptComplexSequenceResult<FromEntries<DeepWriteable<T>>> {
@@ -132,13 +144,13 @@ function acceptComplexSequence<
 
 interface AcceptStatementFn<T extends ast.StatementBase> {
   (
-    parser: RecursiveDescentParser,
+    parser: ProtoParser,
     leadingComments: ast.CommentGroup[],
     leadingDetachedComments: ast.CommentGroup[],
   ): T | undefined;
 }
 function acceptStatements<T extends ast.StatementBase>(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   acceptStatementFns: AcceptStatementFn<T>[],
 ) {
   const statements: T[] = [];
@@ -203,7 +215,7 @@ const acceptSemi = acceptPatternAndThen<ast.Semi>(
   ";",
   (semi) => ({ type: "semi", ...semi }),
 );
-function expectSemi(parser: RecursiveDescentParser): ast.Semi {
+function expectSemi(parser: ProtoParser): ast.Semi {
   const semi = acceptSemi(parser);
   if (semi) return semi;
   throw new SyntaxError(parser, [";"]);
@@ -214,7 +226,7 @@ const acceptIdent = acceptPatternAndThen<ast.Ident>(
 );
 
 function acceptSpecialToken<TType extends string>(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   type: TType,
   pattern: Pattern = identPattern,
 ): (Token & { type: TType }) | undefined {
@@ -224,14 +236,14 @@ function acceptSpecialToken<TType extends string>(
 }
 
 function acceptKeyword(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   pattern: Pattern = identPattern,
 ): ast.Keyword | undefined {
   return acceptSpecialToken(parser, "keyword", pattern);
 }
 
 function acceptCommentGroup(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.CommentGroup | undefined {
   const loc = parser.loc;
   const comments: ast.Comment[] = [];
@@ -244,6 +256,7 @@ function acceptCommentGroup(
       multilineCommentPattern,
     );
     if (multilineComment) {
+      parser.emit("comment", multilineComment);
       comments.push(multilineComment);
       continue;
     }
@@ -253,6 +266,7 @@ function acceptCommentGroup(
       singlelineCommentPattern,
     );
     if (singlelineComment) {
+      parser.emit("comment", singlelineComment);
       comments.push(singlelineComment);
       continue;
     }
@@ -270,7 +284,7 @@ function acceptCommentGroup(
 }
 
 function acceptTrailingComments(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.CommentGroup[] {
   const loc = parser.loc;
   const comments: ast.Comment[] = [];
@@ -315,7 +329,7 @@ interface SkipWsAndSweepCommentsResult {
   trailingNewline: boolean;
 }
 function skipWsAndSweepComments(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): SkipWsAndSweepCommentsResult {
   const commentGroups: ast.CommentGroup[] = [];
   let trailingNewline = false;
@@ -342,7 +356,7 @@ function skipWsAndSweepComments(
   };
 }
 
-function skipWsAndComments(parser: RecursiveDescentParser): undefined {
+function skipWsAndComments(parser: ProtoParser): undefined {
   while (true) {
     const whitespace = parser.accept(whitespacePattern);
     if (whitespace) continue;
@@ -351,19 +365,25 @@ function skipWsAndComments(parser: RecursiveDescentParser): undefined {
       "multiline-comment",
       multilineCommentPattern,
     );
-    if (multilineComment) continue;
+    if (multilineComment) {
+      parser.emit("comment", multilineComment);
+      continue;
+    }
     const singlelineComment = acceptSpecialToken(
       parser,
       "singleline-comment",
       singlelineCommentPattern,
     );
-    if (singlelineComment) continue;
+    if (singlelineComment) {
+      parser.emit("comment", singlelineComment);
+      continue;
+    }
     break;
   }
   return;
 }
 
-function skipWsAndComments2(parser: RecursiveDescentParser): boolean {
+function skipWsAndComments2(parser: ProtoParser): boolean {
   let hasNewline = false;
   while (true) {
     const whitespace = parser.accept(whitespaceWithoutNewlinePattern);
@@ -378,13 +398,17 @@ function skipWsAndComments2(parser: RecursiveDescentParser): boolean {
       "multiline-comment",
       multilineCommentPattern,
     );
-    if (multilineComment) continue;
+    if (multilineComment) {
+      parser.emit("comment", multilineComment);
+      continue;
+    }
     const singlelineComment = acceptSpecialToken(
       parser,
       "singleline-comment",
       singlelineCommentPattern,
     );
     if (singlelineComment) {
+      parser.emit("comment", singlelineComment);
       hasNewline = true;
       continue;
     }
@@ -394,7 +418,7 @@ function skipWsAndComments2(parser: RecursiveDescentParser): boolean {
 }
 
 function acceptFullIdent(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.FullIdent | undefined {
   const identOrDots = many(
     parser,
@@ -411,14 +435,14 @@ function acceptFullIdent(
   };
 }
 
-function expectFullIdent(parser: RecursiveDescentParser): ast.FullIdent {
+function expectFullIdent(parser: ProtoParser): ast.FullIdent {
   const fullIdent = acceptFullIdent(parser);
   if (fullIdent) return fullIdent;
   throw new SyntaxError(parser, [".", identPattern]);
 }
 
 function acceptType(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.Type | undefined {
   const identOrDots = many(
     parser,
@@ -435,26 +459,26 @@ function acceptType(
   };
 }
 
-function expectType(parser: RecursiveDescentParser): ast.Type {
+function expectType(parser: ProtoParser): ast.Type {
   const type = acceptType(parser);
   if (type) return type;
   throw new SyntaxError(parser, [".", identPattern]);
 }
 
-function acceptIntLit(parser: RecursiveDescentParser): ast.IntLit | undefined {
+function acceptIntLit(parser: ProtoParser): ast.IntLit | undefined {
   const intLit = parser.accept(intLitPattern);
   if (!intLit) return;
   return { type: "int-lit", ...intLit };
 }
 
-function expectIntLit(parser: RecursiveDescentParser): ast.IntLit {
+function expectIntLit(parser: ProtoParser): ast.IntLit {
   const intLit = acceptIntLit(parser);
   if (intLit) return intLit;
   throw new SyntaxError(parser, [intLitPattern]);
 }
 
 function acceptSignedIntLit(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.SignedIntLit | undefined {
   const loc = parser.loc;
   const sign = parser.accept("-") ?? parser.accept("+");
@@ -471,14 +495,14 @@ function acceptSignedIntLit(
   };
 }
 
-function expectSignedIntLit(parser: RecursiveDescentParser): ast.SignedIntLit {
+function expectSignedIntLit(parser: ProtoParser): ast.SignedIntLit {
   const signedIntLit = acceptSignedIntLit(parser);
   if (signedIntLit) return signedIntLit;
   throw new SyntaxError(parser, ["-", intLitPattern]);
 }
 
 function acceptFloatLit(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.FloatLit | undefined {
   const floatLit = parser.accept(floatLitPattern);
   if (!floatLit) return;
@@ -486,7 +510,7 @@ function acceptFloatLit(
 }
 
 function acceptSignedFloatLit(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.SignedFloatLit | undefined {
   const loc = parser.loc;
   const sign = parser.accept("-") ?? parser.accept("+");
@@ -504,14 +528,14 @@ function acceptSignedFloatLit(
 }
 
 function acceptBoolLit(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.BoolLit | undefined {
   const boolLit = parser.accept(boolLitPattern);
   if (!boolLit) return;
   return { type: "bool-lit", ...boolLit };
 }
 
-function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
+function acceptStrLit(parser: ProtoParser): ast.StrLit | undefined {
   const strLit = parser.accept(strLitPattern);
   if (!strLit) return;
   const tokens = [strLit];
@@ -524,7 +548,7 @@ function acceptStrLit(parser: RecursiveDescentParser): ast.StrLit | undefined {
   return { ...mergeSpans(tokens), type: "str-lit", tokens };
 }
 
-function expectStrLit(parser: RecursiveDescentParser): ast.StrLit {
+function expectStrLit(parser: ProtoParser): ast.StrLit {
   const strLit = acceptStrLit(parser);
   if (strLit) return strLit;
   throw new SyntaxError(parser, [strLitPattern]);
@@ -532,7 +556,7 @@ function expectStrLit(parser: RecursiveDescentParser): ast.StrLit {
 
 // https://github.com/protocolbuffers/protobuf/blob/c2148566c7/src/google/protobuf/compiler/parser.cc#L1429-L1452
 function acceptAggregate(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.Aggregate | undefined {
   const parenthesisOpen = parser.accept("{");
   if (!parenthesisOpen) return;
@@ -558,14 +582,14 @@ function acceptAggregate(
 }
 
 function acceptConstant(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.Constant | undefined {
   return acceptSignedFloatLit(parser) ?? acceptSignedIntLit(parser) ??
     acceptStrLit(parser) ?? acceptBoolLit(parser) ?? acceptFullIdent(parser) ??
     acceptAggregate(parser);
 }
 
-function expectConstant(parser: RecursiveDescentParser): ast.Constant {
+function expectConstant(parser: ProtoParser): ast.Constant {
   const constant = acceptConstant(parser);
   if (constant) return constant;
   throw new SyntaxError(parser, [
@@ -579,7 +603,7 @@ function expectConstant(parser: RecursiveDescentParser): ast.Constant {
 }
 
 function acceptOptionNameSegment(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.OptionNameSegment | undefined {
   const bracketOpen = parser.accept("(");
   const name = acceptFullIdent(parser);
@@ -598,7 +622,7 @@ function acceptOptionNameSegment(
 }
 
 function acceptOptionName(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.OptionName | undefined {
   const optionNameSegmentOrDots = many(
     parser,
@@ -615,14 +639,14 @@ function acceptOptionName(
   };
 }
 
-function expectOptionName(parser: RecursiveDescentParser): ast.OptionName {
+function expectOptionName(parser: ProtoParser): ast.OptionName {
   const optionName = acceptOptionName(parser);
   if (optionName) return optionName;
   throw new SyntaxError(parser, ["(", identPattern]);
 }
 
 function acceptSyntax(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Syntax | undefined {
@@ -659,7 +683,7 @@ function acceptSyntax(
 }
 
 function acceptImport(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Import | undefined {
@@ -692,7 +716,7 @@ function acceptImport(
 }
 
 function acceptPackage(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Package | undefined {
@@ -722,7 +746,7 @@ function acceptPackage(
 }
 
 function acceptOption(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Option | undefined {
@@ -758,7 +782,7 @@ function acceptOption(
 }
 
 function acceptEmpty(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Empty | undefined {
@@ -781,7 +805,7 @@ function acceptEmpty(
 }
 
 function acceptFieldOption(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.FieldOption | undefined {
   const optionName = acceptOptionName(parser);
   if (!optionName) return;
@@ -799,7 +823,7 @@ function acceptFieldOption(
 }
 
 function acceptFieldOptions(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
 ): ast.FieldOptions | undefined {
   const bracketOpen = parser.accept("[");
   if (!bracketOpen) return;
@@ -822,7 +846,7 @@ function acceptFieldOptions(
 }
 
 function acceptEnumField(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.EnumField | undefined {
@@ -857,7 +881,7 @@ function acceptEnumField(
   };
 }
 
-function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
+function expectEnumBody(parser: ProtoParser): ast.EnumBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.EnumBodyStatement>(parser, [
     acceptOption,
@@ -876,7 +900,7 @@ function expectEnumBody(parser: RecursiveDescentParser): ast.EnumBody {
 }
 
 function acceptEnum(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Enum | undefined {
@@ -906,7 +930,7 @@ function acceptEnum(
 }
 
 function acceptField(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Field | ast.MalformedField | undefined {
@@ -953,7 +977,7 @@ function acceptField(
 }
 
 function acceptOneofField(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.OneofField | undefined {
@@ -992,7 +1016,7 @@ function acceptOneofField(
 }
 
 function acceptMapField(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.MapField | undefined {
@@ -1045,7 +1069,7 @@ function acceptMapField(
   };
 }
 
-function expectOneofBody(parser: RecursiveDescentParser): ast.OneofBody {
+function expectOneofBody(parser: ProtoParser): ast.OneofBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.OneofBodyStatement>(parser, [
     acceptOneofGroup,
@@ -1064,7 +1088,7 @@ function expectOneofBody(parser: RecursiveDescentParser): ast.OneofBody {
 }
 
 function acceptOneof(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Oneof | undefined {
@@ -1098,7 +1122,7 @@ const acceptMax = acceptPatternAndThen<ast.Max>(
   (max) => ({ type: "max", ...max }),
 );
 
-function acceptRange(parser: RecursiveDescentParser): ast.Range | undefined {
+function acceptRange(parser: ProtoParser): ast.Range | undefined {
   const rangeStart = acceptIntLit(parser);
   if (!rangeStart) return;
   skipWsAndComments(parser);
@@ -1123,7 +1147,7 @@ function acceptRange(parser: RecursiveDescentParser): ast.Range | undefined {
   };
 }
 
-function expectRanges(parser: RecursiveDescentParser): ast.Ranges {
+function expectRanges(parser: ProtoParser): ast.Ranges {
   const rangeOrCommas = many(
     parser,
     choice<ast.Range | ast.Comma>([
@@ -1140,7 +1164,7 @@ function expectRanges(parser: RecursiveDescentParser): ast.Ranges {
 }
 
 function acceptExtensions(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Extensions | undefined {
@@ -1169,7 +1193,7 @@ function acceptExtensions(
   };
 }
 
-function expectFieldNames(parser: RecursiveDescentParser): ast.FieldNames {
+function expectFieldNames(parser: ProtoParser): ast.FieldNames {
   const strLitOrCommas = many(
     parser,
     choice<ast.StrLit | ast.Comma>([
@@ -1186,7 +1210,7 @@ function expectFieldNames(parser: RecursiveDescentParser): ast.FieldNames {
 }
 
 function acceptReserved(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Reserved | undefined {
@@ -1217,7 +1241,7 @@ function acceptReserved(
   };
 }
 
-function expectExtendBody(parser: RecursiveDescentParser): ast.ExtendBody {
+function expectExtendBody(parser: ProtoParser): ast.ExtendBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.ExtendBodyStatement>(parser, [
     acceptGroup,
@@ -1235,7 +1259,7 @@ function expectExtendBody(parser: RecursiveDescentParser): ast.ExtendBody {
 }
 
 function acceptExtend(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Extend | undefined {
@@ -1265,7 +1289,7 @@ function acceptExtend(
 }
 
 function acceptGroup(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Group | undefined {
@@ -1315,7 +1339,7 @@ function acceptGroup(
 }
 
 function acceptOneofGroup(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.OneofGroup | undefined {
@@ -1350,7 +1374,7 @@ function acceptOneofGroup(
   };
 }
 
-function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
+function expectMessageBody(parser: ProtoParser): ast.MessageBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.MessageBodyStatement>(parser, [
     acceptGroup,
@@ -1376,7 +1400,7 @@ function expectMessageBody(parser: RecursiveDescentParser): ast.MessageBody {
 }
 
 function acceptMessage(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Message | undefined {
@@ -1405,7 +1429,7 @@ function acceptMessage(
   };
 }
 
-function expectRpcType(parser: RecursiveDescentParser): ast.RpcType {
+function expectRpcType(parser: ProtoParser): ast.RpcType {
   const bracketOpen = parser.expect("(");
   skipWsAndComments(parser);
   const stream = acceptKeyword(parser, "stream");
@@ -1423,7 +1447,7 @@ function expectRpcType(parser: RecursiveDescentParser): ast.RpcType {
 }
 
 function acceptRpc(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Rpc | undefined {
@@ -1461,7 +1485,7 @@ function acceptRpc(
   };
 }
 
-function expectRpcBody(parser: RecursiveDescentParser): ast.RpcBody {
+function expectRpcBody(parser: ProtoParser): ast.RpcBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.RpcBodyStatement>(parser, [
     acceptOption,
@@ -1477,7 +1501,7 @@ function expectRpcBody(parser: RecursiveDescentParser): ast.RpcBody {
   };
 }
 
-function expectServiceBody(parser: RecursiveDescentParser): ast.ServiceBody {
+function expectServiceBody(parser: ProtoParser): ast.ServiceBody {
   const bracketOpen = parser.expect("{");
   const statements = acceptStatements<ast.ServiceBodyStatement>(parser, [
     acceptOption,
@@ -1495,7 +1519,7 @@ function expectServiceBody(parser: RecursiveDescentParser): ast.ServiceBody {
 }
 
 function acceptService(
-  parser: RecursiveDescentParser,
+  parser: ProtoParser,
   leadingComments: ast.CommentGroup[],
   leadingDetachedComments: ast.CommentGroup[],
 ): ast.Service | undefined {

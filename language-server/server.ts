@@ -12,6 +12,13 @@ import * as lsp from "./lsp.ts";
 import { createProjectManager } from "./project.ts";
 import { parse } from "../core/parser/proto.ts";
 import { fromFileUrl } from "../core/loader/deno-fs.ts";
+import {
+  getSemanticTokens,
+  toDeltaSemanticTokens,
+  tokenModifiers,
+  tokenTypes,
+  toLspRepresentation,
+} from "../core/schema/semantic-token-provider.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
@@ -49,6 +56,11 @@ export function run(config: RunConfig): Server {
             referencesProvider: true,
             definitionProvider: true,
             hoverProvider: true,
+            semanticTokensProvider: {
+              legend: { tokenModifiers, tokenTypes },
+              full: true,
+              range: false,
+            },
             workspace: {
               workspaceFolders: {
                 // @TODO: Add support for workspaceFolders
@@ -109,6 +121,18 @@ export function run(config: RunConfig): Server {
             kind: "markdown",
             value: typeInformation,
           },
+        };
+      },
+      async ["textDocument/semanticTokens/full"](
+        params: lsp.SematicTokenParams,
+      ): Promise<lsp.SemanticTokens | null> {
+        const { textDocument } = params;
+        const parseResult = parse(
+          await Deno.readTextFile(fromFileUrl(textDocument.uri)),
+        );
+        const tokens = toDeltaSemanticTokens(getSemanticTokens(parseResult));
+        return {
+          data: toLspRepresentation(tokens),
         };
       },
     },

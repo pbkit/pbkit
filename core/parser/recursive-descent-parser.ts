@@ -1,4 +1,9 @@
-export interface RecursiveDescentParser {
+import {
+  createEventEmitter,
+  EventEmitter,
+} from "../runtime/async/event-emitter.ts";
+
+export interface RecursiveDescentParser<T = unknown> extends EventEmitter<T> {
   readonly input: string;
   loc: number;
   offsetToColRow: (offset: number) => ColRow;
@@ -28,14 +33,15 @@ export interface Token extends Span {
 }
 export type Pattern = string | RegExp | typeof eof;
 export const eof = Symbol("<EOF>");
-export function createRecursiveDescentParser(
+export function createRecursiveDescentParser<T = unknown>(
   input: string,
   config?: Partial<RecursiveDescentParserConfig>,
-): RecursiveDescentParser {
+): RecursiveDescentParser<T> {
   const debug = !!config?.debug;
   let cnt = 0;
   const lines = input.split("\n");
-  const parser: RecursiveDescentParser = {
+  const parser: RecursiveDescentParser<T> = {
+    ...createEventEmitter<T>(),
     input,
     loc: 0,
     offsetToColRow: (offset) => offsetToColRow(lines, offset),
@@ -116,11 +122,9 @@ export class SyntaxError extends Error {
     const expectedPatternsText = expectedPatterns.map(patternToString).join(
       " or ",
     );
-    this.message = (
-      `at line ${colRow.row + 1}, column ${colRow.col + 1}:\n\n` +
+    this.message = `at line ${colRow.row + 1}, column ${colRow.col + 1}:\n\n` +
       `expected ${expectedPatternsText}, got ${patternToString(got)}\n\n` +
-      parser.getAroundText(parser.loc, length)
-    );
+      parser.getAroundText(parser.loc, length);
   }
   get got() {
     const parser = this.parser;

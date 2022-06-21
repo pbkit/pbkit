@@ -588,7 +588,7 @@ export const visitor: Visitor = {
   visitToken() {},
 };
 
-function visitStatementBase<T extends ast.StatementBase>(
+export function visitStatementBase<T extends ast.StatementBase>(
   visitor: Visitor,
   node: T,
   visit: () => void,
