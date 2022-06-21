@@ -30,7 +30,6 @@ export type PollapoDepFrag =
 
 export interface PollapoRoot {
   lock?: PollapoRootLockTable;
-  "replace-file-option"?: PollapoRootReplaceFileOption;
 }
 
 export interface PollapoRootLockTable {
