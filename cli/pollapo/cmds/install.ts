@@ -8,9 +8,6 @@ import {
 import { emptyDir, ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { parse } from "../../../core/parser/proto.ts";
-import minify from "../../../core/stringifier/minify.ts";
-import replaceFileOption from "../postprocess/replaceFileOption.ts";
 import backoff from "../misc/exponential-backoff.ts";
 import {
   getToken,
