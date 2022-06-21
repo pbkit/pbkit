@@ -185,19 +185,8 @@ async function installDep(
   const zipData = await Deno.readFile(zipPath);
   const files = stripComponents(await unzip(zipData), 1);
   const targetDir = path.resolve(options.outDir, dep.user, dep.repo);
-  const pollapoRootReplaceFileOption = (
-    pollapoYml?.root?.["replace-file-option"]
-  );
   const promises = [];
   for await (let { fileName, data } of iterFiles(files)) {
-    if (fileName.endsWith(".proto") && pollapoRootReplaceFileOption) {
-      const textDecoder = new TextDecoder();
-      const textEncoder = new TextEncoder();
-      const text = textDecoder.decode(data);
-      let { ast } = parse(text);
-      ast = replaceFileOption(ast, pollapoRootReplaceFileOption);
-      data = textEncoder.encode(minify(ast));
-    }
     const filePath = path.resolve(targetDir, fileName);
     promises.push(
       ensureDir(path.dirname(filePath))
