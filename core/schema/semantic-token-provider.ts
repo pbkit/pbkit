@@ -35,22 +35,22 @@ function getKeysFromEnum<T extends { [key: string]: any }>(e: T): (keyof T)[] {
   return Object.keys(e).filter((v) => !numValues.includes(v)) as (keyof T)[];
 }
 
-interface TokenPosition {
+export interface TokenPosition {
   line: number;
   startChar: number;
   length: number;
 }
-interface DeltaPosition {
+export interface DeltaPosition {
   deltaLine: number;
   deltaStartChar: number;
   length: number;
 }
-interface TokenInformation {
+export interface TokenInformation {
   tokenType: TokenType;
   tokenModifiers: TokenModifier[];
 }
-interface SemanticToken extends TokenPosition, TokenInformation {}
-interface DeltaSemanticToken extends DeltaPosition, TokenInformation {}
+export interface SemanticToken extends TokenPosition, TokenInformation {}
+export interface DeltaSemanticToken extends DeltaPosition, TokenInformation {}
 
 export function getSemanticTokens(
   { ast, parser, comments }: ParseResult<Proto>,
