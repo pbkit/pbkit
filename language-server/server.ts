@@ -18,7 +18,7 @@ import {
   tokenModifiers,
   tokenTypes,
   toLspRepresentation,
-} from "../core/schema/semanticTokenProvider.ts";
+} from "../core/schema/semantic-token-provider.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
