@@ -24,7 +24,3 @@ export const scalarValueTypes: ScalarValueTypes =
 type Writable<T extends readonly string[]> = {
   -readonly [K in keyof T]: T[K];
 };
-
-enum A {
-  B = "B",
-}
