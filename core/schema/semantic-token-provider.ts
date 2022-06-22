@@ -69,8 +69,8 @@ export function getSemanticTokens(
     },
     visitType(visitor, node) {
       if (
-        node.identOrDots.some((token) =>
-          (scalarValueTypes as string[]).includes(token.text)
+        node.identOrDots.some(
+          (token) => (scalarValueTypes as string[]).includes(token.text),
         )
       ) {
         return;
