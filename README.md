@@ -18,7 +18,7 @@
   </a>
   <br>
   <a href="https://github.com/pbkit/pbkit">
-    <img src="https://tokei.rs/b1/github/pbkit/pbkit" />
+    <img src="https://tokei.ekzhang.com/b1/github/pbkit/pbkit" />
   </a>
 </div>
 
