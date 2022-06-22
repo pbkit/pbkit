@@ -19,11 +19,17 @@ import {
   tokenTypes,
   toLspRepresentation,
 } from "../core/schema/semantic-token-provider.ts";
+import { getCompletionItems } from "../core/schema/completion.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
   writer: Deno.Writer;
   logConfig?: CreateJsonRpcLogConfig;
+}
+interface FileCache {
+  uri: string;
+  content: string;
+  revision: number;
 }
 export interface Server {
   finish(): void;
@@ -31,6 +37,7 @@ export interface Server {
 
 export function run(config: RunConfig): Server {
   const projectManager = createProjectManager();
+  let fileCache: FileCache | null = null;
   const connection = createJsonRpcConnection({
     reader: config.reader,
     writer: config.writer,
@@ -38,6 +45,16 @@ export function run(config: RunConfig): Server {
     notificationHandlers: {
       ["initialized"]() {},
       ["textDocument/didOpen"]() {},
+      ["textDocument/didChange"]({ textDocument, contentChanges }) {
+        if (!fileCache) return;
+        if (
+          fileCache.uri === textDocument.uri &&
+          fileCache.revision < textDocument.version
+        ) {
+          fileCache.content = contentChanges[0].text;
+          fileCache.revision = textDocument.version;
+        }
+      },
       ["exit"]() {
         throw new Error("Implement this");
       },
@@ -52,7 +69,9 @@ export function run(config: RunConfig): Server {
           capabilities: {
             // @TODO: Add support for incremental sync
             textDocumentSync: lsp.TextDocumentSyncKind.Full,
-            completionProvider: undefined,
+            completionProvider: {
+              resolveProvider: true,
+            },
             referencesProvider: true,
             definitionProvider: true,
             hoverProvider: true,
@@ -104,43 +123,79 @@ export function run(config: RunConfig): Server {
       ): Promise<lsp.HoverResponse> {
         const { textDocument, position } = params;
         const colRow = positionToColRow(position);
-        const parseResult = parse(
-          await Deno.readTextFile(fromFileUrl(textDocument.uri)),
-        );
-        // try parse textDocument only -> check if it is type specifier
-        if (!isTypeSpecifier(parseResult, colRow)) return null;
-        const schema = await buildFreshSchema(textDocument.uri);
-        const typeInformation = getTypeInformation(
-          schema,
-          textDocument.uri,
-          colRow,
-        );
-        if (!typeInformation) return null;
-        return {
-          contents: {
-            kind: "markdown",
-            value: typeInformation,
-          },
-        };
+        try {
+          const parseResult = parse(
+            await Deno.readTextFile(fromFileUrl(textDocument.uri)),
+          );
+          // try parse textDocument only -> check if it is type specifier
+          if (!isTypeSpecifier(parseResult, colRow)) return null;
+          const schema = await buildFreshSchema(textDocument.uri);
+          const typeInformation = getTypeInformation(
+            schema,
+            textDocument.uri,
+            colRow,
+          );
+          if (!typeInformation) return null;
+          return {
+            contents: {
+              kind: "markdown",
+              value: typeInformation,
+            },
+          };
+        } catch {
+          return null;
+        }
       },
       async ["textDocument/semanticTokens/full"](
         params: lsp.SematicTokenParams,
       ): Promise<lsp.SemanticTokens | null> {
         const { textDocument } = params;
-        const parseResult = parse(
-          await Deno.readTextFile(fromFileUrl(textDocument.uri)),
-        );
-        const tokens = toDeltaSemanticTokens(getSemanticTokens(parseResult));
-        return {
-          data: toLspRepresentation(tokens),
-        };
+        try {
+          const parseResult = parse(
+            await getContentFromCache(textDocument.uri),
+          );
+          const tokens = toDeltaSemanticTokens(getSemanticTokens(parseResult));
+          return {
+            data: toLspRepresentation(tokens),
+          };
+        } catch {
+          return null;
+        }
       },
+      async ["textDocument/completion"](
+        params: lsp.CompletionParams,
+      ): Promise<lsp.CompletionList> {
+        try {
+          const { textDocument, position } = params;
+          const schema = await buildFreshSchema(textDocument.uri);
+          const items = getCompletionItems(
+            schema,
+            textDocument.uri,
+            positionToColRow(position),
+          );
+          return { isIncomplete: false, items };
+        } catch {
+          return { isIncomplete: true, items: [] };
+        }
+      },
+      async ["completionItem/resolve"]() {},
     },
   });
   return { finish: connection.finish };
   async function buildFreshSchema(file: string): Promise<Schema> {
     const buildConfig = await projectManager.createBuildConfig(file);
     return await build(buildConfig);
+  }
+  async function getContentFromCache(uri: string): Promise<string> {
+    if (fileCache?.uri === uri) {
+      return fileCache.content;
+    }
+    fileCache = {
+      uri: uri,
+      content: await Deno.readTextFile(fromFileUrl(uri)),
+      revision: 0,
+    };
+    return fileCache.content;
   }
 }
 
