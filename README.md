@@ -17,9 +17,6 @@
     <img src="https://img.shields.io/badge/deno.land/x/-pbkit-gray?logo=deno&labelColor=black" />
   </a>
   <br>
-  <a href="https://github.com/pbkit/pbkit">
-    <img src="https://tokei.rs/b1/github/pbkit/pbkit" />
-  </a>
 </div>
 
 ## What is Protobuf?
