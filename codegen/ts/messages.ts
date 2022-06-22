@@ -314,6 +314,10 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
       );
       const opt = nullable ? "?" : "";
       const arr = (field.schema.kind === "repeated") ? "[]" : "";
+      const isDeprecated = field.schema.options["deprecated"] ?? false;
+      if (isDeprecated) {
+        return `    /** @deprecated */\n    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
+      }
       return `    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
     }).join("");
   }
