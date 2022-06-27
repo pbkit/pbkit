@@ -71,6 +71,9 @@ export function run(config: RunConfig): Server {
             textDocumentSync: lsp.TextDocumentSyncKind.Full,
             completionProvider: {
               resolveProvider: true,
+              completionItem: {
+                labelDetailsSupport: true,
+              },
             },
             referencesProvider: true,
             definitionProvider: true,
@@ -178,7 +181,9 @@ export function run(config: RunConfig): Server {
           return { isIncomplete: true, items: [] };
         }
       },
-      async ["completionItem/resolve"]() {},
+      async ["completionItem/resolve"](params) {
+        return params;
+      },
     },
   });
   return { finish: connection.finish };

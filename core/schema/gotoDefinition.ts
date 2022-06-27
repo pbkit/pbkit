@@ -100,6 +100,10 @@ export function getTypeInformation(
   if (!typePath) return;
   const type = schema.types[typePath];
   if (!type) return;
+  return getTypeDocs(type, typePath);
+}
+
+export function getTypeDocs(type: Type, typePath: string) {
   const fields = getFields(type);
   return [
     "```proto",
