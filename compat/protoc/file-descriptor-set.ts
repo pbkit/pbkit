@@ -220,7 +220,7 @@ function convertEnumToEnumDescriptorProto(
   }
   return {
     name,
-    value: [],
+    value,
     options,
     reservedRange: [], // TODO
     reservedName: [], // TODO
