@@ -3,7 +3,6 @@ import {
   File,
   Message,
   MessageField,
-  Options,
   OptionValue,
   Schema,
   Service,
@@ -28,6 +27,11 @@ import { snakeToCamel } from "../../misc/case.ts";
 import {
   Type as OptimizeMode,
 } from "../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
+import {
+  Type as IdempotencyLevel,
+} from "../../generated/messages/google/protobuf/(MethodOptions)/IdempotencyLevel.ts";
+import { Type as CType } from "../../generated/messages/google/protobuf/(FieldOptions)/CType.ts";
+import { Type as JSType } from "../../generated/messages/google/protobuf/(FieldOptions)/JSType.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -93,7 +97,7 @@ export function convertSchemaToFileDescriptorSet(
         convertServiceToDescriptorProto({ service })
       ),
       extension: [], // TODO
-      options,
+      options: optionsOrUndefined(options),
       sourceCodeInfo: undefined, // TODO
       publicDependency: file.imports.map(
         ({ kind }, index) => kind === "public" ? index : -1,
@@ -115,11 +119,16 @@ function convertServiceToDescriptorProto(
   const { service: [name, service] } = config;
   const methodDescriptorProtos: ServiceDescriptorProto["method"] = [];
   for (const [rpcName, rpc] of Object.entries(service.rpcs)) {
+    const options: MethodDescriptorProto["options"] = {
+      deprecated: booleanOptionValue(rpc.options["deprecated"]),
+      idempotencyLevel: getIdempotencyLevel(rpc.options["idempotency_level"]),
+      uninterpretedOption: [], // TODO
+    };
     const methodDescriptorProto: MethodDescriptorProto = {
       name: rpcName,
       inputType: rpc.reqType.typePath,
       outputType: rpc.resType.typePath,
-      options: undefined, // TODO
+      options: optionsOrUndefined(options),
       clientStreaming: rpc.reqType.stream,
       serverStreaming: rpc.resType.stream,
     };
@@ -147,7 +156,13 @@ function convertMessageToDescriptorProto(
   for (const [fieldNumber, field] of Object.entries(messageType.type.fields)) {
     if (field.kind === "map") continue; // TODO
     const options: FieldDescriptorProto["options"] = {
-      // TODO
+      packed: booleanOptionValue(field.options["packed"]),
+      deprecated: booleanOptionValue(field.options["deprecated"]),
+      lazy: booleanOptionValue(field.options["lazy"]),
+      weak: booleanOptionValue(field.options["weak"]),
+      unverifiedLazy: booleanOptionValue(field.options["unverified_lazy"]),
+      ctype: getCType(field.options["ctype"]),
+      jstype: getJSType(field.options["jstype"]),
       uninterpretedOption: [], // TODO
     };
     if ("deprecated" in field.options) {
@@ -181,21 +196,15 @@ function convertMessageToDescriptorProto(
     (name) => ({ name }),
   );
   const options: DescriptorProto["options"] = {
+    messageSetWireFormat: booleanOptionValue(
+      messageType.type.options["message_set_wire_format"],
+    ),
+    deprecated: booleanOptionValue(messageType.type.options["deprecated"]),
+    noStandardDescriptorAccessor: booleanOptionValue(
+      messageType.type.options["no_standard_descriptor_accessor"],
+    ),
     uninterpretedOption: [], // TODO
   };
-  if ("message_set_wire_format" in messageType.type.options) {
-    options.messageSetWireFormat = Boolean(
-      messageType.type.options["message_set_wire_format"],
-    );
-  }
-  if ("no_standard_descriptor_accessor" in messageType.type.options) {
-    options.noStandardDescriptorAccessor = Boolean(
-      messageType.type.options["no_standard_descriptor_accessor"],
-    );
-  }
-  if ("deprecated" in messageType.type.options) {
-    options.deprecated = Boolean(messageType.type.options["deprecated"]);
-  }
   return {
     name,
     field: fieldDescriptorProtos,
@@ -218,6 +227,19 @@ function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
     case "CODE_SIZE":
     case "LITE_RUNTIME":
       return optimizeFor;
+    default:
+      return undefined;
+  }
+}
+
+function getIdempotencyLevel(
+  idempotencyLevel: OptionValue,
+): IdempotencyLevel | undefined {
+  switch (idempotencyLevel) {
+    case "IDEMPOTENCY_UNKNOWN":
+    case "NO_SIDE_EFFECTS":
+    case "IDEMPOTENT":
+      return idempotencyLevel;
     default:
       return undefined;
   }
@@ -283,6 +305,28 @@ function getFieldType(schema: Schema, field: MessageField): FieldType {
       return "TYPE_SINT64";
     default:
       return "UNSPECIFIED";
+  }
+}
+
+function getCType(ctype: OptionValue): CType | undefined {
+  switch (ctype) {
+    case "STRING":
+    case "CORD":
+    case "STRING_PIECE":
+      return ctype;
+    default:
+      return undefined;
+  }
+}
+
+function getJSType(jstype: OptionValue): JSType | undefined {
+  switch (jstype) {
+    case "JS_NORMAL":
+    case "JS_STRING":
+    case "JS_NUMBER":
+      return jstype;
+    default:
+      return undefined;
   }
 }
 
