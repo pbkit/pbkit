@@ -14,12 +14,15 @@ import {
   FieldDescriptorProto,
   FileDescriptorProto,
   FileDescriptorSet,
+  MethodDescriptorProto,
+  ServiceDescriptorProto,
   UninterpretedOption,
 } from "../../generated/messages/google/protobuf/index.ts";
 import {
   Label as FieldLabel,
   Type as FieldType,
 } from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
+import { snakeToCamel } from "../../misc/case.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -39,22 +42,51 @@ export function convertSchemaToFileDescriptorSet(
     const fileDescriptorProto: FileDescriptorProto = {
       name: file.importPath,
       package: file.package,
-      dependency: [], // TODO
+      dependency: file.imports.map(({ importPath }) => importPath),
       messageType: messageTypes.map((messageType) =>
         convertMessageToDescriptorProto({ schema, messageType })
       ),
       enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
-      service: [], // TODO
+      service: services.map((service) =>
+        convertServiceToDescriptorProto({ service })
+      ),
       extension: [], // TODO
       options: undefined, // TODO
       sourceCodeInfo: undefined, // TODO
-      publicDependency: [], // TODO
+      publicDependency: file.imports.map(
+        ({ kind }, index) => kind === "public" ? index : -1,
+      ).filter((v) => v >= 0),
       weakDependency: [], // TODO
       syntax: file.syntax,
     };
     result.file.push(fileDescriptorProto);
   }
   return result;
+}
+
+interface ConvertServiceToDescriptorProtoConfig {
+  service: ServicePair;
+}
+function convertServiceToDescriptorProto(
+  config: ConvertServiceToDescriptorProtoConfig,
+): ServiceDescriptorProto {
+  const { service: [name, service] } = config;
+  const methodDescriptorProtos: ServiceDescriptorProto["method"] = [];
+  for (const [rpcName, rpc] of Object.entries(service.rpcs)) {
+    const methodDescriptorProto: MethodDescriptorProto = {
+      name: rpcName,
+      inputType: rpc.reqType.typePath,
+      outputType: rpc.resType.typePath,
+      options: undefined, // TODO
+      clientStreaming: rpc.reqType.stream,
+      serverStreaming: rpc.resType.stream,
+    };
+    methodDescriptorProtos.push(methodDescriptorProto);
+  }
+  return {
+    name,
+    method: methodDescriptorProtos,
+  };
 }
 
 interface ConvertMessageToDescriptorProtoConfig {
@@ -76,6 +108,9 @@ function convertMessageToDescriptorProto(
       // TODO
       uninterpretedOption: [], // TODO
     };
+    if ("deprecated" in field.options) {
+      options.deprecated = Boolean(field.options["deprecated"]);
+    }
     const fieldDescriptorProto: FieldDescriptorProto = {
       name: field.name,
       extendee: undefined, // TODO
@@ -88,7 +123,8 @@ function convertMessageToDescriptorProto(
         : undefined,
       options: optionsOrUndefined(options),
       oneofIndex: undefined,
-      jsonName: undefined, // TODO
+      jsonName: field.options["json_name"]?.toString() ??
+        snakeToCamel(field.name),
       proto3Optional: undefined, // TODO
     };
     if (field.kind === "oneof") {
@@ -211,7 +247,7 @@ function convertEnumToEnumDescriptorProto(
     if ("deprecated" in field.options) {
       options.deprecated = Boolean(field.options.deprecated);
     }
-    value.push({ name, number, options });
+    value.push({ name, number, options: optionsOrUndefined(options) });
   }
   const options: EnumDescriptorProto["options"] = {
     uninterpretedOption: [], // TODO
@@ -296,11 +332,12 @@ function isEnumType<T extends Type>(type: Type): type is T {
   return type.kind === "enum";
 }
 
-function getServicesFromFile(schema: Schema, file: File): Service[] {
-  const result: Service[] = [];
+type ServicePair = [string, Service];
+function getServicesFromFile(schema: Schema, file: File): ServicePair[] {
+  const result: ServicePair[] = [];
   for (const servicePath of file.servicePaths) {
     if (!(servicePath in schema.services)) continue;
-    result.push(schema.services[servicePath]);
+    result.push([servicePath.split(".").pop()!, schema.services[servicePath]]);
   }
   return result;
 }
