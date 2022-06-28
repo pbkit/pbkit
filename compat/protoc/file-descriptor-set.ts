@@ -3,6 +3,8 @@ import {
   File,
   Message,
   MessageField,
+  Options,
+  OptionValue,
   Schema,
   Service,
   Type,
@@ -23,6 +25,9 @@ import {
   Type as FieldType,
 } from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
 import { snakeToCamel } from "../../misc/case.ts";
+import {
+  Type as OptimizeMode,
+} from "../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -39,6 +44,43 @@ export function convertSchemaToFileDescriptorSet(
     const messageTypes = typeTreeArray.filter(isMessageTypeTree);
     const enumTypes = typeTreeArray.filter(isEnumTypeTree);
     const services = getServicesFromFile(schema, file);
+    const options: FileDescriptorProto["options"] = {
+      javaPackage: file.options["java_package"]?.toString(),
+      javaOuterClassname: file.options["java_outer_classname"]?.toString(),
+      javaMultipleFiles: booleanOptionValue(
+        file.options["java_multiple_files"],
+      ),
+      goPackage: file.options["go_package"]?.toString(),
+      ccGenericServices: booleanOptionValue(
+        file.options["cc_generic_services"],
+      ),
+      javaGenericServices: booleanOptionValue(
+        file.options["java_generic_services"],
+      ),
+      pyGenericServices: booleanOptionValue(
+        file.options["py_generic_services"],
+      ),
+      javaGenerateEqualsAndHash: booleanOptionValue(
+        file.options["java_generate_equals_and_hash"],
+      ),
+      deprecated: booleanOptionValue(file.options["deprecated"]),
+      javaStringCheckUtf8: booleanOptionValue(
+        file.options["java_string_check_utf8"],
+      ),
+      ccEnableArenas: booleanOptionValue(file.options["cc_enable_arenas"]),
+      objcClassPrefix: file.options["objc_class_prefix"]?.toString(),
+      csharpNamespace: file.options["csharp_namespace"]?.toString(),
+      swiftPrefix: file.options["swift_prefix"]?.toString(),
+      phpClassPrefix: file.options["php_class_prefix"]?.toString(),
+      phpNamespace: file.options["php_namespace"]?.toString(),
+      phpGenericServices: booleanOptionValue(
+        file.options["php_generic_services"],
+      ),
+      phpMetadataNamespace: file.options["php_metadata_namespace"]?.toString(),
+      rubyPackage: file.options["ruby_package"]?.toString(),
+      optimizeFor: getOptimizeMode(file.options["optimize_for"]),
+      uninterpretedOption: [], // TODO
+    };
     const fileDescriptorProto: FileDescriptorProto = {
       name: file.importPath,
       package: file.package,
@@ -51,7 +93,7 @@ export function convertSchemaToFileDescriptorSet(
         convertServiceToDescriptorProto({ service })
       ),
       extension: [], // TODO
-      options: undefined, // TODO
+      options,
       sourceCodeInfo: undefined, // TODO
       publicDependency: file.imports.map(
         ({ kind }, index) => kind === "public" ? index : -1,
@@ -168,6 +210,17 @@ function convertMessageToDescriptorProto(
     reservedRange: [], // TODO
     reservedName: [], // TODO
   };
+}
+
+function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
+  switch (optimizeFor) {
+    case "SPEED":
+    case "CODE_SIZE":
+    case "LITE_RUNTIME":
+      return optimizeFor;
+    default:
+      return undefined;
+  }
 }
 
 function getFieldLabel(field: MessageField): FieldLabel {
@@ -350,4 +403,10 @@ function optionsOrUndefined<T extends OptionsBase>(options: T): T | undefined {
     Object.values(rest).filter((x) => x !== undefined).length
   );
   return countOfOption === 0 ? undefined : options;
+}
+
+function booleanOptionValue(
+  value: OptionValue | undefined,
+): boolean | undefined {
+  return value !== undefined ? Boolean(value) : value;
 }
