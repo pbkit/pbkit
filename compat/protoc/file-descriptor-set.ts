@@ -28,6 +28,7 @@ export function convertSchemaToFileDescriptorSet(
 ): FileDescriptorSet {
   const result: FileDescriptorSet = { file: [] };
   for (const file of Object.values(schema.files)) {
+    console.error(Deno.inspect(file));
     const typeTreeArray = typePathsToTypeTreeArray(
       schema.types,
       file.typePaths,
