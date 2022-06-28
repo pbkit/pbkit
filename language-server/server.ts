@@ -18,8 +18,8 @@ import {
   tokenModifiers,
   tokenTypes,
   toLspRepresentation,
-} from "../core/schema/semantic-token-provider.ts";
-import { getCompletionItems } from "../core/schema/completion.ts";
+} from "./semantic-token-provider.ts";
+import { getCompletionItems } from "./completion.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;

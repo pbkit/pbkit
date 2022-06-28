@@ -1,12 +1,12 @@
-import { Proto } from "../ast/index.ts";
-import { ParseResult } from "../parser/proto.ts";
-import { Span } from "../parser/recursive-descent-parser.ts";
-import { scalarValueTypes } from "../runtime/scalar.ts";
+import { Proto } from "../core/ast/index.ts";
+import { ParseResult } from "../core/parser/proto.ts";
+import { Span } from "../core/parser/recursive-descent-parser.ts";
+import { scalarValueTypes } from "../core/runtime/scalar.ts";
 import {
   Visitor,
   visitor as defaultVisitor,
   visitStatementBase,
-} from "../visitor/index.ts";
+} from "../core/visitor/index.ts";
 
 export enum TokenType {
   enum = 0,

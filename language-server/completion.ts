@@ -1,12 +1,12 @@
-import * as lsp from "../../language-server/lsp.ts";
-import { CompletionItemKind } from "../../language-server/lsp.ts";
-import { ParseResult } from "../parser/proto.ts";
-import { ColRow } from "../parser/recursive-descent-parser.ts";
-import { Visitor, visitor as defaultVisitor } from "../visitor/index.ts";
-import { getResolveTypePathFn } from "./builder.ts";
-import { getTypeDocs } from "./gotoDefinition.ts";
-import { Schema } from "./model.ts";
-import { stringifyFullIdent } from "./stringify-ast-frag.ts";
+import * as lsp from "./lsp.ts";
+import { CompletionItemKind } from "./lsp.ts";
+import { ParseResult } from "../core/parser/proto.ts";
+import { ColRow } from "../core/parser/recursive-descent-parser.ts";
+import { Visitor, visitor as defaultVisitor } from "../core/visitor/index.ts";
+import { getResolveTypePathFn } from "../core/schema/builder.ts";
+import { getTypeDocs } from "../core/schema/gotoDefinition.ts";
+import { Schema } from "../core/schema/model.ts";
+import { stringifyFullIdent } from "../core/schema/stringify-ast-frag.ts";
 
 export enum CompletionType {
   Uninitialized = 0,
