@@ -452,7 +452,6 @@ function fileDescriptorOptions(
       uninterpretedOption: [], // TODO
     };
   return result;
-
   function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
     switch (optimizeFor) {
       case "SPEED":
