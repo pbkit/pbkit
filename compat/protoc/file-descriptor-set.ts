@@ -3,6 +3,7 @@ import {
   File,
   Message,
   MessageField,
+  Options,
   OptionValue,
   Schema,
   Service,
@@ -48,43 +49,7 @@ export function convertSchemaToFileDescriptorSet(
     const messageTypes = typeTreeArray.filter(isMessageTypeTree);
     const enumTypes = typeTreeArray.filter(isEnumTypeTree);
     const services = getServicesFromFile(schema, file);
-    const options: FileDescriptorProto["options"] = {
-      javaPackage: file.options["java_package"]?.toString(),
-      javaOuterClassname: file.options["java_outer_classname"]?.toString(),
-      javaMultipleFiles: booleanOptionValue(
-        file.options["java_multiple_files"],
-      ),
-      goPackage: file.options["go_package"]?.toString(),
-      ccGenericServices: booleanOptionValue(
-        file.options["cc_generic_services"],
-      ),
-      javaGenericServices: booleanOptionValue(
-        file.options["java_generic_services"],
-      ),
-      pyGenericServices: booleanOptionValue(
-        file.options["py_generic_services"],
-      ),
-      javaGenerateEqualsAndHash: booleanOptionValue(
-        file.options["java_generate_equals_and_hash"],
-      ),
-      deprecated: booleanOptionValue(file.options["deprecated"]),
-      javaStringCheckUtf8: booleanOptionValue(
-        file.options["java_string_check_utf8"],
-      ),
-      ccEnableArenas: booleanOptionValue(file.options["cc_enable_arenas"]),
-      objcClassPrefix: file.options["objc_class_prefix"]?.toString(),
-      csharpNamespace: file.options["csharp_namespace"]?.toString(),
-      swiftPrefix: file.options["swift_prefix"]?.toString(),
-      phpClassPrefix: file.options["php_class_prefix"]?.toString(),
-      phpNamespace: file.options["php_namespace"]?.toString(),
-      phpGenericServices: booleanOptionValue(
-        file.options["php_generic_services"],
-      ),
-      phpMetadataNamespace: file.options["php_metadata_namespace"]?.toString(),
-      rubyPackage: file.options["ruby_package"]?.toString(),
-      optimizeFor: getOptimizeMode(file.options["optimize_for"]),
-      uninterpretedOption: [], // TODO
-    };
+    const options = fileDescriptorOptions(file.options);
     const fileDescriptorProto: FileDescriptorProto = {
       name: file.importPath,
       package: file.package,
@@ -119,11 +84,7 @@ function convertServiceToDescriptorProto(
   const { service: [name, service] } = config;
   const methodDescriptorProtos: ServiceDescriptorProto["method"] = [];
   for (const [rpcName, rpc] of Object.entries(service.rpcs)) {
-    const options: MethodDescriptorProto["options"] = {
-      deprecated: booleanOptionValue(rpc.options["deprecated"]),
-      idempotencyLevel: getIdempotencyLevel(rpc.options["idempotency_level"]),
-      uninterpretedOption: [], // TODO
-    };
+    const options = methodDescriptorOptions(rpc.options);
     const methodDescriptorProto: MethodDescriptorProto = {
       name: rpcName,
       inputType: rpc.reqType.typePath,
@@ -155,19 +116,7 @@ function convertMessageToDescriptorProto(
   const oneofMap = new Map<string, number>();
   for (const [fieldNumber, field] of Object.entries(messageType.type.fields)) {
     if (field.kind === "map") continue; // TODO
-    const options: FieldDescriptorProto["options"] = {
-      packed: booleanOptionValue(field.options["packed"]),
-      deprecated: booleanOptionValue(field.options["deprecated"]),
-      lazy: booleanOptionValue(field.options["lazy"]),
-      weak: booleanOptionValue(field.options["weak"]),
-      unverifiedLazy: booleanOptionValue(field.options["unverified_lazy"]),
-      ctype: getCType(field.options["ctype"]),
-      jstype: getJSType(field.options["jstype"]),
-      uninterpretedOption: [], // TODO
-    };
-    if ("deprecated" in field.options) {
-      options.deprecated = Boolean(field.options["deprecated"]);
-    }
+    const options = fieldDescriptorOptions(field.options);
     const fieldDescriptorProto: FieldDescriptorProto = {
       name: field.name,
       extendee: undefined, // TODO
@@ -195,16 +144,7 @@ function convertMessageToDescriptorProto(
   ).map(
     (name) => ({ name }),
   );
-  const options: DescriptorProto["options"] = {
-    messageSetWireFormat: booleanOptionValue(
-      messageType.type.options["message_set_wire_format"],
-    ),
-    deprecated: booleanOptionValue(messageType.type.options["deprecated"]),
-    noStandardDescriptorAccessor: booleanOptionValue(
-      messageType.type.options["no_standard_descriptor_accessor"],
-    ),
-    uninterpretedOption: [], // TODO
-  };
+  const options = descriptorOptions(messageType.type.options);
   return {
     name,
     field: fieldDescriptorProtos,
@@ -219,30 +159,6 @@ function convertMessageToDescriptorProto(
     reservedRange: [], // TODO
     reservedName: [], // TODO
   };
-}
-
-function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
-  switch (optimizeFor) {
-    case "SPEED":
-    case "CODE_SIZE":
-    case "LITE_RUNTIME":
-      return optimizeFor;
-    default:
-      return undefined;
-  }
-}
-
-function getIdempotencyLevel(
-  idempotencyLevel: OptionValue,
-): IdempotencyLevel | undefined {
-  switch (idempotencyLevel) {
-    case "IDEMPOTENCY_UNKNOWN":
-    case "NO_SIDE_EFFECTS":
-    case "IDEMPOTENT":
-      return idempotencyLevel;
-    default:
-      return undefined;
-  }
 }
 
 function getFieldLabel(field: MessageField): FieldLabel {
@@ -308,28 +224,6 @@ function getFieldType(schema: Schema, field: MessageField): FieldType {
   }
 }
 
-function getCType(ctype: OptionValue): CType | undefined {
-  switch (ctype) {
-    case "STRING":
-    case "CORD":
-    case "STRING_PIECE":
-      return ctype;
-    default:
-      return undefined;
-  }
-}
-
-function getJSType(jstype: OptionValue): JSType | undefined {
-  switch (jstype) {
-    case "JS_NORMAL":
-    case "JS_STRING":
-    case "JS_NUMBER":
-      return jstype;
-    default:
-      return undefined;
-  }
-}
-
 function convertEnumToEnumDescriptorProto(
   enumType: TypeTree<Enum>,
 ): EnumDescriptorProto {
@@ -338,23 +232,10 @@ function convertEnumToEnumDescriptorProto(
   for (const [fieldNumber, field] of Object.entries(enumType.type.fields)) {
     const name = field.name;
     const number = Number(fieldNumber);
-    const options: EnumValueOptions = {
-      uninterpretedOption: [], // TODO
-    };
-    if ("deprecated" in field.options) {
-      options.deprecated = Boolean(field.options.deprecated);
-    }
+    const options = enumValueOptions(field.options);
     value.push({ name, number, options: optionsOrUndefined(options) });
   }
-  const options: EnumDescriptorProto["options"] = {
-    uninterpretedOption: [], // TODO
-  };
-  if ("allow_alias" in enumType.type.options) {
-    options.allowAlias = Boolean(enumType.type.options["allow_alias"]);
-  }
-  if ("deprecated" in enumType.type.options) {
-    options.deprecated = Boolean(enumType.type.options["deprecated"]);
-  }
+  const options = enumDescriptorOptions(enumType.type.options);
   return {
     name,
     value,
@@ -453,4 +334,152 @@ function booleanOptionValue(
   value: OptionValue | undefined,
 ): boolean | undefined {
   return value !== undefined ? Boolean(value) : value;
+}
+
+function fileDescriptorOptions(
+  options: Options,
+): NonNullable<FileDescriptorProto["options"]> {
+  const result: FileDescriptorProto["options"] = {
+    javaPackage: options["java_package"]?.toString(),
+    javaOuterClassname: options["java_outer_classname"]?.toString(),
+    javaMultipleFiles: booleanOptionValue(
+      options["java_multiple_files"],
+    ),
+    goPackage: options["go_package"]?.toString(),
+    ccGenericServices: booleanOptionValue(
+      options["cc_generic_services"],
+    ),
+    javaGenericServices: booleanOptionValue(
+      options["java_generic_services"],
+    ),
+    pyGenericServices: booleanOptionValue(
+      options["py_generic_services"],
+    ),
+    javaGenerateEqualsAndHash: booleanOptionValue(
+      options["java_generate_equals_and_hash"],
+    ),
+    deprecated: booleanOptionValue(options["deprecated"]),
+    javaStringCheckUtf8: booleanOptionValue(
+      options["java_string_check_utf8"],
+    ),
+    ccEnableArenas: booleanOptionValue(options["cc_enable_arenas"]),
+    objcClassPrefix: options["objc_class_prefix"]?.toString(),
+    csharpNamespace: options["csharp_namespace"]?.toString(),
+    swiftPrefix: options["swift_prefix"]?.toString(),
+    phpClassPrefix: options["php_class_prefix"]?.toString(),
+    phpNamespace: options["php_namespace"]?.toString(),
+    phpGenericServices: booleanOptionValue(
+      options["php_generic_services"],
+    ),
+    phpMetadataNamespace: options["php_metadata_namespace"]?.toString(),
+    rubyPackage: options["ruby_package"]?.toString(),
+    optimizeFor: getOptimizeMode(options["optimize_for"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+
+  function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
+    switch (optimizeFor) {
+      case "SPEED":
+      case "CODE_SIZE":
+      case "LITE_RUNTIME":
+        return optimizeFor;
+      default:
+        return undefined;
+    }
+  }
+}
+
+function methodDescriptorOptions(
+  options: Options,
+): NonNullable<MethodDescriptorProto["options"]> {
+  const result: MethodDescriptorProto["options"] = {
+    deprecated: booleanOptionValue(options["deprecated"]),
+    idempotencyLevel: getIdempotencyLevel(options["idempotency_level"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+  function getIdempotencyLevel(
+    idempotencyLevel: OptionValue,
+  ): IdempotencyLevel | undefined {
+    switch (idempotencyLevel) {
+      case "IDEMPOTENCY_UNKNOWN":
+      case "NO_SIDE_EFFECTS":
+      case "IDEMPOTENT":
+        return idempotencyLevel;
+      default:
+        return undefined;
+    }
+  }
+}
+
+function fieldDescriptorOptions(
+  options: Options,
+): NonNullable<FieldDescriptorProto["options"]> {
+  const result: FieldDescriptorProto["options"] = {
+    packed: booleanOptionValue(options["packed"]),
+    deprecated: booleanOptionValue(options["deprecated"]),
+    lazy: booleanOptionValue(options["lazy"]),
+    weak: booleanOptionValue(options["weak"]),
+    unverifiedLazy: booleanOptionValue(options["unverified_lazy"]),
+    ctype: getCType(options["ctype"]),
+    jstype: getJSType(options["jstype"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+  function getCType(ctype: OptionValue): CType | undefined {
+    switch (ctype) {
+      case "STRING":
+      case "CORD":
+      case "STRING_PIECE":
+        return ctype;
+      default:
+        return undefined;
+    }
+  }
+  function getJSType(jstype: OptionValue): JSType | undefined {
+    switch (jstype) {
+      case "JS_NORMAL":
+      case "JS_STRING":
+      case "JS_NUMBER":
+        return jstype;
+      default:
+        return undefined;
+    }
+  }
+}
+
+function enumDescriptorOptions(
+  options: Options,
+): NonNullable<EnumDescriptorProto["options"]> {
+  const result: EnumDescriptorProto["options"] = {
+    allowAlias: booleanOptionValue(options["allow_alias"]),
+    deprecated: booleanOptionValue(options["deprecated"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+}
+
+function enumValueOptions(options: Options): NonNullable<EnumValueOptions> {
+  const result: EnumValueOptions = {
+    deprecated: booleanOptionValue(options["deprecated"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+}
+
+function descriptorOptions(
+  options: Options,
+): NonNullable<DescriptorProto["options"]> {
+  const result: DescriptorProto["options"] = {
+    messageSetWireFormat: booleanOptionValue(
+      options["message_set_wire_format"],
+    ),
+    deprecated: booleanOptionValue(options["deprecated"]),
+    noStandardDescriptorAccessor: booleanOptionValue(
+      options["no_standard_descriptor_accessor"],
+    ),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
 }
