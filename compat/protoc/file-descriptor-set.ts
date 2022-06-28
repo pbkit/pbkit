@@ -24,7 +24,7 @@ import {
   Label as FieldLabel,
   Type as FieldType,
 } from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
-import { snakeToCamel } from "../../misc/case.ts";
+import { capitalize, snakeToCamel } from "../../misc/case.ts";
 import {
   Type as OptimizeMode,
 } from "../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
@@ -41,7 +41,7 @@ export function convertSchemaToFileDescriptorSet(
   { schema }: ConvertSchemaToFileDescriptorSetConfig,
 ): FileDescriptorSet {
   const result: FileDescriptorSet = { file: [] };
-  for (const file of Object.values(schema.files)) {
+  for (const [filePath, file] of Object.entries(schema.files)) {
     const typeTreeArray = typePathsToTypeTreeArray(
       schema.types,
       file.typePaths,
@@ -55,7 +55,7 @@ export function convertSchemaToFileDescriptorSet(
       package: file.package,
       dependency: file.imports.map(({ importPath }) => importPath),
       messageType: messageTypes.map((messageType) =>
-        convertMessageToDescriptorProto({ schema, messageType })
+        convertMessageToDescriptorProto({ schema, filePath, messageType })
       ),
       enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
       service: services.map((service) =>
@@ -103,19 +103,89 @@ function convertServiceToDescriptorProto(
 
 interface ConvertMessageToDescriptorProtoConfig {
   schema: Schema;
+  filePath: string;
   messageType: TypeTree<Message>;
 }
 function convertMessageToDescriptorProto(
   config: ConvertMessageToDescriptorProtoConfig,
 ): DescriptorProto {
-  const { schema, messageType } = config;
+  const { schema, filePath, messageType } = config;
   const name = messageType.baseName;
   const nestedTypes = messageType.children.filter(isMessageTypeTree);
   const enumTypes = messageType.children.filter(isEnumTypeTree);
   const fieldDescriptorProtos: DescriptorProto["field"] = [];
   const oneofMap = new Map<string, number>();
   for (const [fieldNumber, field] of Object.entries(messageType.type.fields)) {
-    if (field.kind === "map") continue; // TODO
+    if (field.kind === "map") {
+      const options = fieldDescriptorOptions(field.options);
+      const entryTypeName = `${capitalize(snakeToCamel(field.name))}Entry`;
+      const entryTypePath = `${messageType.typePath}.${entryTypeName}`;
+      const fieldDescriptorProto: FieldDescriptorProto = {
+        name: field.name,
+        extendee: undefined, // TODO
+        number: Number(fieldNumber),
+        label: getFieldLabel(field),
+        type: getFieldType(schema, field),
+        typeName: entryTypePath,
+        defaultValue: "default" in field.options
+          ? String(field.options["default"])
+          : undefined,
+        options: optionsOrUndefined(options),
+        oneofIndex: undefined,
+        jsonName: field.options["json_name"]?.toString() ??
+          snakeToCamel(field.name),
+        proto3Optional: undefined, // TODO
+      };
+      fieldDescriptorProtos.push(fieldDescriptorProto);
+      nestedTypes.push({
+        baseName: entryTypeName,
+        typePath: entryTypePath,
+        type: {
+          kind: "message",
+          filePath,
+          description: {
+            leading: [],
+            trailing: [],
+            leadingDetached: [],
+          },
+          options: {
+            "map_entry": true,
+          },
+          fields: {
+            1: {
+              kind: "normal",
+              name: "key",
+              type: field.keyType,
+              typePath: field.keyTypePath,
+              options: {},
+              description: {
+                leading: [],
+                trailing: [],
+                leadingDetached: [],
+              },
+            },
+            2: {
+              kind: "normal",
+              name: "value",
+              type: field.valueType,
+              typePath: field.valueTypePath,
+              options: {},
+              description: {
+                leading: [],
+                trailing: [],
+                leadingDetached: [],
+              },
+            },
+          },
+          groups: {},
+          reservedFieldNumberRanges: [],
+          reservedFieldNames: [],
+          extensions: [],
+        },
+        children: [],
+      });
+      continue;
+    }
     const options = fieldDescriptorOptions(field.options);
     const fieldDescriptorProto: FieldDescriptorProto = {
       name: field.name,
@@ -149,7 +219,8 @@ function convertMessageToDescriptorProto(
     name,
     field: fieldDescriptorProtos,
     nestedType: nestedTypes.map(
-      (messageType) => convertMessageToDescriptorProto({ schema, messageType }),
+      (messageType) =>
+        convertMessageToDescriptorProto({ schema, filePath, messageType }),
     ),
     enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
     extensionRange: [], // TODO
@@ -336,46 +407,50 @@ function booleanOptionValue(
   return value !== undefined ? Boolean(value) : value;
 }
 
+type RequiredOptional<T extends { [key: string]: any }> = {
+  [key in keyof Required<T>]-?: T[key];
+};
 function fileDescriptorOptions(
   options: Options,
-): NonNullable<FileDescriptorProto["options"]> {
-  const result: FileDescriptorProto["options"] = {
-    javaPackage: options["java_package"]?.toString(),
-    javaOuterClassname: options["java_outer_classname"]?.toString(),
-    javaMultipleFiles: booleanOptionValue(
-      options["java_multiple_files"],
-    ),
-    goPackage: options["go_package"]?.toString(),
-    ccGenericServices: booleanOptionValue(
-      options["cc_generic_services"],
-    ),
-    javaGenericServices: booleanOptionValue(
-      options["java_generic_services"],
-    ),
-    pyGenericServices: booleanOptionValue(
-      options["py_generic_services"],
-    ),
-    javaGenerateEqualsAndHash: booleanOptionValue(
-      options["java_generate_equals_and_hash"],
-    ),
-    deprecated: booleanOptionValue(options["deprecated"]),
-    javaStringCheckUtf8: booleanOptionValue(
-      options["java_string_check_utf8"],
-    ),
-    ccEnableArenas: booleanOptionValue(options["cc_enable_arenas"]),
-    objcClassPrefix: options["objc_class_prefix"]?.toString(),
-    csharpNamespace: options["csharp_namespace"]?.toString(),
-    swiftPrefix: options["swift_prefix"]?.toString(),
-    phpClassPrefix: options["php_class_prefix"]?.toString(),
-    phpNamespace: options["php_namespace"]?.toString(),
-    phpGenericServices: booleanOptionValue(
-      options["php_generic_services"],
-    ),
-    phpMetadataNamespace: options["php_metadata_namespace"]?.toString(),
-    rubyPackage: options["ruby_package"]?.toString(),
-    optimizeFor: getOptimizeMode(options["optimize_for"]),
-    uninterpretedOption: [], // TODO
-  };
+): RequiredOptional<NonNullable<FileDescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<FileDescriptorProto["options"]>> =
+    {
+      javaPackage: options["java_package"]?.toString(),
+      javaOuterClassname: options["java_outer_classname"]?.toString(),
+      javaMultipleFiles: booleanOptionValue(
+        options["java_multiple_files"],
+      ),
+      goPackage: options["go_package"]?.toString(),
+      ccGenericServices: booleanOptionValue(
+        options["cc_generic_services"],
+      ),
+      javaGenericServices: booleanOptionValue(
+        options["java_generic_services"],
+      ),
+      pyGenericServices: booleanOptionValue(
+        options["py_generic_services"],
+      ),
+      javaGenerateEqualsAndHash: booleanOptionValue(
+        options["java_generate_equals_and_hash"],
+      ),
+      deprecated: booleanOptionValue(options["deprecated"]),
+      javaStringCheckUtf8: booleanOptionValue(
+        options["java_string_check_utf8"],
+      ),
+      ccEnableArenas: booleanOptionValue(options["cc_enable_arenas"]),
+      objcClassPrefix: options["objc_class_prefix"]?.toString(),
+      csharpNamespace: options["csharp_namespace"]?.toString(),
+      swiftPrefix: options["swift_prefix"]?.toString(),
+      phpClassPrefix: options["php_class_prefix"]?.toString(),
+      phpNamespace: options["php_namespace"]?.toString(),
+      phpGenericServices: booleanOptionValue(
+        options["php_generic_services"],
+      ),
+      phpMetadataNamespace: options["php_metadata_namespace"]?.toString(),
+      rubyPackage: options["ruby_package"]?.toString(),
+      optimizeFor: getOptimizeMode(options["optimize_for"]),
+      uninterpretedOption: [], // TODO
+    };
   return result;
 
   function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
@@ -392,8 +467,10 @@ function fileDescriptorOptions(
 
 function methodDescriptorOptions(
   options: Options,
-): NonNullable<MethodDescriptorProto["options"]> {
-  const result: MethodDescriptorProto["options"] = {
+): RequiredOptional<NonNullable<MethodDescriptorProto["options"]>> {
+  const result: RequiredOptional<
+    NonNullable<MethodDescriptorProto["options"]>
+  > = {
     deprecated: booleanOptionValue(options["deprecated"]),
     idempotencyLevel: getIdempotencyLevel(options["idempotency_level"]),
     uninterpretedOption: [], // TODO
@@ -415,17 +492,18 @@ function methodDescriptorOptions(
 
 function fieldDescriptorOptions(
   options: Options,
-): NonNullable<FieldDescriptorProto["options"]> {
-  const result: FieldDescriptorProto["options"] = {
-    packed: booleanOptionValue(options["packed"]),
-    deprecated: booleanOptionValue(options["deprecated"]),
-    lazy: booleanOptionValue(options["lazy"]),
-    weak: booleanOptionValue(options["weak"]),
-    unverifiedLazy: booleanOptionValue(options["unverified_lazy"]),
-    ctype: getCType(options["ctype"]),
-    jstype: getJSType(options["jstype"]),
-    uninterpretedOption: [], // TODO
-  };
+): RequiredOptional<NonNullable<FieldDescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<FieldDescriptorProto["options"]>> =
+    {
+      packed: booleanOptionValue(options["packed"]),
+      deprecated: booleanOptionValue(options["deprecated"]),
+      lazy: booleanOptionValue(options["lazy"]),
+      weak: booleanOptionValue(options["weak"]),
+      unverifiedLazy: booleanOptionValue(options["unverified_lazy"]),
+      ctype: getCType(options["ctype"]),
+      jstype: getJSType(options["jstype"]),
+      uninterpretedOption: [], // TODO
+    };
   return result;
   function getCType(ctype: OptionValue): CType | undefined {
     switch (ctype) {
@@ -451,17 +529,20 @@ function fieldDescriptorOptions(
 
 function enumDescriptorOptions(
   options: Options,
-): NonNullable<EnumDescriptorProto["options"]> {
-  const result: EnumDescriptorProto["options"] = {
-    allowAlias: booleanOptionValue(options["allow_alias"]),
-    deprecated: booleanOptionValue(options["deprecated"]),
-    uninterpretedOption: [], // TODO
-  };
+): RequiredOptional<NonNullable<EnumDescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<EnumDescriptorProto["options"]>> =
+    {
+      allowAlias: booleanOptionValue(options["allow_alias"]),
+      deprecated: booleanOptionValue(options["deprecated"]),
+      uninterpretedOption: [], // TODO
+    };
   return result;
 }
 
-function enumValueOptions(options: Options): NonNullable<EnumValueOptions> {
-  const result: EnumValueOptions = {
+function enumValueOptions(
+  options: Options,
+): RequiredOptional<EnumValueOptions> {
+  const result: RequiredOptional<EnumValueOptions> = {
     deprecated: booleanOptionValue(options["deprecated"]),
     uninterpretedOption: [], // TODO
   };
@@ -470,15 +551,16 @@ function enumValueOptions(options: Options): NonNullable<EnumValueOptions> {
 
 function descriptorOptions(
   options: Options,
-): NonNullable<DescriptorProto["options"]> {
-  const result: DescriptorProto["options"] = {
+): RequiredOptional<NonNullable<DescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<DescriptorProto["options"]>> = {
     messageSetWireFormat: booleanOptionValue(
       options["message_set_wire_format"],
     ),
-    deprecated: booleanOptionValue(options["deprecated"]),
     noStandardDescriptorAccessor: booleanOptionValue(
       options["no_standard_descriptor_accessor"],
     ),
+    deprecated: booleanOptionValue(options["deprecated"]),
+    mapEntry: booleanOptionValue(options["map_entry"]),
     uninterpretedOption: [], // TODO
   };
   return result;

@@ -7,7 +7,8 @@ export function pascalToCamel(pascal: string): string {
 }
 
 const id = (x: any) => x;
-const capitalize = (word: string) => word[0].toUpperCase() + word.substr(1);
+export const capitalize = (word: string) =>
+  word[0].toUpperCase() + word.substr(1);
 const snakeToCamelRegex = /^(_*)(.*?)(_*)$/;
 const snakeToCamelReplaceFn = (...args: string[]) => {
   const [, $1, $2, $3] = args;
