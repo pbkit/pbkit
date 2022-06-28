@@ -14,6 +14,7 @@ import {
   FieldDescriptorProto,
   FileDescriptorProto,
   FileDescriptorSet,
+  UninterpretedOption,
 } from "../../generated/messages/google/protobuf/index.ts";
 import {
   Label as FieldLabel,
@@ -86,7 +87,7 @@ function convertMessageToDescriptorProto(
       defaultValue: "default" in field.options
         ? String(field.options["default"])
         : undefined,
-      options,
+      options: optionsOrUndefined(options),
       oneofIndex: undefined,
       jsonName: undefined, // TODO
       proto3Optional: undefined, // TODO
@@ -127,7 +128,7 @@ function convertMessageToDescriptorProto(
     enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
     extensionRange: [], // TODO
     extension: [], // TODO
-    options,
+    options: optionsOrUndefined(options),
     oneofDecl,
     reservedRange: [], // TODO
     reservedName: [], // TODO
@@ -136,10 +137,13 @@ function convertMessageToDescriptorProto(
 
 function getFieldLabel(field: MessageField): FieldLabel {
   switch (field.kind) {
+    case "normal":
+    case "oneof":
     case "optional":
       return "LABEL_OPTIONAL";
     case "required":
       return "LABEL_REQUIRED";
+    case "map":
     case "repeated":
       return "LABEL_REPEATED";
     default:
@@ -222,7 +226,7 @@ function convertEnumToEnumDescriptorProto(
   return {
     name,
     value,
-    options,
+    options: optionsOrUndefined(options),
     reservedRange: [], // TODO
     reservedName: [], // TODO
   };
@@ -300,4 +304,14 @@ function getServicesFromFile(schema: Schema, file: File): Service[] {
     result.push(schema.services[servicePath]);
   }
   return result;
+}
+
+type OptionsBase = { uninterpretedOption: UninterpretedOption[] };
+function optionsOrUndefined<T extends OptionsBase>(options: T): T | undefined {
+  const { uninterpretedOption, ...rest } = options;
+  const countOfOption = (
+    uninterpretedOption.length +
+    Object.values(rest).filter((x) => x !== undefined).length
+  );
+  return countOfOption === 0 ? undefined : options;
 }
