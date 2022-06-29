@@ -1,19 +1,19 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { createLoader } from "../../../../../core/loader/deno-fs.ts";
-import { build } from "../../../../../core/schema/builder.ts";
-import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set.ts";
+import { BufWriter } from "https://deno.land/std@0.122.0/io/buffer.ts";
+import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 import { getVendorDir } from "../../../config.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
-import { BufWriter } from "https://deno.land/std@0.122.0/io/buffer.ts";
+import { build } from "../../../../../core/schema/builder.ts";
+import { createLoader } from "../../../../../core/loader/deno-fs.ts";
+import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set.ts";
 import {
   encodeBinary as encodeCodeGeneratorRequest,
 } from "../../../../../generated/messages/google/protobuf/compiler/CodeGeneratorRequest.ts";
 import {
   decodeBinary as decodeCodeGeneratorResponse,
 } from "../../../../../generated/messages/google/protobuf/compiler/CodeGeneratorResponse.ts";
-import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
 import { FileDescriptorProto } from "../../../../../generated/messages/google/protobuf/index.ts";
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 
 interface Options {
   entryPath?: string[];
