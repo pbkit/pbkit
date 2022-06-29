@@ -20,6 +20,7 @@ interface Options {
   protoPath?: string[];
   pluginPath: string;
   outDir: string;
+  option?: string;
 }
 
 export default new Command()
@@ -40,6 +41,7 @@ export default new Command()
     { collect: true },
   )
   .option("-o, --out-dir <value:string>", "Out directory", { default: "out" })
+  .option("--option <value:string>", "Option for plugin")
   .description("Generate codes using protoc plugin.")
   .action(async (options: Options, protoFiles: string[] = []) => {
     const entryPaths = options.entryPath ?? [];
@@ -62,7 +64,7 @@ export default new Command()
         file.importPath
       ),
       protoFile: topo(fileDescriptorSet.file),
-      parameter: "long_type_string",
+      parameter: options.option,
     };
     const payload = encodeCodeGeneratorRequest(request);
     const writer = new BufWriter(plugin.stdin);
