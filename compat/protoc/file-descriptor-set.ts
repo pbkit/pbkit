@@ -3,6 +3,8 @@ import {
   File,
   Message,
   MessageField,
+  Options,
+  OptionValue,
   Schema,
   Service,
   Type,
@@ -14,11 +16,23 @@ import {
   FieldDescriptorProto,
   FileDescriptorProto,
   FileDescriptorSet,
+  MethodDescriptorProto,
+  ServiceDescriptorProto,
+  UninterpretedOption,
 } from "../../generated/messages/google/protobuf/index.ts";
 import {
   Label as FieldLabel,
   Type as FieldType,
 } from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
+import { snakeToCamel, snakeToPascal } from "../../misc/case.ts";
+import {
+  Type as OptimizeMode,
+} from "../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
+import {
+  Type as IdempotencyLevel,
+} from "../../generated/messages/google/protobuf/(MethodOptions)/IdempotencyLevel.ts";
+import { Type as CType } from "../../generated/messages/google/protobuf/(FieldOptions)/CType.ts";
+import { Type as JSType } from "../../generated/messages/google/protobuf/(FieldOptions)/JSType.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -27,7 +41,7 @@ export function convertSchemaToFileDescriptorSet(
   { schema }: ConvertSchemaToFileDescriptorSetConfig,
 ): FileDescriptorSet {
   const result: FileDescriptorSet = { file: [] };
-  for (const file of Object.values(schema.files)) {
+  for (const [filePath, file] of Object.entries(schema.files)) {
     const typeTreeArray = typePathsToTypeTreeArray(
       schema.types,
       file.typePaths,
@@ -35,19 +49,22 @@ export function convertSchemaToFileDescriptorSet(
     const messageTypes = typeTreeArray.filter(isMessageTypeTree);
     const enumTypes = typeTreeArray.filter(isEnumTypeTree);
     const services = getServicesFromFile(schema, file);
+    const options = fileDescriptorOptions(file.options);
     const fileDescriptorProto: FileDescriptorProto = {
       name: file.importPath,
       package: file.package,
-      dependency: [], // TODO
+      dependency: file.imports.map(({ importPath }) => importPath),
       messageType: messageTypes.map((messageType) =>
-        convertMessageToDescriptorProto({ schema, messageType })
+        convertMessageToDescriptorProto({ schema, filePath, messageType })
       ),
       enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
-      service: [], // TODO
+      service: services.map(convertServiceToDescriptorProto),
       extension: [], // TODO
-      options: undefined, // TODO
+      options: optionsOrUndefined(options),
       sourceCodeInfo: undefined, // TODO
-      publicDependency: [], // TODO
+      publicDependency: file.imports.map(
+        ({ kind }, index) => kind === "public" ? index : -1,
+      ).filter((v) => v >= 0),
       weakDependency: [], // TODO
       syntax: file.syntax,
     };
@@ -56,25 +73,114 @@ export function convertSchemaToFileDescriptorSet(
   return result;
 }
 
+function convertServiceToDescriptorProto(
+  service: ServiceWithName,
+): ServiceDescriptorProto {
+  const methodDescriptorProtos: ServiceDescriptorProto["method"] = [];
+  for (const [rpcName, rpc] of Object.entries(service.rpcs)) {
+    const options = methodDescriptorOptions(rpc.options);
+    const methodDescriptorProto: MethodDescriptorProto = {
+      name: rpcName,
+      inputType: rpc.reqType.typePath,
+      outputType: rpc.resType.typePath,
+      options: optionsOrUndefined(options),
+      clientStreaming: rpc.reqType.stream,
+      serverStreaming: rpc.resType.stream,
+    };
+    methodDescriptorProtos.push(methodDescriptorProto);
+  }
+  return {
+    name: service.name,
+    method: methodDescriptorProtos,
+  };
+}
+
 interface ConvertMessageToDescriptorProtoConfig {
   schema: Schema;
+  filePath: string;
   messageType: TypeTree<Message>;
 }
 function convertMessageToDescriptorProto(
   config: ConvertMessageToDescriptorProtoConfig,
 ): DescriptorProto {
-  const { schema, messageType } = config;
+  const { schema, filePath, messageType } = config;
   const name = messageType.baseName;
   const nestedTypes = messageType.children.filter(isMessageTypeTree);
   const enumTypes = messageType.children.filter(isEnumTypeTree);
   const fieldDescriptorProtos: DescriptorProto["field"] = [];
   const oneofMap = new Map<string, number>();
   for (const [fieldNumber, field] of Object.entries(messageType.type.fields)) {
-    if (field.kind === "map") continue; // TODO
-    const options: FieldDescriptorProto["options"] = {
-      // TODO
-      uninterpretedOption: [], // TODO
-    };
+    if (field.kind === "map") {
+      const options = fieldDescriptorOptions(field.options);
+      const entryTypeName = `${snakeToPascal(field.name)}Entry`;
+      const entryTypePath = `${messageType.typePath}.${entryTypeName}`;
+      const fieldDescriptorProto: FieldDescriptorProto = {
+        name: field.name,
+        extendee: undefined, // TODO
+        number: Number(fieldNumber),
+        label: getFieldLabel(field),
+        type: getFieldType(schema, field),
+        typeName: entryTypePath,
+        defaultValue: "default" in field.options
+          ? String(field.options["default"])
+          : undefined,
+        options: optionsOrUndefined(options),
+        oneofIndex: undefined,
+        jsonName: field.options["json_name"]?.toString() ??
+          snakeToCamel(field.name),
+        proto3Optional: undefined, // TODO
+      };
+      fieldDescriptorProtos.push(fieldDescriptorProto);
+      nestedTypes.push({
+        baseName: entryTypeName,
+        typePath: entryTypePath,
+        type: {
+          kind: "message",
+          filePath,
+          description: {
+            leading: [],
+            trailing: [],
+            leadingDetached: [],
+          },
+          options: {
+            "map_entry": true,
+          },
+          fields: {
+            1: {
+              kind: "normal",
+              name: "key",
+              type: field.keyType,
+              typePath: field.keyTypePath,
+              options: {},
+              description: {
+                leading: [],
+                trailing: [],
+                leadingDetached: [],
+              },
+            },
+            2: {
+              kind: "normal",
+              name: "value",
+              type: field.valueType,
+              typePath: field.valueTypePath,
+              options: {},
+              description: {
+                leading: [],
+                trailing: [],
+                leadingDetached: [],
+              },
+            },
+          },
+          groups: {},
+          reservedFieldNumberRanges: [],
+          reservedFieldNames: [],
+          extensions: [],
+        },
+        children: [],
+      });
+      continue;
+    }
+    const options = fieldDescriptorOptions(field.options);
     const fieldDescriptorProto: FieldDescriptorProto = {
       name: field.name,
       extendee: undefined, // TODO
@@ -85,9 +191,10 @@ function convertMessageToDescriptorProto(
       defaultValue: "default" in field.options
         ? String(field.options["default"])
         : undefined,
-      options,
+      options: optionsOrUndefined(options),
       oneofIndex: undefined,
-      jsonName: undefined, // TODO
+      jsonName: field.options["json_name"]?.toString() ??
+        snakeToCamel(field.name),
       proto3Optional: undefined, // TODO
     };
     if (field.kind === "oneof") {
@@ -101,32 +208,18 @@ function convertMessageToDescriptorProto(
   ).map(
     (name) => ({ name }),
   );
-  const options: DescriptorProto["options"] = {
-    uninterpretedOption: [], // TODO
-  };
-  if ("message_set_wire_format" in messageType.type.options) {
-    options.messageSetWireFormat = Boolean(
-      messageType.type.options["message_set_wire_format"],
-    );
-  }
-  if ("no_standard_descriptor_accessor" in messageType.type.options) {
-    options.noStandardDescriptorAccessor = Boolean(
-      messageType.type.options["no_standard_descriptor_accessor"],
-    );
-  }
-  if ("deprecated" in messageType.type.options) {
-    options.deprecated = Boolean(messageType.type.options["deprecated"]);
-  }
+  const options = descriptorOptions(messageType.type.options);
   return {
     name,
     field: fieldDescriptorProtos,
     nestedType: nestedTypes.map(
-      (messageType) => convertMessageToDescriptorProto({ schema, messageType }),
+      (messageType) =>
+        convertMessageToDescriptorProto({ schema, filePath, messageType }),
     ),
     enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
     extensionRange: [], // TODO
     extension: [], // TODO
-    options,
+    options: optionsOrUndefined(options),
     oneofDecl,
     reservedRange: [], // TODO
     reservedName: [], // TODO
@@ -135,10 +228,13 @@ function convertMessageToDescriptorProto(
 
 function getFieldLabel(field: MessageField): FieldLabel {
   switch (field.kind) {
+    case "normal":
+    case "oneof":
     case "optional":
       return "LABEL_OPTIONAL";
     case "required":
       return "LABEL_REQUIRED";
+    case "map":
     case "repeated":
       return "LABEL_REPEATED";
     default:
@@ -201,27 +297,14 @@ function convertEnumToEnumDescriptorProto(
   for (const [fieldNumber, field] of Object.entries(enumType.type.fields)) {
     const name = field.name;
     const number = Number(fieldNumber);
-    const options: EnumValueOptions = {
-      uninterpretedOption: [], // TODO
-    };
-    if ("deprecated" in field.options) {
-      options.deprecated = Boolean(field.options.deprecated);
-    }
-    value.push({ name, number, options });
+    const options = enumValueOptions(field.options);
+    value.push({ name, number, options: optionsOrUndefined(options) });
   }
-  const options: EnumDescriptorProto["options"] = {
-    uninterpretedOption: [], // TODO
-  };
-  if ("allow_alias" in enumType.type.options) {
-    options.allowAlias = Boolean(enumType.type.options["allow_alias"]);
-  }
-  if ("deprecated" in enumType.type.options) {
-    options.deprecated = Boolean(enumType.type.options["deprecated"]);
-  }
+  const options = enumDescriptorOptions(enumType.type.options);
   return {
     name,
-    value: [],
-    options,
+    value,
+    options: optionsOrUndefined(options),
     reservedRange: [], // TODO
     reservedName: [], // TODO
   };
@@ -292,11 +375,191 @@ function isEnumType<T extends Type>(type: Type): type is T {
   return type.kind === "enum";
 }
 
-function getServicesFromFile(schema: Schema, file: File): Service[] {
-  const result: Service[] = [];
+interface ServiceWithName extends Service {
+  name: string;
+}
+function getServicesFromFile(schema: Schema, file: File): ServiceWithName[] {
+  const result: ServiceWithName[] = [];
   for (const servicePath of file.servicePaths) {
     if (!(servicePath in schema.services)) continue;
-    result.push(schema.services[servicePath]);
+    result.push({
+      ...schema.services[servicePath],
+      name: servicePath.split(".").pop() || "",
+    });
   }
+  return result;
+}
+
+type OptionsBase = { uninterpretedOption: UninterpretedOption[] };
+function optionsOrUndefined<T extends OptionsBase>(options: T): T | undefined {
+  const { uninterpretedOption, ...rest } = options;
+  const countOfOption = (
+    uninterpretedOption.length +
+    Object.values(rest).filter((x) => x !== undefined).length
+  );
+  return countOfOption === 0 ? undefined : options;
+}
+
+function booleanOptionValue(
+  value: OptionValue | undefined,
+): boolean | undefined {
+  return value !== undefined ? Boolean(value) : value;
+}
+
+type RequiredOptional<T extends { [key: string]: any }> = {
+  [key in keyof Required<T>]-?: T[key];
+};
+function fileDescriptorOptions(
+  options: Options,
+): RequiredOptional<NonNullable<FileDescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<FileDescriptorProto["options"]>> =
+    {
+      javaPackage: options["java_package"]?.toString(),
+      javaOuterClassname: options["java_outer_classname"]?.toString(),
+      javaMultipleFiles: booleanOptionValue(
+        options["java_multiple_files"],
+      ),
+      goPackage: options["go_package"]?.toString(),
+      ccGenericServices: booleanOptionValue(
+        options["cc_generic_services"],
+      ),
+      javaGenericServices: booleanOptionValue(
+        options["java_generic_services"],
+      ),
+      pyGenericServices: booleanOptionValue(
+        options["py_generic_services"],
+      ),
+      javaGenerateEqualsAndHash: booleanOptionValue(
+        options["java_generate_equals_and_hash"],
+      ),
+      deprecated: booleanOptionValue(options["deprecated"]),
+      javaStringCheckUtf8: booleanOptionValue(
+        options["java_string_check_utf8"],
+      ),
+      ccEnableArenas: booleanOptionValue(options["cc_enable_arenas"]),
+      objcClassPrefix: options["objc_class_prefix"]?.toString(),
+      csharpNamespace: options["csharp_namespace"]?.toString(),
+      swiftPrefix: options["swift_prefix"]?.toString(),
+      phpClassPrefix: options["php_class_prefix"]?.toString(),
+      phpNamespace: options["php_namespace"]?.toString(),
+      phpGenericServices: booleanOptionValue(
+        options["php_generic_services"],
+      ),
+      phpMetadataNamespace: options["php_metadata_namespace"]?.toString(),
+      rubyPackage: options["ruby_package"]?.toString(),
+      optimizeFor: getOptimizeMode(options["optimize_for"]),
+      uninterpretedOption: [], // TODO
+    };
+  return result;
+  function getOptimizeMode(optimizeFor: OptionValue): OptimizeMode | undefined {
+    switch (optimizeFor) {
+      case "SPEED":
+      case "CODE_SIZE":
+      case "LITE_RUNTIME":
+        return optimizeFor;
+      default:
+        return undefined;
+    }
+  }
+}
+
+function methodDescriptorOptions(
+  options: Options,
+): RequiredOptional<NonNullable<MethodDescriptorProto["options"]>> {
+  const result: RequiredOptional<
+    NonNullable<MethodDescriptorProto["options"]>
+  > = {
+    deprecated: booleanOptionValue(options["deprecated"]),
+    idempotencyLevel: getIdempotencyLevel(options["idempotency_level"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+  function getIdempotencyLevel(
+    idempotencyLevel: OptionValue,
+  ): IdempotencyLevel | undefined {
+    switch (idempotencyLevel) {
+      case "IDEMPOTENCY_UNKNOWN":
+      case "NO_SIDE_EFFECTS":
+      case "IDEMPOTENT":
+        return idempotencyLevel;
+      default:
+        return undefined;
+    }
+  }
+}
+
+function fieldDescriptorOptions(
+  options: Options,
+): RequiredOptional<NonNullable<FieldDescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<FieldDescriptorProto["options"]>> =
+    {
+      packed: booleanOptionValue(options["packed"]),
+      deprecated: booleanOptionValue(options["deprecated"]),
+      lazy: booleanOptionValue(options["lazy"]),
+      weak: booleanOptionValue(options["weak"]),
+      unverifiedLazy: booleanOptionValue(options["unverified_lazy"]),
+      ctype: getCType(options["ctype"]),
+      jstype: getJSType(options["jstype"]),
+      uninterpretedOption: [], // TODO
+    };
+  return result;
+  function getCType(ctype: OptionValue): CType | undefined {
+    switch (ctype) {
+      case "STRING":
+      case "CORD":
+      case "STRING_PIECE":
+        return ctype;
+      default:
+        return undefined;
+    }
+  }
+  function getJSType(jstype: OptionValue): JSType | undefined {
+    switch (jstype) {
+      case "JS_NORMAL":
+      case "JS_STRING":
+      case "JS_NUMBER":
+        return jstype;
+      default:
+        return undefined;
+    }
+  }
+}
+
+function enumDescriptorOptions(
+  options: Options,
+): RequiredOptional<NonNullable<EnumDescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<EnumDescriptorProto["options"]>> =
+    {
+      allowAlias: booleanOptionValue(options["allow_alias"]),
+      deprecated: booleanOptionValue(options["deprecated"]),
+      uninterpretedOption: [], // TODO
+    };
+  return result;
+}
+
+function enumValueOptions(
+  options: Options,
+): RequiredOptional<EnumValueOptions> {
+  const result: RequiredOptional<EnumValueOptions> = {
+    deprecated: booleanOptionValue(options["deprecated"]),
+    uninterpretedOption: [], // TODO
+  };
+  return result;
+}
+
+function descriptorOptions(
+  options: Options,
+): RequiredOptional<NonNullable<DescriptorProto["options"]>> {
+  const result: RequiredOptional<NonNullable<DescriptorProto["options"]>> = {
+    messageSetWireFormat: booleanOptionValue(
+      options["message_set_wire_format"],
+    ),
+    noStandardDescriptorAccessor: booleanOptionValue(
+      options["no_standard_descriptor_accessor"],
+    ),
+    deprecated: booleanOptionValue(options["deprecated"]),
+    mapEntry: booleanOptionValue(options["map_entry"]),
+    uninterpretedOption: [], // TODO
+  };
   return result;
 }

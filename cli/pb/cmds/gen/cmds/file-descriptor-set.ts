@@ -44,6 +44,10 @@ export default new Command()
     if (options.text) {
       const wireMessage = deserialize(fileDescroptorSetBinary);
       const typePath = ".google.protobuf.FileDescriptorSet";
+      const roots = [getVendorDir()];
+      const loader = createLoader({ roots });
+      const files = ["google/protobuf/descriptor.proto"];
+      const schema = await build({ loader, files });
       const text = encode(wireMessage, { schema, typePath });
       await writeAll(Deno.stdout, new TextEncoder().encode(text));
     } else {
