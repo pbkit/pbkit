@@ -11,7 +11,9 @@ import {
 import {
   decodeBinary as decodeCodeGeneratorResponse,
 } from "../../../../../generated/messages/google/protobuf/compiler/CodeGeneratorResponse.ts";
+import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
 import { FileDescriptorProto } from "../../../../../generated/messages/google/protobuf/index.ts";
+import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 
 interface Options {
   entryPath?: string[];
@@ -56,7 +58,9 @@ export default new Command()
       stdout: "piped",
     });
     const request = {
-      fileToGenerate: files,
+      fileToGenerate: Object.values(schema.files).map((file) =>
+        file.importPath
+      ),
       protoFile: topo(fileDescriptorSet.file),
       parameter: "long_type_string",
     };
@@ -66,8 +70,17 @@ export default new Command()
     await writer.flush();
     plugin.stdin.close();
     const output = await plugin.output();
-    const response = decodeCodeGeneratorResponse(output);
-    console.error({ response });
+    const { error, file } = decodeCodeGeneratorResponse(output);
+    if (error && error.length > 0) {
+      throw new Error("Failed to generate code: " + error);
+    }
+    for await (const { name: filePath, content } of file) {
+      if (!filePath || !content) continue;
+      const outPath = path.resolve(options.outDir, filePath);
+      await ensureDir(path.dirname(outPath));
+      const outFile = await Deno.create(outPath);
+      await outFile.write(new TextEncoder().encode(content));
+    }
   });
 
 function topo(files: FileDescriptorProto[]): FileDescriptorProto[] {
