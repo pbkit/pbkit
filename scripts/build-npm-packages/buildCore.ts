@@ -1,6 +1,7 @@
 import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.14.43/mod.js";
+import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.5.0/mod.ts";
 import {
   dirname,
   join,
@@ -72,10 +73,12 @@ export default async function buildCore(config: BuildConfig) {
   { // bundle codegen logic
     await ensureDir(`${config.dist}/codegen/ts`);
     await esbuild.build({
+      plugins: [denoPlugin()],
       bundle: true,
       entryPoints: [`codegen/ts/index.ts`],
       outfile: `${config.dist}/codegen/ts/index.mjs`,
       target: "node14",
+      format: "esm",
     });
   }
   { // copy nodejs-specific files
