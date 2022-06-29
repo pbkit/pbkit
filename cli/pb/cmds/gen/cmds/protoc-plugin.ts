@@ -11,6 +11,7 @@ import {
 import {
   decodeBinary as decodeCodeGeneratorResponse,
 } from "../../../../../generated/messages/google/protobuf/compiler/CodeGeneratorResponse.ts";
+import { FileDescriptorProto } from "../../../../../generated/messages/google/protobuf/index.ts";
 
 interface Options {
   entryPath?: string[];
@@ -56,13 +57,7 @@ export default new Command()
     });
     const request = {
       fileToGenerate: files,
-      protoFile: [
-        fileDescriptorSet.file[2],
-        fileDescriptorSet.file[1],
-        fileDescriptorSet.file[0],
-        fileDescriptorSet.file[4],
-        fileDescriptorSet.file[3],
-      ],
+      protoFile: topo(fileDescriptorSet.file),
       parameter: "long_type_string",
     };
     const payload = encodeCodeGeneratorRequest(request);
@@ -72,4 +67,21 @@ export default new Command()
     plugin.stdin.close();
     const output = await plugin.output();
     const response = decodeCodeGeneratorResponse(output);
+    console.error({ response });
   });
+
+function topo(files: FileDescriptorProto[]): FileDescriptorProto[] {
+  const result: FileDescriptorProto[] = [];
+  const queue = files.filter((file) => file.dependency.length === 0);
+  let curr: FileDescriptorProto | undefined;
+  while (curr = queue.pop()) {
+    const name = curr.name;
+    result.push(curr);
+    const target = files.filter((file) =>
+      file.dependency.includes(name!) &&
+      file.dependency.every((dep) => result.some((res) => res.name === dep))
+    );
+    queue.push(...target);
+  }
+  return result;
+}
