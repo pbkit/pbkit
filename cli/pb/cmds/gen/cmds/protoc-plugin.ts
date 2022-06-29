@@ -1,14 +1,9 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { writeAll } from "https://deno.land/std@0.136.0/streams/conversion.ts";
 import { createLoader } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
-import deserialize from "../../../../../core/runtime/wire/deserialize.ts";
-import { encode } from "../../../../../compat/protoc/text-format.ts";
-import { encodeBinary } from "../../../../../generated/messages/google/protobuf/FileDescriptorSet.ts";
 import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set.ts";
 import { getVendorDir } from "../../../config.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
-import { readableStreamFromReader } from "https://deno.land/std@0.122.0/streams/conversion.ts";
 import { BufWriter } from "https://deno.land/std@0.122.0/io/buffer.ts";
 import {
   encodeBinary as encodeCodeGeneratorRequest,
@@ -72,14 +67,9 @@ export default new Command()
     };
     const payload = encodeCodeGeneratorRequest(request);
     const writer = new BufWriter(plugin.stdin);
-    Deno.writeFileSync(
-      "log.json",
-      new TextEncoder().encode(JSON.stringify(request, null, 2)),
-    );
     await writer.write(payload);
     await writer.flush();
     plugin.stdin.close();
     const output = await plugin.output();
     const response = decodeCodeGeneratorResponse(output);
-    console.error({ response });
   });
