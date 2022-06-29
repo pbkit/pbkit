@@ -58,9 +58,7 @@ export function convertSchemaToFileDescriptorSet(
         convertMessageToDescriptorProto({ schema, filePath, messageType })
       ),
       enumType: enumTypes.map(convertEnumToEnumDescriptorProto),
-      service: services.map((service) =>
-        convertServiceToDescriptorProto({ service })
-      ),
+      service: services.map(convertServiceToDescriptorProto),
       extension: [], // TODO
       options: optionsOrUndefined(options),
       sourceCodeInfo: undefined, // TODO
@@ -75,13 +73,9 @@ export function convertSchemaToFileDescriptorSet(
   return result;
 }
 
-interface ConvertServiceToDescriptorProtoConfig {
-  service: ServicePair;
-}
 function convertServiceToDescriptorProto(
-  config: ConvertServiceToDescriptorProtoConfig,
+  service: ServiceWithName,
 ): ServiceDescriptorProto {
-  const { service: [name, service] } = config;
   const methodDescriptorProtos: ServiceDescriptorProto["method"] = [];
   for (const [rpcName, rpc] of Object.entries(service.rpcs)) {
     const options = methodDescriptorOptions(rpc.options);
@@ -96,7 +90,7 @@ function convertServiceToDescriptorProto(
     methodDescriptorProtos.push(methodDescriptorProto);
   }
   return {
-    name,
+    name: service.name,
     method: methodDescriptorProtos,
   };
 }
@@ -381,12 +375,17 @@ function isEnumType<T extends Type>(type: Type): type is T {
   return type.kind === "enum";
 }
 
-type ServicePair = [string, Service];
-function getServicesFromFile(schema: Schema, file: File): ServicePair[] {
-  const result: ServicePair[] = [];
+interface ServiceWithName extends Service {
+  name: string;
+}
+function getServicesFromFile(schema: Schema, file: File): ServiceWithName[] {
+  const result: ServiceWithName[] = [];
   for (const servicePath of file.servicePaths) {
     if (!(servicePath in schema.services)) continue;
-    result.push([servicePath.split(".").pop()!, schema.services[servicePath]]);
+    result.push({
+      ...schema.services[servicePath],
+      name: servicePath.split(".").pop() || "",
+    });
   }
   return result;
 }
