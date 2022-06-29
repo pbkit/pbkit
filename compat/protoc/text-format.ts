@@ -1,6 +1,9 @@
 import { Field, WireMessage, WireType } from "../../core/runtime/wire/index.ts";
 import deserialize from "../../core/runtime/wire/deserialize.ts";
-import { wireValueToTsValueFns } from "../../core/runtime/wire/scalar.ts";
+import {
+  unpackFns,
+  wireValueToTsValueFns,
+} from "../../core/runtime/wire/scalar.ts";
 import { Schema } from "../../core/schema/model.ts";
 
 export interface TypeInfo {
@@ -42,13 +45,28 @@ function printFields(
         case "map": // TODO
           continue iter;
         default: {
-          const { name, typePath } = field;
+          const { name, type, typePath, kind } = field;
           if (!typePath) continue iter;
           if (scalarToStringTable[typePath]) {
-            const value = scalarToStringTable[typePath](wireField);
-            if (value === undefined) continue iter;
+            if (
+              kind === "repeated" &&
+              wireField.type === WireType.LengthDelimited &&
+              type as keyof typeof unpackFns in unpackFns
+            ) {
+              const values = Array.from<number | string | boolean>(
+                unpackFns[type as keyof typeof unpackFns]([
+                  wireField,
+                ]),
+              ).filter((v) => v != null).map(String);
+              for (const value of values) {
+                printer.println(`${name}: ${value}`);
+              }
+            } else {
+              const value = scalarToStringTable[typePath](wireField);
+              if (value === undefined) continue iter;
+              printer.println(`${name}: ${value}`);
+            }
             unknown = false;
-            printer.println(`${name}: ${value}`);
           }
           const fieldType = schema.types[typePath];
           if (!fieldType) continue iter;
@@ -68,11 +86,23 @@ function printFields(
               break;
             }
             case "enum": {
-              if (wireField.type !== WireType.Varint) continue iter;
-              const enumField = fieldType.fields[wireField.value[0]];
-              if (!enumField) continue iter;
+              if (
+                kind === "repeated" &&
+                wireField.type === WireType.LengthDelimited
+              ) {
+                const values = Array.from(unpackFns.int32([wireField])).map(
+                  (v) => fieldType.fields[v],
+                );
+                for (const value of values) {
+                  printer.println(`${name}: ${value.name}`);
+                }
+              } else {
+                if (wireField.type !== WireType.Varint) continue iter;
+                const enumField = fieldType.fields[wireField.value[0]];
+                if (!enumField) continue iter;
+                printer.println(`${name}: ${enumField.name}`);
+              }
               unknown = false;
-              printer.println(`${name}: ${enumField.name}`);
               break;
             }
           }
