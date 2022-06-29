@@ -1,5 +1,6 @@
 import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
+import * as esbuild from "https://deno.land/x/esbuild@v0.14.43/mod.js";
 import {
   dirname,
   join,
@@ -70,15 +71,12 @@ export default async function buildCore(config: BuildConfig) {
   }
   { // bundle codegen logic
     await ensureDir(`${config.dist}/codegen/ts`);
-    await Deno.run({
-      cmd: [
-        "deno",
-        "bundle",
-        "--unstable",
-        "codegen/ts/index.ts",
-        `${config.dist}/codegen/ts/index.mjs`,
-      ],
-    }).status();
+    await esbuild.build({
+      bundle: true,
+      entryPoints: [`codegen/ts/index.ts`],
+      outfile: `${config.dist}/codegen/ts/index.mjs`,
+      target: "node14",
+    });
   }
   { // copy nodejs-specific files
     const entries = walk("compat/node", { includeDirs: false, exts: [".js"] });
