@@ -24,7 +24,7 @@ import {
   Label as FieldLabel,
   Type as FieldType,
 } from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
-import { capitalize, snakeToCamel } from "../../misc/case.ts";
+import { snakeToCamel, snakeToPascal } from "../../misc/case.ts";
 import {
   Type as OptimizeMode,
 } from "../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
@@ -118,7 +118,7 @@ function convertMessageToDescriptorProto(
   for (const [fieldNumber, field] of Object.entries(messageType.type.fields)) {
     if (field.kind === "map") {
       const options = fieldDescriptorOptions(field.options);
-      const entryTypeName = `${capitalize(snakeToCamel(field.name))}Entry`;
+      const entryTypeName = `${snakeToPascal(field.name)}Entry`;
       const entryTypePath = `${messageType.typePath}.${entryTypeName}`;
       const fieldDescriptorProto: FieldDescriptorProto = {
         name: field.name,
