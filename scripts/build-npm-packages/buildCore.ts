@@ -80,6 +80,7 @@ export default async function buildCore(config: BuildConfig) {
       target: "node14",
       format: "esm",
     });
+    esbuild.stop();
   }
   { // copy nodejs-specific files
     const entries = walk("compat/node", { includeDirs: false, exts: [".js"] });
