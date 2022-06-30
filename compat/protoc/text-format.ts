@@ -52,15 +52,27 @@ function printFields(
             fieldType
               ? fieldType.kind
               : scalarTypes.includes(typePath)
-              ? "scalar"
+              ? (typePath === ".string" || typePath === ".bytes")
+                ? "scalar:string-or-bytes"
+                : "scalar:others"
               : "unknown"
           );
           switch (kind) {
-            case "scalar":
+            case "scalar:string-or-bytes": {
+              const value = wireValueToTsValueFns
+                [field.type as "string" | "bytes"](wireField);
+              if (!value) continue iter;
+              unknown = false;
+              printer.println(
+                `${field.name}: ${scalarToString(typePath, value)}`,
+              );
+              break;
+            }
+            case "scalar:others":
             case "enum": {
               const type = field.type as keyof typeof unpackFns;
               const values = (
-                kind === "scalar"
+                kind === "scalar:others"
                   ? getScalarReprs<any>(
                     field.kind,
                     wireField,
@@ -115,7 +127,7 @@ function getScalarReprs<T>(
   stringify: (value: T) => string,
 ): string[] | undefined {
   if (kind === "repeated" && wireField.type === WireType.LengthDelimited) {
-    return Array.from(unpackFn([wireField])).map(stringify) as string[];
+    return Array.from(unpackFn([wireField])).map(stringify);
   } else {
     const value = wireValueToTsValueFn(wireField);
     if (value === undefined) return;
