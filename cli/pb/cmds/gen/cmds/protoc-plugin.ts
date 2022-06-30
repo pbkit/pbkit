@@ -67,9 +67,7 @@ export default new Command()
       parameter: options.option,
     };
     const payload = encodeCodeGeneratorRequest(request);
-    const writer = new BufWriter(plugin.stdin);
-    await writer.write(payload);
-    await writer.flush();
+    await plugin.stdin.write(payload);
     plugin.stdin.close();
     const output = await plugin.output();
     const { error, file } = decodeCodeGeneratorResponse(output);
