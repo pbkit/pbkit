@@ -1,7 +1,10 @@
 import { Field, WireMessage, WireType } from "../../core/runtime/wire/index.ts";
 import deserialize from "../../core/runtime/wire/deserialize.ts";
-import { wireValueToTsValueFns } from "../../core/runtime/wire/scalar.ts";
-import { Schema } from "../../core/schema/model.ts";
+import {
+  unpackFns,
+  wireValueToTsValueFns,
+} from "../../core/runtime/wire/scalar.ts";
+import { MessageField, Schema } from "../../core/schema/model.ts";
 
 export interface TypeInfo {
   typePath: string;
@@ -42,21 +45,60 @@ function printFields(
         case "map": // TODO
           continue iter;
         default: {
-          const { name, typePath } = field;
+          const { typePath } = field;
           if (!typePath) continue iter;
-          if (scalarToStringTable[typePath]) {
-            const value = scalarToStringTable[typePath](wireField);
-            if (value === undefined) continue iter;
-            unknown = false;
-            printer.println(`${name}: ${value}`);
-          }
           const fieldType = schema.types[typePath];
-          if (!fieldType) continue iter;
-          switch (fieldType.kind) {
+          const kind = (
+            fieldType
+              ? fieldType.kind
+              : scalarTypes.includes(typePath)
+              ? (typePath === ".string" || typePath === ".bytes")
+                ? "scalar:string-or-bytes"
+                : "scalar:others"
+              : "unknown"
+          );
+          switch (kind) {
+            case "scalar:string-or-bytes": {
+              const value = wireValueToTsValueFns
+                [field.type as "string" | "bytes"](wireField);
+              if (!value) continue iter;
+              unknown = false;
+              printer.println(
+                `${field.name}: ${scalarToString(typePath, value)}`,
+              );
+              break;
+            }
+            case "scalar:others":
+            case "enum": {
+              const type = field.type as keyof typeof unpackFns;
+              const values = (
+                kind === "scalar:others"
+                  ? getScalarReprs<any>(
+                    field.kind,
+                    wireField,
+                    unpackFns[type],
+                    wireValueToTsValueFns[type],
+                    (v) => scalarToString(typePath, v),
+                  )
+                  : getScalarReprs<number>(
+                    field.kind,
+                    wireField,
+                    unpackFns.int32,
+                    wireValueToTsValueFns.int32,
+                    (enumValue) => fieldType.fields[enumValue].name,
+                  )
+              );
+              if (!values) continue iter;
+              unknown = false;
+              for (const value of values) {
+                printer.println(`${field.name}: ${value}`);
+              }
+              break;
+            }
             case "message": {
               if (wireField.type !== WireType.LengthDelimited) continue iter;
               unknown = false;
-              printer.println(`${name} {`);
+              printer.println(`${field.name} {`);
               printer.indent();
               printFields(
                 printer,
@@ -67,23 +109,30 @@ function printFields(
               printer.println("}");
               break;
             }
-            case "enum": {
-              if (wireField.type !== WireType.Varint) continue iter;
-              const enumField = fieldType.fields[wireField.value[0]];
-              if (!enumField) continue iter;
-              unknown = false;
-              printer.println(`${name}: ${enumField.name}`);
-              break;
-            }
           }
         }
       }
     } finally {
       if (unknown) unknownFields.push(item);
-      unknown = true;
     }
   }
   if (unknownFields.length) printUnknownFields(printer, unknownFields);
+}
+
+function getScalarReprs<T>(
+  kind: MessageField["kind"],
+  wireField: Field,
+  unpackFn: (wireValues: Iterable<Field>) => Iterable<T>,
+  wireValueToTsValueFn: (wireField: Field) => T | undefined,
+  stringify: (value: T) => string,
+): string[] | undefined {
+  if (kind === "repeated" && wireField.type === WireType.LengthDelimited) {
+    return Array.from(unpackFn([wireField])).map(stringify);
+  } else {
+    const value = wireValueToTsValueFn(wireField);
+    if (value === undefined) return;
+    return [stringify(value)];
+  }
 }
 
 function printUnknownFields(
@@ -150,87 +199,40 @@ export function decodeSchemaless(text: string): WireMessage {
   return []; // TODO
 }
 
-interface ScalarToStringTable {
-  [typePath: string]: (field: Field) => string | undefined;
+const scalarTypes = [
+  ".double",
+  ".float",
+  ".int32",
+  ".int64",
+  ".uint32",
+  ".uint64",
+  ".sint32",
+  ".sint64",
+  ".fixed32",
+  ".fixed64",
+  ".sfixed32",
+  ".sfixed64",
+  ".bool",
+  ".string",
+  ".bytes",
+];
+function scalarToString(typePath: string, value: any): string {
+  switch (typePath) {
+    case ".bool":
+      return value ? "true" : "false";
+    case ".double":
+    case ".float": {
+      if (isNaN(value)) return "nan";
+      return String(value);
+    }
+    case ".string":
+    case ".bytes": {
+      return JSON.stringify(value);
+    }
+    default:
+      return String(value);
+  }
 }
-const scalarToStringTable: ScalarToStringTable = {
-  ".double": (v) => {
-    const value = wireValueToTsValueFns.double(v);
-    if (value === undefined) return;
-    if (isNaN(value)) return "nan";
-    return String(value);
-  },
-  ".float": (v) => {
-    const value = wireValueToTsValueFns.float(v);
-    if (value === undefined) return;
-    if (isNaN(value)) return "nan";
-    return String(value);
-  },
-  ".int32": (v) => {
-    const value = wireValueToTsValueFns.int32(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".int64": (v) => {
-    const value = wireValueToTsValueFns.int64(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".uint32": (v) => {
-    const value = wireValueToTsValueFns.uint32(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".uint64": (v) => {
-    const value = wireValueToTsValueFns.uint64(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".sint32": (v) => {
-    const value = wireValueToTsValueFns.sint32(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".sint64": (v) => {
-    const value = wireValueToTsValueFns.sint64(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".fixed32": (v) => {
-    const value = wireValueToTsValueFns.fixed32(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".fixed64": (v) => {
-    const value = wireValueToTsValueFns.fixed64(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".sfixed32": (v) => {
-    const value = wireValueToTsValueFns.sfixed32(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".sfixed64": (v) => {
-    const value = wireValueToTsValueFns.sfixed64(v);
-    if (value === undefined) return;
-    return String(value);
-  },
-  ".bool": (v) => {
-    if (v.type !== WireType.Varint) return;
-    return String(Boolean(v.value[0]));
-  },
-  ".string": (v) => {
-    const value = wireValueToTsValueFns.string(v);
-    if (value === undefined) return;
-    return JSON.stringify(value);
-  },
-  ".bytes": (v) => {
-    const value = wireValueToTsValueFns.bytes(v);
-    if (value === undefined) return;
-    return JSON.stringify(value);
-  },
-};
 
 interface Printer {
   indent(): void;
