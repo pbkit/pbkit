@@ -1,5 +1,5 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { BufWriter } from "https://deno.land/std@0.122.0/io/buffer.ts";
+import { writeAll } from "https://deno.land/std@0.122.0/streams/conversion.ts";
 import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
 import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
 import { getVendorDir } from "../../../config.ts";
@@ -66,11 +66,9 @@ export default new Command()
       protoFile: topo(fileDescriptorSet.file),
       parameter: options.option,
     };
-    const payload = encodeCodeGeneratorRequest(request);
-    await plugin.stdin.write(payload);
+    await writeAll(plugin.stdin, encodeCodeGeneratorRequest(request));
     plugin.stdin.close();
-    const output = await plugin.output();
-    const { error, file } = decodeCodeGeneratorResponse(output);
+    const { error, file } = decodeCodeGeneratorResponse(await plugin.output());
     if (error && error.length > 0) {
       throw new Error("Failed to generate code: " + error);
     }
@@ -79,7 +77,7 @@ export default new Command()
       const outPath = path.resolve(options.outDir, filePath);
       await ensureDir(path.dirname(outPath));
       const outFile = await Deno.create(outPath);
-      await outFile.write(new TextEncoder().encode(content));
+      await writeAll(outFile, new TextEncoder().encode(content));
     }
   });
 
