@@ -38,6 +38,7 @@ export interface Visitor {
   visitOneofBodyStatement: VisitFn<ast.OneofBodyStatement>;
   visitOneofField: VisitFn<ast.OneofField>;
   visitOneofGroup: VisitFn<ast.OneofGroup>;
+  visitMalformedField: VisitFn<ast.MalformedField>;
   visitMapField: VisitFn<ast.MapField>;
   visitExtensions: VisitFn<ast.Extensions>;
   visitRanges: VisitFn<ast.Ranges>;
@@ -177,6 +178,8 @@ export const visitor: Visitor = {
     switch (node.type) {
       case "field":
         return visitor.visitField(visitor, node);
+      case "malformed-field":
+        return visitor.visitMalformedField(visitor, node);
       case "enum":
         return visitor.visitEnum(visitor, node);
       case "message":
@@ -408,6 +411,18 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.eq);
       visitor.visitIntLit(visitor, node.fieldNumber);
       visitor.visitMessageBody(visitor, node.messageBody);
+    });
+  },
+  visitMalformedField(visitor, node) {
+    visitStatementBase(visitor, node, () => {
+      node.fieldLabel && visitor.visitKeyword(visitor, node.fieldLabel);
+      visitor.visitType(visitor, node.fieldType);
+      node.fieldName && visitor.visitToken(visitor, node.fieldName);
+      node.eq && visitor.visitToken(visitor, node.eq);
+      node.fieldNumber && visitor.visitIntLit(visitor, node.fieldNumber);
+      node.fieldOptions &&
+        visitor.visitFieldOptions(visitor, node.fieldOptions);
+      node.semi && visitor.visitSemi(visitor, node.semi);
     });
   },
   visitMapField(visitor, node) {

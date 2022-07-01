@@ -1,11 +1,12 @@
-import { Proto } from "../ast/index.ts";
-import { ParseResult } from "../parser/proto.ts";
-import { Span } from "../parser/recursive-descent-parser.ts";
+import { Proto } from "../core/ast/index.ts";
+import { ParseResult } from "../core/parser/proto.ts";
+import { Span } from "../core/parser/recursive-descent-parser.ts";
+import { scalarValueTypes } from "../core/runtime/scalar.ts";
 import {
   Visitor,
   visitor as defaultVisitor,
   visitStatementBase,
-} from "../visitor/index.ts";
+} from "../core/visitor/index.ts";
 
 export enum TokenType {
   enum = 0,
@@ -18,6 +19,7 @@ export enum TokenType {
   type = 7,
   variable = 8,
   parameter = 9,
+  namespace = 10,
 }
 export enum TokenModifier {
   deprecated = 0,
@@ -66,8 +68,23 @@ export function getSemanticTokens(
       });
     },
     visitType(visitor, node) {
+      if (
+        node.identOrDots.some(
+          (token) => (scalarValueTypes as string[]).includes(token.text),
+        )
+      ) {
+        return;
+      }
+      const nameIdent = node.identOrDots.slice(-1)[0];
+      if (nameIdent.start !== node.start) {
+        tokens.push({
+          ...getTokenPosition({ start: node.start, end: nameIdent.start }),
+          tokenType: TokenType.namespace,
+          tokenModifiers: [],
+        });
+      }
       tokens.push({
-        ...getTokenPosition(node),
+        ...getTokenPosition(nameIdent),
         tokenType: TokenType.type,
         tokenModifiers: [],
       });
@@ -97,6 +114,19 @@ export function getSemanticTokens(
           visitor.visitFieldOptions(visitor, node.fieldOptions);
       });
     },
+    visitMalformedField(visitor, node) {
+      node.fieldLabel && visitor.visitKeyword(visitor, node.fieldLabel);
+      node.fieldType && visitor.visitType(visitor, node.fieldType);
+      node.fieldName &&
+        tokens.push({
+          ...getTokenPosition(node.fieldName),
+          tokenType: TokenType.property,
+          tokenModifiers: [],
+        });
+      node.fieldNumber && visitor.visitIntLit(visitor, node.fieldNumber);
+      node.fieldOptions &&
+        visitor.visitFieldOptions(visitor, node.fieldOptions);
+    },
     visitFieldOption(visitor, node) {
       tokens.push({
         ...getTokenPosition(node.optionName),
@@ -107,6 +137,42 @@ export function getSemanticTokens(
         ...getTokenPosition(node.constant),
         tokenType: TokenType.variable,
         tokenModifiers: [TokenModifier.readonly],
+      });
+    },
+    visitEnum(visitor, node) {
+      visitStatementBase(visitor, node, () => {
+        visitor.visitKeyword(visitor, node.keyword);
+        tokens.push({
+          ...getTokenPosition(node.enumName),
+          tokenType: TokenType.enum,
+          tokenModifiers: [],
+        });
+        visitor.visitEnumBody(visitor, node.enumBody);
+      });
+    },
+    visitEnumField(visitor, node) {
+      visitStatementBase(visitor, node, () => {
+        tokens.push({
+          ...getTokenPosition(node.fieldName),
+          tokenType: TokenType.property,
+          tokenModifiers: [],
+        });
+        visitor.visitToken(visitor, node.eq);
+        visitor.visitSignedIntLit(visitor, node.fieldNumber);
+        node.fieldOptions &&
+          visitor.visitFieldOptions(visitor, node.fieldOptions);
+        visitor.visitSemi(visitor, node.semi);
+      });
+    },
+    visitOneof(visitor, node) {
+      visitStatementBase(visitor, node, () => {
+        visitor.visitKeyword(visitor, node.keyword);
+        tokens.push({
+          ...getTokenPosition(node.oneofName),
+          tokenType: TokenType.property,
+          tokenModifiers: [],
+        });
+        visitor.visitOneofBody(visitor, node.oneofBody);
       });
     },
     visitIdent(visitor, node) {

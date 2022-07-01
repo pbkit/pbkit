@@ -963,7 +963,7 @@ function acceptField(
       leadingComments,
       fieldLabel,
       fieldType,
-      rest.result.semi,
+      Object.values(rest.result),
       trailingComments,
     ]),
     leadingComments,
