@@ -1,3 +1,7 @@
+import * as compiler from "./compiler/index.ts";
+export type {
+  compiler,
+};
 export type { Type as FileDescriptorSet } from "./FileDescriptorSet.ts";
 export type { Type as FileDescriptorProto } from "./FileDescriptorProto.ts";
 export type { Type as DescriptorProto } from "./DescriptorProto.ts";
