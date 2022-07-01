@@ -155,7 +155,8 @@ export function run(config: RunConfig): Server {
   return { finish: connection.finish };
   async function buildFileSchema(file: string): Promise<Schema | null> {
     try {
-      const loader = await projectManager.getProjectLoader(file);
+      const projectPath = projectManager.getProjectPath(file);
+      const loader = await projectManager.getProjectLoader(projectPath);
       return await build({ loader, files: [file] });
     } catch {
       return null;
@@ -163,7 +164,8 @@ export function run(config: RunConfig): Server {
   }
   async function buildProjectSchema(file: string): Promise<Schema | null> {
     try {
-      const loader = await projectManager.getProjectLoader(file);
+      const projectPath = projectManager.getProjectPath(file);
+      const loader = await projectManager.getProjectLoader(projectPath);
       const files = await projectManager.getProjectProtoFiles(file);
       return await build({ loader, files });
     } catch {
