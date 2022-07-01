@@ -36,8 +36,8 @@ import {
   stringifyType,
 } from "./stringify-ast-frag.ts";
 
-export interface BuildConfig {
-  loader: Loader;
+export interface BuildConfig<T extends Loader = Loader> {
+  loader: T;
   files: string[];
 }
 export async function build(config: BuildConfig): Promise<Schema> {

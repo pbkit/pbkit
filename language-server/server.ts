@@ -10,8 +10,6 @@ import { Schema } from "../core/schema/model.ts";
 import findAllReferences from "../core/schema/findAllReferences.ts";
 import * as lsp from "./lsp.ts";
 import { createProjectManager } from "./project.ts";
-import { parse } from "../core/parser/proto.ts";
-import { fromFileUrl } from "../core/loader/deno-fs.ts";
 import {
   getSemanticTokens,
   toDeltaSemanticTokens,
@@ -20,40 +18,34 @@ import {
   toLspRepresentation,
 } from "./semantic-token-provider.ts";
 import { getCompletionItems } from "./completion.ts";
+import { createOpenProtoManager } from "./open-proto-manager.ts";
 
 export interface RunConfig {
   reader: Deno.Reader;
   writer: Deno.Writer;
   logConfig?: CreateJsonRpcLogConfig;
 }
-interface FileCache {
-  uri: string;
-  content: string;
-  revision: number;
-}
 export interface Server {
   finish(): void;
 }
 
 export function run(config: RunConfig): Server {
-  const projectManager = createProjectManager();
-  let fileCache: FileCache | null = null;
+  const openProtoManager = createOpenProtoManager();
+  const projectManager = createProjectManager(openProtoManager);
   const connection = createJsonRpcConnection({
     reader: config.reader,
     writer: config.writer,
     logConfig: config.logConfig,
     notificationHandlers: {
       ["initialized"]() {},
-      ["textDocument/didOpen"]() {},
+      ["textDocument/didOpen"]({ textDocument }) {
+        updateProto(textDocument.uri, textDocument.text);
+      },
       ["textDocument/didChange"]({ textDocument, contentChanges }) {
-        if (!fileCache) return;
-        if (
-          fileCache.uri === textDocument.uri &&
-          fileCache.revision < textDocument.version
-        ) {
-          fileCache.content = contentChanges[0].text;
-          fileCache.revision = textDocument.version;
-        }
+        updateProto(textDocument.uri, contentChanges[0].text);
+      },
+      ["textDocument/didClose"]({ textDocument }) {
+        openProtoManager.delete(textDocument.uri);
       },
       ["exit"]() {
         throw new Error("Implement this");
@@ -101,85 +93,59 @@ export function run(config: RunConfig): Server {
         params: lsp.DefinitionParams,
       ): Promise<lsp.DefinitionResponse> {
         const { textDocument, position } = params;
-        const schema = await buildFreshSchema(textDocument.uri);
-        const location = gotoDefinition(
-          schema,
-          textDocument.uri,
-          positionToColRow(position),
-        );
+        const file = textDocument.uri;
+        const schema = await buildFileSchema(file);
+        if (!schema) return null;
+        const colRow = positionToColRow(position);
+        const location = gotoDefinition(schema, file, colRow);
         return location ? locationToLspLocation(location) : null;
       },
       async ["textDocument/references"](
         params: lsp.ReferenceParams,
       ): Promise<lsp.ReferenceResponse> {
         const { textDocument, position } = params;
-        const schema = await buildFreshSchema(textDocument.uri);
-        const locations = findAllReferences(
-          schema,
-          textDocument.uri,
-          positionToColRow(position),
-        );
+        const file = textDocument.uri;
+        const schema = await buildProjectSchema(file);
+        if (!schema) return null;
+        const colRow = positionToColRow(position);
+        const locations = findAllReferences(schema, file, colRow);
         return locations.map(locationToLspLocation);
       },
       async ["textDocument/hover"](
         params: lsp.HoverParams,
       ): Promise<lsp.HoverResponse> {
         const { textDocument, position } = params;
+        const file = textDocument.uri;
         const colRow = positionToColRow(position);
-        try {
-          const parseResult = parse(
-            await Deno.readTextFile(fromFileUrl(textDocument.uri)),
-          );
-          // try parse textDocument only -> check if it is type specifier
-          if (!isTypeSpecifier(parseResult, colRow)) return null;
-          const schema = await buildFreshSchema(textDocument.uri);
-          const typeInformation = getTypeInformation(
-            schema,
-            textDocument.uri,
-            colRow,
-          );
-          if (!typeInformation) return null;
-          return {
-            contents: {
-              kind: "markdown",
-              value: typeInformation,
-            },
-          };
-        } catch {
-          return null;
-        }
+        const parseResult = openProtoManager.getParseResult(file);
+        if (!parseResult) return null;
+        if (!isTypeSpecifier(parseResult, colRow)) return null;
+        const schema = await buildFileSchema(file);
+        if (!schema) return null;
+        const value = getTypeInformation(schema, file, colRow);
+        if (!value) return null;
+        return { contents: { kind: "markdown", value } };
       },
       async ["textDocument/semanticTokens/full"](
         params: lsp.SematicTokenParams,
       ): Promise<lsp.SemanticTokens | null> {
         const { textDocument } = params;
-        try {
-          const parseResult = parse(
-            await getContentFromCache(textDocument.uri),
-          );
-          const tokens = toDeltaSemanticTokens(getSemanticTokens(parseResult));
-          return {
-            data: toLspRepresentation(tokens),
-          };
-        } catch {
-          return null;
-        }
+        const parseResult = openProtoManager.getParseResult(textDocument.uri);
+        if (!parseResult) return null;
+        const semanticTokens = getSemanticTokens(parseResult);
+        const data = toLspRepresentation(toDeltaSemanticTokens(semanticTokens));
+        return { data };
       },
       async ["textDocument/completion"](
         params: lsp.CompletionParams,
       ): Promise<lsp.CompletionList> {
-        try {
-          const { textDocument, position } = params;
-          const schema = await buildFreshSchema(textDocument.uri);
-          const items = getCompletionItems(
-            schema,
-            textDocument.uri,
-            positionToColRow(position),
-          );
-          return { isIncomplete: false, items };
-        } catch {
-          return { isIncomplete: true, items: [] };
-        }
+        const { textDocument, position } = params;
+        const file = textDocument.uri;
+        const colRow = positionToColRow(position);
+        const schema = await buildFileSchema(file);
+        if (!schema) return { isIncomplete: true, items: [] };
+        const items = getCompletionItems(schema, file, colRow);
+        return { isIncomplete: false, items };
       },
       async ["completionItem/resolve"](params) {
         return params;
@@ -187,20 +153,32 @@ export function run(config: RunConfig): Server {
     },
   });
   return { finish: connection.finish };
-  async function buildFreshSchema(file: string): Promise<Schema> {
-    const buildConfig = await projectManager.createBuildConfig(file);
-    return await build(buildConfig);
-  }
-  async function getContentFromCache(uri: string): Promise<string> {
-    if (fileCache?.uri === uri) {
-      return fileCache.content;
+  async function buildFileSchema(file: string): Promise<Schema | null> {
+    try {
+      const loader = await projectManager.getProjectLoader(file);
+      return await build({ loader, files: [file] });
+    } catch {
+      return null;
     }
-    fileCache = {
-      uri: uri,
-      content: await Deno.readTextFile(fromFileUrl(uri)),
-      revision: 0,
-    };
-    return fileCache.content;
+  }
+  async function buildProjectSchema(file: string): Promise<Schema | null> {
+    try {
+      const loader = await projectManager.getProjectLoader(file);
+      const files = await projectManager.getProjectProtoFiles(file);
+      return await build({ loader, files });
+    } catch {
+      return null;
+    }
+  }
+  async function updateProto(
+    absolutePath: string,
+    data: string,
+  ): Promise<void> {
+    openProtoManager.upsert(absolutePath, data);
+    const projectPath = projectManager.getProjectPath(absolutePath);
+    if (!projectPath) return;
+    const loader = await projectManager.getProjectLoader(projectPath);
+    loader.update({ absolutePath, data });
   }
 }
 
