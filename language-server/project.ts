@@ -1,4 +1,3 @@
-import { exists } from "https://deno.land/std@0.122.0/fs/exists.ts";
 import { getVendorDir } from "../cli/pb/config.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 import { loadPollapoYml } from "../cli/pollapo/pollapoYml.ts";
@@ -108,8 +107,11 @@ function createPollapoRepoLoader(projectPath: string, repo: string): Loader {
       if (!path.startsWith(repo + "/")) return null;
       const absolutePath = resolve(projectPath, path.slice(repo.length + 1));
       const filePath = fromFileUrl(absolutePath);
-      if (!await exists(filePath)) return null;
-      return { absolutePath, data: await Deno.readTextFile(filePath) };
+      try {
+        return { absolutePath, data: await Deno.readTextFile(filePath) };
+      } catch {
+        return null;
+      }
     },
   };
 }
