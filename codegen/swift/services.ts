@@ -22,7 +22,9 @@ export default function* gen(
   config: GenConfig,
 ) {
   const { customTypeMapping, services } = config;
-  for (const [typePath, type] of Object.entries(schema.services)) {
+  const servicePaths = services.servicePaths ?? Object.keys(schema.services);
+  for (const typePath of servicePaths) {
+    const type = schema.services[typePath];
     yield* genService({
       typePath,
       type,

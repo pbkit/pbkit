@@ -15,6 +15,7 @@ import expandEntryPaths from "../../expandEntryPaths.ts";
 interface Options {
   entryPath?: string[];
   protoPath?: string[];
+  includePath?: string[];
   excludePath?: string[];
   messagesDir: string;
   servicesDir: string;
@@ -51,8 +52,13 @@ export default new Command()
     { default: "out" },
   )
   .option(
+    "--include-path <dir:string>",
+    "Specify the directory containing proto files to codegen.",
+    { collect: true },
+  )
+  .option(
     "--exclude-path <dir:string>",
-    "Specify the directory containing proto files to exclude codegen.",
+    "Specify the directory containing proto files to exclude from codegen.",
     { collect: true },
   )
   .option(
@@ -67,6 +73,9 @@ export default new Command()
   .action(async (options: Options, protoFiles: string[] = []) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
+    const includePaths = (options.includePath ?? []).map((path) =>
+      toFileUrl(normalize(resolve(path))).href
+    );
     const excludePaths = (options.excludePath ?? []).map((path) =>
       toFileUrl(normalize(resolve(path))).href
     );
@@ -77,6 +86,15 @@ export default new Command()
       ...protoFiles,
     ];
     const schema = await build({ loader, files });
+    if (options.includePath && options.excludePath) {
+      throw new Error("--include-path and --exclude-path are exclusive.");
+    }
+    const typePaths = Object.entries(schema.types).filter(([_, value]) =>
+      filterFilePath(value.filePath)
+    ).map(([typePath]) => typePath as `.${string}`);
+    const servicePaths = Object.entries(schema.services).filter(
+      ([_, value]) => filterFilePath(value.filePath),
+    ).map(([servicePath]) => servicePath as `.${string}`);
     const serviceType = (() => {
       const types: ServiceType[] = [];
       if (options.grpcService) types.push("grpc");
@@ -86,12 +104,21 @@ export default new Command()
     await save(
       options.outDir,
       gen(schema, {
-        messages: { outDir: options.messagesDir.trim(), excludePaths },
+        messages: { outDir: options.messagesDir.trim(), typePaths },
         services: {
           outDir: options.servicesDir.trim(),
           genTypes: serviceType,
-          excludePaths,
+          servicePaths,
         },
       }),
     );
+    function filterFilePath(filePath: string) {
+      if (options.includePath) {
+        return includePaths.some((path) => filePath.startsWith(path));
+      }
+      if (options.excludePath) {
+        return !excludePaths.some((path) => filePath.startsWith(path));
+      }
+      return true;
+    }
   });

@@ -82,12 +82,12 @@ export type GenRuntimeConfig = {
 };
 export interface GenMessagesConfig {
   outDir: string;
-  excludePaths: string[];
+  typePaths?: `.${string}`[];
 }
 export interface GenServicesConfig {
   outDir: string;
-  excludePaths: string[];
   genTypes: ServiceType[];
+  servicePaths?: `.${string}`[];
 }
 export type ServiceType = "grpc" | "wrp";
 

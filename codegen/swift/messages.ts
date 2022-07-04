@@ -28,12 +28,9 @@ export default function* gen(
   config: GenConfig,
 ): Generator<CodeEntry> {
   const { messages, customTypeMapping } = config;
-  const types = Object.entries(schema.types).filter(([_, value]) =>
-    !messages.excludePaths.some((excludePath) =>
-      value.filePath.startsWith(excludePath)
-    )
-  );
-  for (const [typePath, type] of types) {
+  const typePaths = messages.typePaths ?? Object.keys(schema.types);
+  for (const typePath of typePaths) {
+    const type = schema.types[typePath];
     // Dependent on SwiftProtobuf's well-known types codegen (ex. .google.protobuf.Timestamp)
     if (typePath.startsWith(".google.protobuf")) continue;
     switch (type.kind) {
