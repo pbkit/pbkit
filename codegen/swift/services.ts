@@ -14,7 +14,6 @@ import { toCamelCase } from "./swift-protobuf/name.ts";
 
 export interface GenConfig {
   customTypeMapping: CustomTypeMapping;
-  messages: GenMessagesConfig;
   services: GenServicesConfig;
 }
 
@@ -22,14 +21,13 @@ export default function* gen(
   schema: Schema,
   config: GenConfig,
 ) {
-  const { customTypeMapping, messages, services } = config;
+  const { customTypeMapping, services } = config;
   for (const [typePath, type] of Object.entries(schema.services)) {
     yield* genService({
       typePath,
       type,
       customTypeMapping,
       schema,
-      messages,
       services,
     });
   }
@@ -52,7 +50,6 @@ interface GenServiceConfig {
   type: Service;
   schema: Schema;
   customTypeMapping: CustomTypeMapping;
-  messages: GenMessagesConfig;
   services: GenServicesConfig;
 }
 function* genService({
@@ -60,7 +57,6 @@ function* genService({
   type,
   customTypeMapping,
   schema,
-  messages,
   services,
 }: GenServiceConfig): Generator<CodeEntry> {
   const serviceName = typePath.split(".").slice(1).join(".");

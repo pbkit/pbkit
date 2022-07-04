@@ -28,7 +28,12 @@ export default function* gen(
   config: GenConfig,
 ): Generator<CodeEntry> {
   const { messages, customTypeMapping } = config;
-  for (const [typePath, type] of Object.entries(schema.types)) {
+  const types = Object.entries(schema.types).filter(([_, value]) =>
+    !messages.excludePaths.some((excludePath) =>
+      value.filePath.startsWith(excludePath)
+    )
+  );
+  for (const [typePath, type] of types) {
     // Dependent on SwiftProtobuf's well-known types codegen (ex. .google.protobuf.Timestamp)
     if (typePath.startsWith(".google.protobuf")) continue;
     switch (type.kind) {
@@ -697,19 +702,11 @@ const getTraverseCode: GetCodeFn<GetMessageCodeConfig> = (config) => {
         const buffer: string[] = [];
         const isRepeated = schema.kind === "repeated";
         if (isRepeated) {
-          if (isEnum || isPackableType(swiftProtobufType)) {
-            buffer.push(
-              `    if !self.${swiftName}.isEmpty {\n`,
-              `      try visitor.visitRepeated${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
-              `    }\n`,
-            );
-          } else {
-            buffer.push(
-              `    if !self.${swiftName}.isEmpty {\n`,
-              `      try visitor.visitRepeated${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
-              `    }\n`,
-            );
-          }
+          buffer.push(
+            `    if !self.${swiftName}.isEmpty {\n`,
+            `      try visitor.visitRepeated${swiftProtobufType}Field(value: self.${swiftName}, fieldNumber: ${fieldNumber})\n`,
+            `    }\n`,
+          );
         } else if (schema.kind === "map") {
           const swiftKeyType = getSwiftType(schema.keyTypePath);
           const swiftValueType = getSwiftType(schema.valueTypePath);

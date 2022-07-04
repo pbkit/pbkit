@@ -54,7 +54,6 @@ async function* genBuildUnit(
   });
   yield* genServices(schema, {
     customTypeMapping,
-    messages,
     services,
   });
 }
@@ -83,9 +82,11 @@ export type GenRuntimeConfig = {
 };
 export interface GenMessagesConfig {
   outDir: string;
+  excludePaths: string[];
 }
 export interface GenServicesConfig {
   outDir: string;
+  excludePaths: string[];
   genTypes: ServiceType[];
 }
 export type ServiceType = "grpc" | "wrp";

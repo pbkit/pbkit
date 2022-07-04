@@ -1,4 +1,10 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import {
+  isAbsolute,
+  normalize,
+  resolve,
+  toFileUrl,
+} from "https://deno.land/std@0.122.0/path/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";
@@ -9,6 +15,7 @@ import expandEntryPaths from "../../expandEntryPaths.ts";
 interface Options {
   entryPath?: string[];
   protoPath?: string[];
+  excludePath?: string[];
   messagesDir: string;
   servicesDir: string;
   grpcService?: boolean;
@@ -44,6 +51,11 @@ export default new Command()
     { default: "out" },
   )
   .option(
+    "--exclude-path <dir:string>",
+    "Specify the directory containing proto files to exclude codegen.",
+    { collect: true },
+  )
+  .option(
     "--grpc-service",
     "Generate gRPC service codes.",
   )
@@ -55,6 +67,9 @@ export default new Command()
   .action(async (options: Options, protoFiles: string[] = []) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
+    const excludePaths = (options.excludePath ?? []).map((path) =>
+      toFileUrl(normalize(resolve(path))).href
+    );
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];
     const loader = createLoader({ roots });
     const files = [
@@ -71,10 +86,11 @@ export default new Command()
     await save(
       options.outDir,
       gen(schema, {
-        messages: { outDir: options.messagesDir.trim() },
+        messages: { outDir: options.messagesDir.trim(), excludePaths },
         services: {
           outDir: options.servicesDir.trim(),
           genTypes: serviceType,
+          excludePaths,
         },
       }),
     );
