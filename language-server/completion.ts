@@ -3,17 +3,13 @@ import { CompletionItemKind } from "./lsp.ts";
 import { ParseResult } from "../core/parser/proto.ts";
 import { ColRow } from "../core/parser/recursive-descent-parser.ts";
 import { Visitor, visitor as defaultVisitor } from "../core/visitor/index.ts";
+import { scalarValueTypes } from "../core/runtime/scalar.ts";
 import { getResolveTypePathFn } from "../core/schema/builder.ts";
-import { getTypeDocs } from "../core/schema/gotoDefinition.ts";
 import { Schema } from "../core/schema/model.ts";
-import { stringifyFullIdent } from "../core/schema/stringify-ast-frag.ts";
-
-export enum CompletionType {
-  Uninitialized = 0,
-  FieldLabel = 1,
-  FieldeType = 2,
-  FieldName = 3,
-}
+import {
+  stringifyFullIdent,
+  stringifyType,
+} from "../core/schema/stringify-ast-frag.ts";
 
 export function getCompletionItems(
   schema: Schema,
@@ -21,99 +17,93 @@ export function getCompletionItems(
   colRow: ColRow,
 ): lsp.CompletionItem[] {
   if (!schema.files[filePath]) return [];
-  const { parseResult, package: packageName } = schema.files[filePath];
+  const { parseResult } = schema.files[filePath];
   if (!parseResult) return [];
   const offset = parseResult.parser.colRowToOffset(colRow);
   const scope = getScope(parseResult, offset);
-  const resolveTypePathFn = getResolveTypePathFn(schema, filePath);
-  const resolveTypePath = (type: string) => resolveTypePathFn(type, scope);
   const type = getCompletionType(parseResult, offset);
-  if (type === CompletionType.Uninitialized) return [];
-  switch (type) {
-    case CompletionType.FieldName: {
-      return Object.entries(schema.types).map(([type, value]) => {
-        const documentation: lsp.MarkupContent = {
-          kind: "markdown",
-          value: getTypeDocs(value, type),
-        };
-        const kind = value.kind === "message"
-          ? CompletionItemKind.Interface
-          : CompletionItemKind.Enum;
-        const label = type.split(".").pop()!;
-        const item: lsp.CompletionItem = {
-          label,
-          kind,
-          documentation,
-        };
-        if (value.filePath === filePath) {
-          // simplified specifier
-          const typeName = type.split(".").pop()!;
-          // typePath without packageName and leading dot for path
-          const typePath = type.slice(packageName.length + 2);
-          // if simplified specifier can be used, use it.
-          if (resolveTypePath(typeName) === type) {
-            return {
-              ...item,
-              insertText: typeName,
-              detail: typeName,
-            };
-          }
-          // if simplified specifer and typePath (without packageName) are equal,
-          // you have to use the full specifier because the simplifed specifier is not unique (shadowed).
-          if (typePath === typeName) {
-            return {
-              ...item,
-              insertText: type.slice(1),
-              detail: type.slice(1),
-            };
-          }
-          // if simplified specifier is subtype of typePath, slice the common path.
-          if (type.startsWith(scope)) {
-            return {
-              ...item,
-              insertText: type.slice(scope.length + 1),
-              detail: type.slice(scope.length + 1),
-            };
-          }
-          return {
-            ...item,
-            insertText: typePath,
-            detail: typePath,
-          };
-        }
-        const typePath = resolveTypePath(type);
-        if (typePath) {
-          return {
-            ...item,
-            insertText: typePath.slice(1),
-            detail: typePath.slice(1),
-          };
-        }
-        return {
-          ...item,
-          insertText: type.slice(1),
-          detail: type.slice(1),
-        };
-      });
-    }
-  }
-  return [];
+  if (!type) return [];
+  if (type === "fieldlabel") return fieldLabelCompletionItems;
+  const completionItems = [
+    ...scalarValueTypeCompletionItems,
+    ...typesToCompletionItems(schema, filePath, scope),
+  ];
+  if (type === "fieldtype") return completionItems;
+  return [...fieldLabelCompletionItems, ...completionItems];
 }
 
+function typesToCompletionItems(
+  schema: Schema,
+  filePath: string,
+  scope: `.${string}`,
+): lsp.CompletionItem[] {
+  const resolveTypePathFn = getResolveTypePathFn(schema, filePath);
+  const resolveTypePath = (type: string) => resolveTypePathFn(type, scope);
+  return Object.entries(schema.types).map(([_typePath, type]) => {
+    const typePath = _typePath as `.${string}`;
+    const kind = (type.kind === "message")
+      ? CompletionItemKind.Class
+      : CompletionItemKind.Enum;
+    const label = typePath.split(".").pop()!;
+    const item: lsp.CompletionItem = { label, kind };
+    return (
+      tryCandidate(() => label) ||
+      tryCandidate(() =>
+        typePath.slice(getLongestCommonTypePath(typePath, scope).length + 1)
+      ) ||
+      tryCandidate(() => typePath.slice(1)) ||
+      { ...item, insertText: typePath, detail: typePath }
+    );
+    function tryCandidate(get: () => string): lsp.CompletionItem | undefined {
+      const candidate = get();
+      if (resolveTypePath(candidate) !== typePath) return;
+      return { ...item, insertText: candidate, detail: candidate };
+    }
+  });
+}
+
+const scalarValueTypeCompletionItems: lsp.CompletionItem[] = scalarValueTypes
+  .map((label) => ({ label, kind: CompletionItemKind.Keyword }));
+
+const fieldLabels = ["required", "optional", "repeated"];
+const fieldLabelCompletionItems: lsp.CompletionItem[] = fieldLabels.map(
+  (label) => ({ label, kind: CompletionItemKind.Keyword }),
+);
+
+type CompletionType = "fieldlabel-or-fieldtype" | "fieldlabel" | "fieldtype";
 function getCompletionType(
   { ast }: ParseResult,
   offset: number,
-): CompletionType {
-  let result: CompletionType = CompletionType.Uninitialized;
+): CompletionType | undefined {
+  let result: CompletionType | undefined;
   const visitor: Visitor = {
     ...defaultVisitor,
     visitMalformedField(_visitor, node) {
       if (offset < node.start || offset > node.end + 1) return;
-      result = CompletionType.FieldName;
+      result = "fieldlabel-or-fieldtype";
+      if (node.fieldLabel) result = "fieldtype";
+      const fieldTypeString = stringifyType(node.fieldType);
+      const becomingAFieldLabel = fieldLabels.some(
+        (fieldLabel) => fieldLabel.startsWith(fieldTypeString),
+      );
+      if (becomingAFieldLabel) result = "fieldlabel";
     },
   };
   visitor.visitProto(visitor, ast);
   return result;
+}
+
+function getLongestCommonTypePath(
+  a: `.${string}`,
+  b: `.${string}`,
+): `.${string}` {
+  const _a = a.slice(1).split(".");
+  const _b = b.slice(1).split(".");
+  const commonLength = Math.min(_a.length, _b.length);
+  for (let i = 0; i < commonLength; ++i) {
+    if (_a[i] !== _b[i]) return `.${_a.slice(0, i).join(".")}`;
+  }
+  return `.${_a.slice(0, commonLength).join(".")}`;
 }
 
 type Scope = `.${string}`;
