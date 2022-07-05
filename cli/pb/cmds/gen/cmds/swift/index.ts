@@ -110,11 +110,8 @@ export default new Command()
       }),
     );
     function filterFilePath(filePath: string) {
-      const flag = options.includePath
-        ? includePaths.some((path) => filePath.startsWith(path))
-        : true;
-      return options.excludePath && flag
-        ? !excludePaths.some((path) => filePath.startsWith(path))
-        : flag;
+      return (!options.includePath ||
+        includePaths.some((path) => filePath.startsWith(path))) &&
+        !excludePaths.some((path) => filePath.startsWith(path));
     }
   });
