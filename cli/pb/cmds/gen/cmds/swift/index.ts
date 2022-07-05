@@ -110,7 +110,7 @@ export default new Command()
       }),
     );
     function filterFilePath(filePath: string) {
-      let flag = options.includePath
+      const flag = options.includePath
         ? includePaths.some((path) => filePath.startsWith(path))
         : true;
       return options.excludePath && flag
