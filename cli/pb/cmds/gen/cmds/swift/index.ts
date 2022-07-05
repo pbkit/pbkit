@@ -86,9 +86,6 @@ export default new Command()
       ...protoFiles,
     ];
     const schema = await build({ loader, files });
-    if (options.includePath && options.excludePath) {
-      throw new Error("--include-path and --exclude-path are exclusive.");
-    }
     const typePaths = Object.entries(schema.types).filter(([_, value]) =>
       filterFilePath(value.filePath)
     ).map(([typePath]) => typePath as `.${string}`);
@@ -113,12 +110,11 @@ export default new Command()
       }),
     );
     function filterFilePath(filePath: string) {
-      if (options.includePath) {
-        return includePaths.some((path) => filePath.startsWith(path));
-      }
-      if (options.excludePath) {
-        return !excludePaths.some((path) => filePath.startsWith(path));
-      }
-      return true;
+      let flag = options.includePath
+        ? includePaths.some((path) => filePath.startsWith(path))
+        : true;
+      return options.excludePath && flag
+        ? !excludePaths.some((path) => filePath.startsWith(path))
+        : flag;
     }
   });
