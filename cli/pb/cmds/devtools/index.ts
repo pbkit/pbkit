@@ -4,7 +4,8 @@ import {
   disassembleZip,
   File,
   serveZipFiles,
-} from "https://deno.land/x/zipland@v0.0.5/mod.ts";
+} from "https://deno.land/x/zipland@v0.0.6/mod.ts";
+import { open } from "../../../../misc/browser.ts";
 
 interface Options {
   port: number;
@@ -58,10 +59,12 @@ command
         }
       }
       if (!zip) throw new Deno.errors.NotFound();
-      return serveZipFiles(req, zip, { fsRoot: "webview" });
+      return serveZipFiles(req, zip);
     }, {
       port,
     });
+    console.log(`Listening on http://localhost:${port}/`);
+    open(`http://localhost:${port}/index.html`);
   });
 export default command;
 
@@ -86,7 +89,7 @@ function createFile(arrayBuffer: ArrayBuffer): File {
   let pointer = 0;
   return {
     read(p) {
-      p.set(u8s.subarray(pointer, p.length));
+      p.set(u8s.subarray(pointer, pointer += p.length));
       return Promise.resolve(p.length);
     },
     seek(offset, whence) {
@@ -101,7 +104,7 @@ function createFile(arrayBuffer: ArrayBuffer): File {
           break;
         }
         case Deno.SeekMode.End: {
-          next -= offset;
+          next = u8s.byteLength + offset;
           break;
         }
       }
@@ -109,7 +112,7 @@ function createFile(arrayBuffer: ArrayBuffer): File {
     },
     stat() {
       return Promise.resolve({
-        size: u8s.length,
+        size: u8s.byteLength,
       });
     },
   };
