@@ -23,9 +23,7 @@ command
     "--webview-zip-url <url:string>",
     "Specify zip url for pbkit devtools webview",
   )
-  .description(
-    "Start pbkit devtools server",
-  )
+  .description("Start pbkit devtools server")
   .arguments("[port:number]")
   .action(async (options: Options, port: number = 0) => {
     const { webviewZipUrl } = options;
