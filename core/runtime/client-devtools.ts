@@ -50,14 +50,13 @@ function createDevtoolsConfig(): DevtoolsConfig {
 export interface WrapRpcClientImplConfig<TMetadata, THeader, TTrailer> {
   rpcClientImpl: RpcClientImpl<TMetadata, THeader, TTrailer>;
   devtoolsConfig: DevtoolsConfig;
-  hostname: string;
   tags: string[];
 }
 export function wrapRpcClientImpl<TMetadata, THeader, TTrailer>(
   config: WrapRpcClientImplConfig<TMetadata, THeader, TTrailer>,
 ): RpcClientImpl<TMetadata, THeader, TTrailer> {
   return function devtoolsRpcClientImpl(methodDescriptor) {
-    const { rpcClientImpl, devtoolsConfig, hostname, tags } = config;
+    const { rpcClientImpl, devtoolsConfig, tags } = config;
     const rpcMethodImpl = rpcClientImpl(methodDescriptor);
     return function devtoolsRpcMethodImpl(req, metadata) {
       const configId = devtoolsConfig.configId;
