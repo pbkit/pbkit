@@ -4,7 +4,7 @@ import {
   disassembleZip,
   File,
   serveZipFiles,
-} from "https://deno.land/x/zipland@v0.0.6/mod.ts";
+} from "https://deno.land/x/zipland@v0.0.7/mod.ts";
 import { open } from "../../../../misc/browser.ts";
 
 interface Options {
@@ -64,7 +64,7 @@ command
       port,
     });
     console.log(`Listening on http://localhost:${port}/`);
-    open(`http://localhost:${port}/index.html`);
+    open(`http://localhost:${port}/`);
   });
 export default command;
 
