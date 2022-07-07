@@ -35,6 +35,9 @@ command
         "https://github.com/pbkit/pbkit-devtools/releases/download/v0.0.8/standalone-webview.zip",
     );
     const zip = await disassembleZip(file);
+    if (!zip) {
+      throw new Error("Failed to disassemble zip file.");
+    }
     const listener = Deno.listen({ port, transport: "tcp" });
     const handler: Handler = createHandler(channel, zip);
     const server = new Server({ handler });
@@ -48,7 +51,7 @@ export default command;
 
 function createHandler(
   channel: EventEmitter<{ message: string }>,
-  zip: ZipFiles | null,
+  zip: ZipFiles,
 ): Handler {
   return async (req) => {
     const pathname = new URL(req.url).pathname;
@@ -76,9 +79,6 @@ function createHandler(
           headers: { "content-type": "text/event-stream" },
         });
       }
-    }
-    if (!zip) {
-      throw new Deno.errors.NotFound();
     }
     return serveZipFiles(req, zip);
   };
