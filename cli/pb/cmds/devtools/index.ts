@@ -35,9 +35,7 @@ command
         "https://github.com/pbkit/pbkit-devtools/releases/download/v0.0.8/standalone-webview.zip",
     );
     const zip = await disassembleZip(file);
-    if (!zip) {
-      throw new Error("Failed to disassemble zip file.");
-    }
+    if (!zip) throw new Error("Failed to read zip file.");
     const listener = Deno.listen({ port, transport: "tcp" });
     new Server({ handler: createHandler(channel, zip) }).serve(listener);
     const addr = listener.addr as Deno.NetAddr;
