@@ -39,9 +39,7 @@ command
       throw new Error("Failed to disassemble zip file.");
     }
     const listener = Deno.listen({ port, transport: "tcp" });
-    const handler: Handler = createHandler(channel, zip);
-    const server = new Server({ handler });
-    server.serve(listener);
+    new Server({ handler: createHandler(channel, zip) }).serve(listener);
     const addr = listener.addr as Deno.NetAddr;
     const url = `http://${addr.hostname}:${addr.port}`;
     console.error(`Listening on ${url}`);
