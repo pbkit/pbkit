@@ -1,7 +1,21 @@
 import type { RpcClientImpl } from "./rpc.ts";
-import { createEventEmitter, EventEmitter } from "./async/event-emitter.ts";
+import {
+  createEventEmitter,
+  EventEmitter,
+  Off,
+} from "./async/event-emitter.ts";
 
 export const devtoolsKey = "@pbkit/devtools";
+
+export function registerRemoteDevtools(host: string): Off {
+  return getDevtoolsConfig().on("*", (event, type) => {
+    fetch(`${host}/send`, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify({ event, type }),
+    });
+  });
+}
 
 export function getDevtoolsConfig(): DevtoolsConfig {
   const global = globalThis as any;
