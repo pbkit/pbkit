@@ -14,24 +14,24 @@ import {
 import { open } from "../../../../misc/browser.ts";
 
 interface Options {
-  webviewPath?: string;
+  webviewZipUrl?: string;
 }
 
 const command = new Command();
 command
   .option(
-    "--webview-path <path:string>",
-    "Specify path for pbkit devtools webview",
+    "--webview-zip-url <url:string>",
+    "Specify zip url for pbkit devtools webview",
   )
   .description(
     "Start pbkit devtools server",
   )
   .arguments("[port:number]")
   .action(async (options: Options, port: number = 0) => {
-    const { webviewPath } = options;
+    const { webviewZipUrl } = options;
     const channel = createEventEmitter<{ message: string }>();
     const file = await download(
-      webviewPath ??
+      webviewZipUrl ??
         "https://github.com/pbkit/pbkit-devtools/releases/download/v0.0.8/standalone-webview.zip",
     );
     const zip = await disassembleZip(file);
