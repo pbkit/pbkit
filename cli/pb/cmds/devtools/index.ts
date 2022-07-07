@@ -1,24 +1,24 @@
-import { serve } from "https://deno.land/std@0.136.0/http/mod.ts";
+import { Handler, Server } from "https://deno.land/std@0.136.0/http/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import {
   disassembleZip,
   File,
   serveZipFiles,
+  ZipFiles,
 } from "https://deno.land/x/zipland@v0.0.7/mod.ts";
+import {
+  createEventEmitter,
+  EventEmitter,
+  Off,
+} from "../../../../core/runtime/async/event-emitter.ts";
 import { open } from "../../../../misc/browser.ts";
 
 interface Options {
-  port: number;
   webviewPath?: string;
 }
 
 const command = new Command();
 command
-  .option(
-    "-p, --port <port:number>",
-    "Port for pbkit devtools server to listen on",
-    { default: 8099 },
-  )
   .option(
     "--webview-path <path:string>",
     "Specify path for pbkit devtools webview",
@@ -26,53 +26,62 @@ command
   .description(
     "Start pbkit devtools server",
   )
-  .action(async (options: Options) => {
-    const { port, webviewPath } = options;
-    const channel = createChannel();
+  .arguments("[port:number]")
+  .action(async (options: Options, port: number = 0) => {
+    const { webviewPath } = options;
+    const channel = createEventEmitter<{ message: string }>();
     const file = await download(
       webviewPath ??
-        "https://github.com/pbkit/pbkit-devtools/releases/download/v0.0.7/standalone-webview.zip",
+        "https://github.com/pbkit/pbkit-devtools/releases/download/v0.0.8/standalone-webview.zip",
     );
     const zip = await disassembleZip(file);
-    serve(async (req) => {
-      const pathname = new URL(req.url).pathname;
-      switch (pathname) {
-        case "/send": {
-          channel.sender.postMessage(await req.text());
-          return new Response("good", { status: 200 });
-        }
-        case "/connect": {
-          const stream = new ReadableStream({
-            start(controller) {
-              channel.receiver.onmessage = function (message: MessageEvent) {
-                const body = `data: ${message.data}\n\n`;
-                controller.enqueue(body);
-              };
-            },
-            cancel() {
-              channel.receiver.close();
-            },
-          });
-          return new Response(stream.pipeThrough(new TextEncoderStream()), {
-            headers: { "content-type": "text/event-stream" },
-          });
-        }
-      }
-      if (!zip) throw new Deno.errors.NotFound();
-      return serveZipFiles(req, zip);
-    }, {
-      port,
-    });
-    console.log(`Listening on http://localhost:${port}/`);
-    open(`http://localhost:${port}/`);
+    const listener = Deno.listen({ port, transport: "tcp" });
+    const handler: Handler = createHandler(channel, zip);
+    const server = new Server({ handler });
+    server.serve(listener);
+    const addr = listener.addr as Deno.NetAddr;
+    const url = `http://${addr.hostname}:${addr.port}`;
+    console.error(`Listening on ${url}`);
+    open(url);
   });
 export default command;
 
-function createChannel() {
-  const channel = new MessageChannel();
-  channel.port1.start();
-  channel.port2.start();
-  return { sender: channel.port1, receiver: channel.port2 };
+function createHandler(
+  channel: EventEmitter<{ message: string }>,
+  zip: ZipFiles | null,
+): Handler {
+  return async (req) => {
+    const pathname = new URL(req.url).pathname;
+    switch (pathname) {
+      case "/send": {
+        const message = await req.text();
+        if (message.indexOf("\n") !== -1) {
+          return new Response("Newline not allowed.", { status: 400 });
+        } else {
+          channel.emit("message", message);
+          return new Response("Ok.", { status: 200 });
+        }
+      }
+      case "/connect": {
+        let off: Off;
+        const stream = new ReadableStream({
+          start(controller) {
+            off = channel.on("message", (message) => {
+              controller.enqueue(`data: ${message}\n\n`);
+            });
+          },
+          cancel: () => off?.(),
+        });
+        return new Response(stream.pipeThrough(new TextEncoderStream()), {
+          headers: { "content-type": "text/event-stream" },
+        });
+      }
+    }
+    if (!zip) {
+      throw new Deno.errors.NotFound();
+    }
+    return serveZipFiles(req, zip);
+  };
 }
 
 async function download(url: string): Promise<File> {
