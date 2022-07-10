@@ -2,7 +2,8 @@ import {
   fromFileUrl as _fromFileUrl,
   isAbsolute,
   resolve as _resolve,
-} from "https://deno.land/std@0.147.0/path/posix.ts";
+  toFileUrl,
+} from "https://deno.land/std@0.147.0/path/mod.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {
@@ -42,7 +43,7 @@ function isFileUrl(path: string): boolean {
 }
 
 export function resolve(absolutePath: string, subPath: string = ""): string {
-  return "file://" + _resolve(fromFileUrl(absolutePath), subPath);
+  return toFileUrl(_resolve(fromFileUrl(absolutePath), subPath)).href;
 }
 
 export function fromFileUrl(path: string): string {
