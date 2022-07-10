@@ -1,9 +1,9 @@
-import { StringReader } from "https://deno.land/std@0.122.0/io/readers.ts";
-import { Buffer } from "https://deno.land/std@0.122.0/io/buffer.ts";
+import { StringReader } from "https://deno.land/std@0.147.0/io/readers.ts";
+import { Buffer } from "https://deno.land/std@0.147.0/io/buffer.ts";
 import {
   assertEquals,
   assertRejects,
-} from "https://deno.land/std@0.122.0/testing/asserts.ts";
+} from "https://deno.land/std@0.147.0/testing/asserts.ts";
 
 import {
   readBaseProtocolMessages,

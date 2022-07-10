@@ -1,8 +1,8 @@
-import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
+import { walk } from "https://deno.land/std@0.147.0/fs/walk.ts";
 import {
   fromFileUrl,
   relative,
-} from "https://deno.land/std@0.122.0/path/mod.ts";
+} from "https://deno.land/std@0.147.0/path/mod.ts";
 
 export default async function expandEntryPaths(
   entryPaths: string[],

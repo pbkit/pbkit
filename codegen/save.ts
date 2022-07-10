@@ -1,6 +1,6 @@
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
-import { copy } from "https://deno.land/std@0.122.0/io/util.ts";
-import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
+import { copy } from "https://deno.land/std@0.147.0/io/util.ts";
+import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
 import { AsyncCodeEntry, CodeEntry } from "./index.ts";
 
 export default async function save(

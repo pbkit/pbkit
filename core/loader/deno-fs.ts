@@ -2,7 +2,7 @@ import {
   fromFileUrl as _fromFileUrl,
   isAbsolute,
   resolve as _resolve,
-} from "https://deno.land/std@0.122.0/path/posix.ts";
+} from "https://deno.land/std@0.147.0/path/posix.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {

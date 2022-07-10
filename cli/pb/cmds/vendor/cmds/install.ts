@@ -1,6 +1,6 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
 import { iterFiles } from "../../../../../misc/archive/zip.ts";
 import { getVendorDir } from "../../../config.ts";
 import downloadRepoAndExtractProtoFiles from "../downloadRepoAndExtractProtoFiles.ts";

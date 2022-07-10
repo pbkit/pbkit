@@ -1,4 +1,4 @@
-import { StringReader } from "https://deno.land/std@0.122.0/io/mod.ts";
+import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { join } from "../path.ts";

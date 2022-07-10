@@ -1,5 +1,5 @@
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
 import JSZip from "https://dev.jspm.io/jszip@3.5.0";
 import { stripComponent } from "./index.ts";
 

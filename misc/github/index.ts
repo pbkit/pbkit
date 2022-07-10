@@ -1,6 +1,6 @@
-import * as path from "https://deno.land/std@0.122.0/path/mod.ts";
-import { parse as parseYaml } from "https://deno.land/std@0.122.0/encoding/yaml.ts";
-import { red } from "https://deno.land/std@0.122.0/fmt/colors.ts";
+import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
+import { parse as parseYaml } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
+import { red } from "https://deno.land/std@0.147.0/fmt/colors.ts";
 import { getHomeDir } from "../env.ts";
 
 export interface GhHosts {

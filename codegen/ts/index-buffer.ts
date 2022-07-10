@@ -1,4 +1,4 @@
-import { StringReader } from "https://deno.land/std@0.122.0/io/mod.ts";
+import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
 import { CodeEntry } from "../index.ts";
 import * as directory from "../../misc/directory.ts";
 

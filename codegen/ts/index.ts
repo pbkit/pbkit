@@ -1,4 +1,4 @@
-import { parse as parseYaml } from "https://deno.land/std@0.122.0/encoding/yaml.ts";
+import { parse as parseYaml } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
 import { build, BuildConfig } from "../../core/schema/builder.ts";
 import { Schema } from "../../core/schema/model.ts";
 import { replaceTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";

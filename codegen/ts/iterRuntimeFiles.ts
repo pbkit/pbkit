@@ -1,5 +1,5 @@
-import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
-import { relative, resolve } from "https://deno.land/std@0.122.0/path/mod.ts";
+import { walk } from "https://deno.land/std@0.147.0/fs/walk.ts";
+import { relative, resolve } from "https://deno.land/std@0.147.0/path/mod.ts";
 import { getAutoClosingFileReader } from "../../misc/file.ts";
 import { CodeEntry } from "../index.ts";
 

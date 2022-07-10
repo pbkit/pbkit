@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.122.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.147.0/testing/asserts.ts";
 import * as ast from "../ast/index.ts";
 import { evalStrLit } from "./eval-ast-constant.ts";
 

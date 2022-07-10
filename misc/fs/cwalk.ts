@@ -1,9 +1,6 @@
-import { join } from "https://deno.land/std@0.122.0/path/mod.ts";
-import {
-  _createWalkEntry,
-  walk,
-  WalkEntry,
-} from "https://deno.land/std@0.122.0/fs/walk.ts";
+import { join } from "https://deno.land/std@0.147.0/path/mod.ts";
+import { walk, WalkEntry } from "https://deno.land/std@0.147.0/fs/walk.ts";
+import { createWalkEntry } from "https://deno.land/std@0.147.0/fs/_util.ts";
 import { createEventBuffer } from "../../core/runtime/async/event-buffer.ts";
 
 const concurrentWalk: typeof walk = function (root, {
@@ -21,7 +18,7 @@ const concurrentWalk: typeof walk = function (root, {
     try {
       if (maxDepth < 0) return;
       if (includeDirs && include(root, exts, match, skip)) {
-        promises.push(_createWalkEntry(root).then(eventBuffer.push));
+        promises.push(createWalkEntry(root).then(eventBuffer.push));
       }
       if (maxDepth < 1 || !include(root, undefined, undefined, skip)) return;
       for await (const entry of Deno.readDir(root)) {

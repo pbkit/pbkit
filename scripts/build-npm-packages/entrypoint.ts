@@ -1,4 +1,4 @@
-import { emptyDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
+import { emptyDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
 import buildCore from "./buildCore.ts";
 import buildRuntime from "./buildRuntime.ts";
 import buildPbCli from "./buildPbCli.ts";

@@ -1,12 +1,12 @@
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
-import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
+import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
+import { walk } from "https://deno.land/std@0.147.0/fs/walk.ts";
 import * as esbuild from "https://deno.land/x/esbuild@v0.14.43/mod.js";
 import { denoPlugin } from "https://deno.land/x/esbuild_deno_loader@0.5.0/mod.ts";
 import {
   dirname,
   join,
   relative,
-} from "https://deno.land/std@0.122.0/path/mod.ts";
+} from "https://deno.land/std@0.147.0/path/mod.ts";
 import { replaceTsFileExtensionInImportStatement } from "../../misc/compat/tsc.ts";
 import { zip } from "../../misc/archive/zip.ts";
 import { getVendorDir } from "../../cli/pb/config.ts";

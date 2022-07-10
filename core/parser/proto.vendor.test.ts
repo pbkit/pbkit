@@ -1,4 +1,4 @@
-import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
+import { walk } from "https://deno.land/std@0.147.0/fs/walk.ts";
 import { getVendorDir } from "../../cli/pb/config.ts";
 import { parse } from "./proto.ts";
 

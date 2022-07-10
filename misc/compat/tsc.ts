@@ -2,7 +2,7 @@ import {
   readAll,
   readAllSync,
   StringReader,
-} from "https://deno.land/std@0.122.0/io/mod.ts";
+} from "https://deno.land/std@0.147.0/io/mod.ts";
 
 export function replaceTsFileExtensionInImportStatement(
   code: string,

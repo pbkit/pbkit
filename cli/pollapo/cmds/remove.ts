@@ -1,5 +1,5 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { stringify } from "https://deno.land/std@0.122.0/encoding/yaml.ts";
+import { stringify } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
 import {
   loadPollapoYml,
   parseDepFrag,

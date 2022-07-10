@@ -1,6 +1,6 @@
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
-import { walk } from "https://deno.land/std@0.122.0/fs/walk.ts";
-import { dirname, join } from "https://deno.land/std@0.122.0/path/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
+import { walk } from "https://deno.land/std@0.147.0/fs/walk.ts";
+import { dirname, join } from "https://deno.land/std@0.147.0/path/mod.ts";
 import { replaceTsFileExtensionInImportStatement } from "../../misc/compat/tsc.ts";
 import { BuildConfig, NameAndVersion } from "./index.ts";
 

@@ -1,4 +1,4 @@
-import { ensureDir } from "https://deno.land/std@0.122.0/fs/mod.ts";
+import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
 import { build } from "https://deno.land/x/dnt@0.22.0/mod.ts";
 import { BuildConfig, NameAndVersion } from "./index.ts";
 

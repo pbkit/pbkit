@@ -1,4 +1,4 @@
-import { StringReader } from "https://deno.land/std@0.122.0/io/readers.ts";
+import { StringReader } from "https://deno.land/std@0.147.0/io/readers.ts";
 import { Rpc, Schema, Service } from "../../core/schema/model.ts";
 import { CodeEntry } from "../index.ts";
 import { join } from "../path.ts";

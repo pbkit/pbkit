@@ -1,8 +1,8 @@
 import {
   BufReader,
   BufWriter,
-} from "https://deno.land/std@0.122.0/io/buffer.ts";
-import { TextProtoReader } from "https://deno.land/std@0.122.0/textproto/mod.ts";
+} from "https://deno.land/std@0.147.0/io/buffer.ts";
+import { TextProtoReader } from "https://deno.land/std@0.147.0/textproto/mod.ts";
 
 export interface BaseProtocolMessage {
   headers: Headers;

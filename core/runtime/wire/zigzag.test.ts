@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.122.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.147.0/testing/asserts.ts";
 import Long from "../Long.ts";
 import { decode, encode } from "./zigzag.ts";
 

@@ -2,7 +2,7 @@ import {
   assertPath,
   isPosixPathSeparator,
   normalizeString,
-} from "https://deno.land/std@0.122.0/path/_util.ts";
+} from "https://deno.land/std@0.147.0/path/_util.ts";
 
 export const CHAR_FORWARD_SLASH = 47;
 

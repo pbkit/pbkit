@@ -1,6 +1,6 @@
-import { copy } from "https://deno.land/std@0.122.0/bytes/mod.ts";
-import { assertEquals } from "https://deno.land/std@0.122.0/testing/asserts.ts";
-import { BufReader } from "https://deno.land/std@0.122.0/io/buffer.ts";
+import { copy } from "https://deno.land/std@0.147.0/bytes/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.147.0/testing/asserts.ts";
+import { BufReader } from "https://deno.land/std@0.147.0/io/buffer.ts";
 import { createEventBuffer } from "../core/runtime/async/event-buffer.ts";
 import { defer } from "../core/runtime/async/observer.ts";
 import { createJsonRpcConnection } from "./json-rpc.ts";
