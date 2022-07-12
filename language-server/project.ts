@@ -1,7 +1,8 @@
+import { join } from "https://deno.land/std@0.147.0/path/mod.ts";
 import { getVendorDir } from "../cli/pb/config.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 import { loadPollapoYml } from "../cli/pollapo/pollapoYml.ts";
-import { BuildConfig } from "../core/schema/builder.ts";
+import { parseBufWorkYaml } from "../compat/buf/workspace.ts";
 import { Loader } from "../core/loader/index.ts";
 import combineLoader from "../core/loader/combineLoader.ts";
 import memoizeLoader, { MemoizedLoader } from "../core/loader/memoizeLoader.ts";
@@ -15,11 +16,11 @@ import { OpenProtoManager } from "./open-proto-manager.ts";
 export interface ProjectManager {
   addProjectPath(projectPath: string): Promise<void>;
   getProjectPath(filePath: string): string | undefined;
-  getProjectEntryPaths(projectPath: string): string[];
+  getProjectEntryPaths(projectPath: string): Promise<string[]>;
+  getProjectDependencyPaths(projectPath: string): Promise<string[]>;
   getProjectProtoFiles(filePath: string): Promise<string[]>;
   getProjectLoader(projectPath?: string): Promise<MemoizedLoader>;
   createProjectLoader(projectPath?: string): Promise<MemoizedLoader>;
-  createBuildConfig(filePath: string): Promise<BuildConfig<MemoizedLoader>>;
 }
 
 export function createProjectManager(
@@ -33,18 +34,13 @@ export function createProjectManager(
     addProjectPath,
     getProjectPath,
     getProjectEntryPaths,
+    getProjectDependencyPaths,
     getProjectProtoFiles,
     async getProjectLoader(projectPath) {
       if (!projectPath) return await createProjectLoader(projectPath);
       return loaders[projectPath] ??= await createProjectLoader(projectPath);
     },
     createProjectLoader,
-    async createBuildConfig(filePath) {
-      const projectPath = getProjectPath(filePath);
-      const loader = await createProjectLoader(projectPath);
-      const files = await getProjectProtoFiles(filePath);
-      return { loader, files };
-    },
   };
   async function addProjectPath(projectPath: string): Promise<void> {
     projectPaths.push(projectPath);
@@ -53,20 +49,37 @@ export function createProjectManager(
   function getProjectPath(filePath: string): string | undefined {
     return projectPaths.find((p) => filePath.startsWith(p));
   }
-  function getProjectEntryPaths(projectPath: string): string[] {
-    return [projectPath + "/.pollapo", projectPath];
+  async function getProjectEntryPaths(projectPath: string): Promise<string[]> {
+    return [projectPath, ...await getBufWorkDirs(projectPath)];
+  }
+  async function getProjectDependencyPaths(
+    projectPath: string,
+  ): Promise<string[]> {
+    const result: string[] = [];
+    const pollapoPath = join(projectPath, ".pollapo");
+    try {
+      if ((await Deno.lstat(pollapoPath)).isDirectory) result.push(pollapoPath);
+    } catch {}
+    return result;
   }
   async function getProjectProtoFiles(filePath: string): Promise<string[]> {
     const projectPath = getProjectPath(filePath);
-    return projectPath
-      ? await expandEntryPaths(getProjectEntryPaths(projectPath))
-      : [filePath];
+    if (projectPath) {
+      const entryPaths = await getProjectEntryPaths(projectPath);
+      return await expandEntryPaths(entryPaths);
+    } else {
+      return [filePath];
+    }
   }
   async function createProjectLoader(
     projectPath?: string,
   ): Promise<MemoizedLoader> {
     const roots = projectPath
-      ? [...getProjectEntryPaths(projectPath), ...getVendorDirs()]
+      ? [
+        ...await getProjectEntryPaths(projectPath),
+        ...await getProjectDependencyPaths(projectPath),
+        ...getVendorDirs(),
+      ]
       : getVendorDirs();
     const repo = projectPath && await getPollapoRepo(projectPath);
     return memoizeLoader(combineLoader(
@@ -78,7 +91,26 @@ export function createProjectManager(
 }
 
 function getVendorDirs() {
-  return [getVendorDir(), "/usr/local/include"];
+  if (Deno.build.os === "windows") {
+    return [getVendorDir()];
+  } else {
+    return [getVendorDir(), "/usr/local/include"];
+  }
+}
+
+async function getBufWorkDirs(
+  projectPath: string,
+): Promise<string[]> {
+  try {
+    const bufWorkYamlPath = resolve(projectPath, "buf.work.yaml");
+    const bufWorkYaml = parseBufWorkYaml(
+      await Deno.readTextFile(fromFileUrl(bufWorkYamlPath)),
+    );
+    return bufWorkYaml.directories.map(
+      (directory) => resolve(projectPath, String(directory)),
+    );
+  } catch {}
+  return [];
 }
 
 async function getPollapoRepo(
