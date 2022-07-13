@@ -16,7 +16,6 @@ jobs:
           cd $TARGET_DIR
             sed -i -e "s|url \".*\"|url \"${{ github.event.release.tarball_url }}\"|"\
                    -e "s|sha256 \".*\"|sha256 \"$(curl -sL "${{ github.event.release.tarball_url }}" | sha256sum | cut -d ' ' -f 1)\"|" Formula/pbkit.rb
-            mv Formula/tmp.rb Formula/pbkit.rb
             git add .
             git commit -m "Bump pbkit to ${{ github.event.release.tag_name }}"
             git push origin main
