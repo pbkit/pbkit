@@ -10,12 +10,17 @@ jobs:
       - uses: actions/checkout@v2
       - run: |-
           TARGET_DIR=$(mktemp -d)
+          CHECKSUM=$(curl -sL "${{ github.event.release.tarball_url }}" | sha256sum | cut -d ' ' -f 1)
+          if [ -z $CHECKSUM ]]
+          then
+            exit 1
+          fi
           git config --global user.email jong@chan.moe
           git config --global user.name pbkit
           git clone --single-branch --branch main --depth 1 "https://disjukr:${{ secrets.GH_PAT_FOR_HOMEBREW_TAP }}@github.com/pbkit/homebrew-tap.git" $TARGET_DIR
           cd $TARGET_DIR
             sed -i -e "s|url \".*\"|url \"${{ github.event.release.tarball_url }}\"|"\
-                   -e "s|sha256 \".*\"|sha256 \"$(curl -sL "${{ github.event.release.tarball_url }}" | sha256sum | cut -d ' ' -f 1)\"|" Formula/pbkit.rb
+                   -e "s|sha256 \".*\"|sha256 \"$CHECKSUM\"|" Formula/pbkit.rb
             git add .
             git commit -m "Bump pbkit to ${{ github.event.release.tag_name }}"
             git push origin main
