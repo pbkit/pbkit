@@ -29,3 +29,19 @@ jobs:
         working-directory: tmp/npm/pb-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: |-
+          TARGET_DIR=$(mktemp -d)
+          TAP_DIR=/usr/local/Homebrew/Library/Taps/pbkit/homebrew-tap
+          git config --global user.email jong@chan.moe
+          git config --global user.name pbkit bot
+          git clone --single-branch --branch main --depth 1 "https://disjukr:${{ secrets.GH_PAT_FOR_HOMEBREW_TAP }}@github.com/pbkit/homebrew-tap.git" $TARGET_DIR
+          cd $TARGET_DIR
+            mkdir -p $TAP_DIR
+            ln -s "$PWD" "$TAP_DIR"
+            VERSION_OLD=$(brew info --json pbkit | jq -r first.versions.stable)
+            brew bump-formula-pr --dry-run --write --url "${{ github.event.release.tarball_url }}" --sha256 $(curl -sL "${{ github.event.release.tarball_url }}" | sha256sum | cut -d ' ' -f 1) pbkit
+            VERSION_NEW=$(brew info --json pbkit | jq -r first.versions.stable)
+            git add .
+            git commit -m "Bump pbkit from $VERSION_OLD to $VERSION_NEW"
+            git push origin main
+          cd -
