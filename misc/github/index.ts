@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
+import { resolve } from "https://deno.land/std@0.147.0/path/mod.ts";
 import { parse as parseYaml } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
 import { red } from "https://deno.land/std@0.147.0/fmt/colors.ts";
 import { getHomeDir } from "../env.ts";
@@ -13,13 +13,18 @@ export interface GhHost {
   git_protocol: "ssh" | "https";
 }
 
+// https://github.com/cli/cli/blob/58cb773/internal/config/config_file.go#L24-L28
 export function getDefaultGhConfigPath(configFile = ".") {
-  // TODO: https://github.com/cli/cli/blob/58cb773/internal/config/config_file.go#L24-L28
-  if (Deno.build.os === "windows" && Deno.env.get("AppData")) {
-    return path.join(Deno.env.get("AppData")!, "GitHub CLI", configFile);
-  } else {
-    return path.resolve(getHomeDir(), ".config", "gh", configFile);
+  let env: string | undefined;
+  env = Deno.env.get("GH_CONFIG_DIR");
+  if (env) return resolve(env, configFile);
+  env = Deno.env.get("XDG_CONFIG_HOME");
+  if (env) return resolve(env, "gh", configFile);
+  if (Deno.build.os === "windows") {
+    env = Deno.env.get("AppData");
+    if (env) return resolve(env, "GitHub CLI", configFile);
   }
+  return resolve(getHomeDir(), ".config", "gh", configFile);
 }
 
 export async function readGhHosts(
