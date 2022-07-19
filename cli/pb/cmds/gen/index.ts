@@ -4,6 +4,7 @@ import protocPlugin from "./cmds/protoc-plugin.ts";
 import schema from "./cmds/schema.ts";
 import swift from "./cmds/swift/index.ts";
 import ts from "./cmds/ts/index.ts";
+import wrpKt from "./cmds/wrp-kt/index.ts";
 
 const command = new Command();
 command
@@ -16,5 +17,6 @@ command
   .command("protoc-plugin", protocPlugin)
   .command("schema", schema)
   .command("swift", swift)
-  .command("ts", ts);
+  .command("ts", ts)
+  .command("wrp-kt", wrpKt);
 export default command;
