@@ -9,7 +9,8 @@ import expandEntryPaths from "../../expandEntryPaths.ts";
 interface Options {
   entryPath?: string[];
   protoPath?: string[];
-  service: string[];
+  host: string[];
+  guest: string[];
   outDir: string;
 }
 
@@ -26,9 +27,14 @@ export default new Command()
     { collect: true },
   )
   .option(
-    "--service <type-path:string>",
-    "The service to generate.",
-    { collect: true, required: true, requiredValue: true },
+    "--host <type-path:string>",
+    "The host service to generate.",
+    { collect: true, requiredValue: true },
+  )
+  .option(
+    "--guest <type-path:string>",
+    "The guest service to generate.",
+    { collect: true, requiredValue: true },
   )
   .option(
     "-o, --out-dir <value:string>",
@@ -46,11 +52,14 @@ export default new Command()
       ...protoFiles,
     ];
     const schema = await build({ loader, files });
-    const servicePaths = options.service.map(
-      (service) => `.${service}` as const,
-    );
+    const hostServicePaths = new Set(options.host.map(toTypepath));
+    const guestServicePaths = new Set(options.guest.map(toTypepath));
     await save(
       options.outDir,
-      gen(schema, { servicePaths }),
+      gen(schema, { hostServicePaths, guestServicePaths }),
     );
   });
+
+function toTypepath(path: string): `.${string}` {
+  return `.${path}`;
+}
