@@ -1,6 +1,7 @@
 import { basename } from "https://deno.land/std@0.147.0/path/mod.ts";
 import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
 import { Rpc, RpcType, Schema, Service } from "../../core/schema/model.ts";
+import { pascalToCamel } from "../../misc/case.ts";
 import { CodeEntry } from "../index.ts";
 
 export interface GenConfig {
@@ -74,14 +75,15 @@ function getMethodSignature(schema: Schema, rpcName: string, rpc: Rpc): string {
   const { reqType, resType } = rpc;
   const reqTypeKt = rpcTypeToKt(schema, reqType);
   const resTypeKt = rpcTypeToKt(schema, resType);
+  const camelRpcName = pascalToCamel(rpcName);
   if (!reqType.stream && !resType.stream) {
-    return `suspend fun ${rpcName}(req: ${reqTypeKt}): ${resTypeKt}`;
+    return `suspend fun ${camelRpcName}(req: ${reqTypeKt}): ${resTypeKt}`;
   } else if (!reqType.stream && resType.stream) {
-    return `suspend fun ${rpcName}(req: ${reqTypeKt}): ReceiveChannel<${resTypeKt}>`;
+    return `suspend fun ${camelRpcName}(req: ${reqTypeKt}): ReceiveChannel<${resTypeKt}>`;
   } else if (reqType.stream && !resType.stream) {
-    return `suspend fun ${rpcName}(req: ReceiveChannel<${reqTypeKt}>): ${resTypeKt}`;
+    return `suspend fun ${camelRpcName}(req: ReceiveChannel<${reqTypeKt}>): ${resTypeKt}`;
   } else {
-    return `suspend fun ${rpcName}(req: ReceiveChannel<${reqTypeKt}>): ReceiveChannel<${resTypeKt}>`;
+    return `suspend fun ${camelRpcName}(req: ReceiveChannel<${reqTypeKt}>): ReceiveChannel<${resTypeKt}>`;
   }
 }
 
@@ -172,12 +174,13 @@ function genWrpServiceServeFunction(
       const indent = "                        ";
       const { reqType, resType } = rpc;
       const reqTypeKt = rpcTypeToKt(schema, reqType);
+      const camelRpcName = pascalToCamel(rpcName);
       if (!reqType.stream && !resType.stream) {
         return [
           `${getMethodString(rpcName)} -> {\n`,
           "    for (byteArray in request.req) {\n",
           `        val req = ${reqTypeKt}.parseFrom(byteArray)\n`,
-          `        val res = impl.${rpcName}(req).toByteArray()\n`,
+          `        val res = impl.${camelRpcName}(req).toByteArray()\n`,
           "        request.sendPayload(res)\n",
           "        request.req.close()\n",
           "        break\n",
@@ -189,7 +192,7 @@ function genWrpServiceServeFunction(
           `${getMethodString(rpcName)} -> {\n`,
           "    for (byteArray in request.req) {\n",
           `        val req = ${reqTypeKt}.parseFrom(byteArray)\n`,
-          `        for (res in impl.${rpcName}(req)) {\n`,
+          `        for (res in impl.${camelRpcName}(req)) {\n`,
           "            request.sendPayload(res.toByteArray())\n",
           "        }\n",
           "        request.req.close()\n",
@@ -206,7 +209,7 @@ function genWrpServiceServeFunction(
           `            send(req)\n`,
           `        }\n`,
           `    }\n`,
-          `    val res = impl.${rpcName}(req).toByteArray()\n`,
+          `    val res = impl.${camelRpcName}(req).toByteArray()\n`,
           "    request.sendPayload(res)\n",
           "    req.close()\n",
           "}\n",
@@ -220,7 +223,7 @@ function genWrpServiceServeFunction(
           `            send(req)\n`,
           `        }\n`,
           `    }\n`,
-          `    for (res in impl.${rpcName}(req)) {\n`,
+          `    for (res in impl.${camelRpcName}(req)) {\n`,
           "        request.sendPayload(res.toByteArray())\n",
           "    }\n",
           "    req.close()\n",
