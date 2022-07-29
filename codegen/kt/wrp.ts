@@ -260,11 +260,38 @@ function getJavaPackage(schema: Schema, filePath: string): string {
   return String(file.options["java_package"] || file.package || "");
 }
 
+// Check where there is any type defined (message, enum, service) in the proto file that has the given class name.
+// https://github.com/protocolbuffers/protobuf/blob/a321b0/src/google/protobuf/compiler/java/name_resolver.cc#L195
 function getJavaOuterClassname(schema: Schema, filePath: string): string {
-  return String(
-    schema.files[filePath].options["java_outer_classname"] ||
-      underscoresToCamelCase(basename(filePath, ".proto"), true),
-  );
+  if (schema.files[filePath].options["java_outer_classname"]) {
+    return String(schema.files[filePath].options["java_outer_classname"]);
+  }
+  const defaultJavaOuterClassname = getDefaultJavaOuterClassname(filePath);
+  const conflict = Object.entries(schema.types).some(checkIfConflict) ||
+    Object.entries(schema.services).some(checkIfConflict);
+  if (conflict) {
+    return defaultJavaOuterClassname + "OuterClass";
+  }
+  return defaultJavaOuterClassname;
+  function checkIfConflict(
+    [typePath, { filePath: typeFilePath }]: [
+      typePath: string,
+      value: { filePath: string },
+    ],
+  ): boolean {
+    const type = typePath.split(".").pop()!;
+    if (
+      typeFilePath === filePath &&
+      defaultJavaOuterClassname.toUpperCase() === type.toUpperCase()
+    ) {
+      return true;
+    }
+    return false;
+  }
+}
+
+function getDefaultJavaOuterClassname(filePath: string): string {
+  return underscoresToCamelCase(basename(filePath, ".proto"), true);
 }
 
 // https://github.com/protocolbuffers/protobuf/blob/cc696d4/src/google/protobuf/compiler/java/helpers.cc#L173-L208
