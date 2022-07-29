@@ -42,6 +42,9 @@ export function genWrpService(
     serviceName,
     getMethodString,
   };
+  const streamIncluded = Object.values(service.rpcs).some((rpc) => {
+    return rpc.reqType.stream || rpc.resType.stream;
+  });
   return [
     `${javaPackage.replaceAll(".", "/")}/${serviceName}.kt`,
     new StringReader([
@@ -51,7 +54,9 @@ export function genWrpService(
       "import dev.pbkit.wrp.core.WrpRequest\n",
       "import dev.pbkit.wrp.core.WrpServer\n",
       "import kotlinx.coroutines.channels.Channel\n",
-      "import kotlinx.coroutines.channels.ReceiveChannel\n",
+      streamIncluded
+        ? "import kotlinx.coroutines.channels.ReceiveChannel\n"
+        : "",
       "import kotlinx.coroutines.coroutineScope\n",
       "import kotlinx.coroutines.launch\n",
       "\n",
