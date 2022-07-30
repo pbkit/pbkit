@@ -280,13 +280,8 @@ function getJavaOuterClassname(schema: Schema, filePath: string): string {
     ],
   ): boolean {
     const type = typePath.split(".").pop()!;
-    if (
-      typeFilePath === filePath &&
-      defaultJavaOuterClassname.toUpperCase() === type.toUpperCase()
-    ) {
-      return true;
-    }
-    return false;
+    return typeFilePath === filePath &&
+      defaultJavaOuterClassname.toUpperCase() === type.toUpperCase();
   }
 }
 
