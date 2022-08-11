@@ -97,6 +97,14 @@ export async function fetchTags(config: FetchTagsConfig): Promise<GhTag[]> {
   return await res.json() as GhTag[];
 }
 
+export interface FetchLatestReleaseConfig extends FetchRepoConfig {}
+export async function fetchLatestRelease(
+  config: FetchLatestReleaseConfig,
+): Promise<GhTag> {
+  const res = await fetchRepoBase(config, "/releases/latest");
+  return await res.json() as GhTag;
+}
+
 export interface FetchBranchesConfig extends FetchRepoConfig {}
 export async function fetchBranches(
   config: FetchBranchesConfig,
