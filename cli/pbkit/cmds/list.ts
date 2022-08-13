@@ -1,7 +1,7 @@
 import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
-import { compareRev, isSemver } from "../../pollapo/rev.ts";
+import { isSemver } from "../../pollapo/rev.ts";
 import { fetchTags } from "../../../misc/github/index.ts";
-import { getVersionsDir } from "../config.ts";
+import getLocalVersions from "../getLocalVersions.ts";
 
 interface Options {
   remote?: boolean;
@@ -16,14 +16,7 @@ export default new Command()
         const tags = await fetchTags({ user: "pbkit", repo: "pbkit" });
         return tags.map((tag) => tag.name.trim()).filter(isSemver);
       } else {
-        try {
-          const items = Array.from(Deno.readDirSync(getVersionsDir()));
-          return items.filter(
-            ({ name, isDirectory }) => isDirectory && isSemver(name),
-          ).map((item) => item.name).sort(compareRev).reverse();
-        } catch {
-          return [];
-        }
+        return getLocalVersions();
       }
     })();
     if (versions.length < 1 && !options.remote) {
