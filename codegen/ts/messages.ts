@@ -303,8 +303,8 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
   if (message.fields.length) typeBodyCodes.push(getFieldsCode());
   if (message.oneofFields.length) typeBodyCodes.push(getOneofsCode());
   return getTypeDefCodeBase(config, (typeName) => {
-    if (!typeBodyCodes.length) return `  export interface ${typeName} {}\n`;
-    return `  export interface ${typeName} {\n${typeBodyCodes.join("")}  }\n`;
+    if (!typeBodyCodes.length) return `  export type ${typeName} = {}\n`;
+    return `  export type ${typeName} = {\n${typeBodyCodes.join("")}  }\n`;
   });
   function getFieldsCode() {
     return message.fields.map((field) => {
