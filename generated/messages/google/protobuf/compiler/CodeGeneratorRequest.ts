@@ -32,7 +32,7 @@ import {
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf.compiler {
-  export interface CodeGeneratorRequest {
+  export type CodeGeneratorRequest = {
     fileToGenerate: string[];
     parameter?: string;
     compilerVersion?: Version;

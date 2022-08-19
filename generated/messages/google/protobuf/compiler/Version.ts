@@ -17,7 +17,7 @@ import {
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf.compiler {
-  export interface Version {
+  export type Version = {
     major?: number;
     minor?: number;
     patch?: number;

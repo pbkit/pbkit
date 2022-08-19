@@ -25,7 +25,7 @@ import {
 } from "../../../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf.compiler.CodeGeneratorResponse {
-  export interface File {
+  export type File = {
     name?: string;
     insertionPoint?: string;
     content?: string;

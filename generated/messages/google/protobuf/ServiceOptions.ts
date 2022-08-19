@@ -25,7 +25,7 @@ import {
 } from "../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf {
-  export interface ServiceOptions {
+  export type ServiceOptions = {
     deprecated?: boolean;
     uninterpretedOption: UninterpretedOption[];
   }

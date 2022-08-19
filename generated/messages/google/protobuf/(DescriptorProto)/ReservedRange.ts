@@ -17,7 +17,7 @@ import {
 } from "../../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf.DescriptorProto {
-  export interface ReservedRange {
+  export type ReservedRange = {
     start?: number;
     end?: number;
   }

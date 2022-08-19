@@ -25,7 +25,7 @@ import {
 } from "../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf {
-  export interface MessageOptions {
+  export type MessageOptions = {
     messageSetWireFormat?: boolean;
     noStandardDescriptorAccessor?: boolean;
     deprecated?: boolean;

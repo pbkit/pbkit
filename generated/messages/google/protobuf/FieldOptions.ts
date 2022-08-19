@@ -38,7 +38,7 @@ import {
 } from "../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf {
-  export interface FieldOptions {
+  export type FieldOptions = {
     ctype?: CType;
     packed?: boolean;
     deprecated?: boolean;

@@ -25,7 +25,7 @@ import {
 } from "../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf {
-  export interface EnumValueDescriptorProto {
+  export type EnumValueDescriptorProto = {
     name?: string;
     number?: number;
     options?: EnumValueOptions;
