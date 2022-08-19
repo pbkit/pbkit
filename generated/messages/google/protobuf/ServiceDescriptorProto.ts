@@ -32,7 +32,7 @@ import {
 } from "../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf {
-  export interface ServiceDescriptorProto {
+  export type ServiceDescriptorProto = {
     name?: string;
     method: MethodDescriptorProto[];
     options?: ServiceOptions;

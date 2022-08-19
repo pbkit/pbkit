@@ -61,7 +61,7 @@ import {
 } from "../../../../core/runtime/wire/deserialize.ts";
 
 export declare namespace $.google.protobuf {
-  export interface FileDescriptorProto {
+  export type FileDescriptorProto = {
     name?: string;
     package?: string;
     dependency: string[];
@@ -74,6 +74,7 @@ export declare namespace $.google.protobuf {
     publicDependency: number[];
     weakDependency: number[];
     syntax?: string;
+    edition?: string;
   }
 }
 export type Type = $.google.protobuf.FileDescriptorProto;
@@ -92,6 +93,7 @@ export function getDefaultValue(): $.google.protobuf.FileDescriptorProto {
     publicDependency: [],
     weakDependency: [],
     syntax: "",
+    edition: "",
   };
 }
 
@@ -116,6 +118,7 @@ export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknow
   result.publicDependency = value.publicDependency.map(value => tsValueToJsonValueFns.int32(value));
   result.weakDependency = value.weakDependency.map(value => tsValueToJsonValueFns.int32(value));
   if (value.syntax !== undefined) result.syntax = tsValueToJsonValueFns.string(value.syntax);
+  if (value.edition !== undefined) result.edition = tsValueToJsonValueFns.string(value.edition);
   return result;
 }
 
@@ -133,6 +136,7 @@ export function decodeJson(value: any): $.google.protobuf.FileDescriptorProto {
   result.publicDependency = value.publicDependency?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   result.weakDependency = value.weakDependency?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   if (value.syntax !== undefined) result.syntax = jsonValueToTsValueFns.string(value.syntax);
+  if (value.edition !== undefined) result.edition = jsonValueToTsValueFns.string(value.edition);
   return result;
 }
 
@@ -201,6 +205,12 @@ export function encodeBinary(value: $.google.protobuf.FileDescriptorProto): Uint
     const tsValue = value.syntax;
     result.push(
       [12, tsValueToWireValueFns.string(tsValue)],
+    );
+  }
+  if (value.edition !== undefined) {
+    const tsValue = value.edition;
+    result.push(
+      [13, tsValueToWireValueFns.string(tsValue)],
     );
   }
   return serialize(result);
@@ -286,6 +296,13 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.FileDescript
     const value = wireValueToTsValueFns.string(wireValue);
     if (value === undefined) break field;
     result.syntax = value;
+  }
+  field: {
+    const wireValue = wireFields.get(13);
+    if (wireValue === undefined) break field;
+    const value = wireValueToTsValueFns.string(wireValue);
+    if (value === undefined) break field;
+    result.edition = value;
   }
   return result;
 }
