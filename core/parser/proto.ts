@@ -1300,7 +1300,7 @@ function acceptGroup(
     return;
   }
   skipWsAndComments(parser);
-  const keyword = acceptKeyword(parser, "group");
+  const keyword = acceptKeyword(parser, /^group\b/);
   if (!keyword) {
     parser.loc = loc;
     return;
