@@ -153,3 +153,12 @@ Deno.test("#172", () => {
     }
   `);
 });
+
+Deno.test("#246", () => {
+  parse(String.raw`
+    message group_info {}
+    message Foo {
+      repeated group_info bar = 1;
+    }
+  `);
+});
