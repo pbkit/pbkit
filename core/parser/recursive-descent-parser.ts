@@ -3,7 +3,9 @@ import {
   EventEmitter,
 } from "../runtime/async/event-emitter.ts";
 
-export interface RecursiveDescentParser<T = unknown> extends EventEmitter<T> {
+export interface RecursiveDescentParser<
+  T extends Record<string, any> = any,
+> extends EventEmitter<T> {
   readonly input: string;
   loc: number;
   offsetToColRow: (offset: number) => ColRow;
@@ -33,7 +35,9 @@ export interface Token extends Span {
 }
 export type Pattern = string | RegExp | typeof eof;
 export const eof = Symbol("<EOF>");
-export function createRecursiveDescentParser<T = unknown>(
+export function createRecursiveDescentParser<
+  T extends Record<string, any> = any,
+>(
   input: string,
   config?: Partial<RecursiveDescentParserConfig>,
 ): RecursiveDescentParser<T> {
