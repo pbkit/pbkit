@@ -1,8 +1,8 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import {
   Select,
   SelectValueOptions,
-} from "https://deno.land/x/cliffy@v0.19.5/prompt/select.ts";
+} from "https://deno.land/x/cliffy@v0.25.2/prompt/select.ts";
 import { stringify } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
 import { cyan, yellow } from "https://deno.land/std@0.147.0/fmt/colors.ts";
 import {
@@ -24,7 +24,7 @@ import {
   PollapoYmlNotFoundError,
   sanitizeDeps,
 } from "../pollapoYml.ts";
-import { Confirm } from "https://deno.land/x/cliffy@v0.19.5/prompt/confirm.ts";
+import { Confirm } from "https://deno.land/x/cliffy@v0.25.2/prompt/confirm.ts";
 import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
 
 interface Options {

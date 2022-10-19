@@ -1,5 +1,5 @@
 import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import resolveRev from "../resolveRev.ts";
 import download from "../download.ts";
 import isDownloaded from "../isDownloaded.ts";
