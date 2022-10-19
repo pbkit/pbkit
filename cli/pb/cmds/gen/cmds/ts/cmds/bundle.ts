@@ -9,12 +9,10 @@ import iterRuntimeFiles from "../../../../../../../codegen/ts/iterRuntimeFiles.t
 import { getVendorDir } from "../../../../../config.ts";
 import expandEntryPaths from "../../../expandEntryPaths.ts";
 
-interface Options {}
-
 export default new Command()
   .arguments("<config-yaml:string>")
   .description("Bundle multiple build unit.")
-  .action(async (_: Options, configYaml: string) => {
+  .action(async (_: void, configYaml: string) => {
     const configYamlText = await Deno.readTextFile(configYaml);
     const [outDir, bundleConfig] = await yamlTextToBundleConfig(
       configYamlText,

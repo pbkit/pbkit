@@ -43,7 +43,7 @@ export default new Command()
   .option("-o, --out-dir <value:string>", "Out directory", { default: "out" })
   .option("--option <value:string>", "Option for plugin")
   .description("Generate codes using protoc plugin.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

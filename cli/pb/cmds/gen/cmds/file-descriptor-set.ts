@@ -29,7 +29,7 @@ export default new Command()
   )
   .option("--text", "Output in text format.")
   .description("Generate FileDescriptorSet.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

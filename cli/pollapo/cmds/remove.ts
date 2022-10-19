@@ -19,7 +19,7 @@ export default new Command()
   .option("-C, --config <value:string>", "Pollapo config", {
     default: "pollapo.yml",
   })
-  .action(async (options: Options, targets: string[]) => {
+  .action(async (options: Options, ...targets: string[]) => {
     try {
       const pollapoYml = await loadPollapoYml(options.config);
       const pollapoYmlText = stringify(sanitizeDeps(

@@ -5,12 +5,10 @@ import getLocalVersions from "../getLocalVersions.ts";
 import { getCurrentVersion } from "../current-version.ts";
 import unuseCurrentVersion from "../unuseCurrentVersion.ts";
 
-interface Options {}
-
 export default new Command()
   .arguments("<versions...:string>")
   .description("Remove given pbkit versions.")
-  .action(async (_options: Options, versions: string[]) => {
+  .action(async (_: void, ...versions: string[]) => {
     const versionsDir = getVersionsDir();
     const localVersions = getLocalVersions();
     const currentVersion = getCurrentVersion();

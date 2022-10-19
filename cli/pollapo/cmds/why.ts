@@ -24,7 +24,7 @@ export default new Command()
       default: 3,
     },
   )
-  .action(async (options: Options, targets: string[]) => {
+  .action(async (options: Options, ...targets: string[]) => {
     try {
       const { depth } = options;
       const cacheDir = getCacheDir();

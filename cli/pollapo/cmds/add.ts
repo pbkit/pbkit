@@ -38,7 +38,7 @@ export default new Command()
   .option("-C, --config <value:string>", "Pollapo config", {
     default: "pollapo.yml",
   })
-  .action(async (options: Options, targets: string[]) => {
+  .action(async (options: Options, ...targets: string[]) => {
     try {
       await addDeps(options, targets);
     } catch (err) {

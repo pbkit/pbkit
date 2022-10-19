@@ -30,7 +30,7 @@ export default new Command()
     "The number of space characters to use as white space for indenting.",
   )
   .description("Generate pbkit style schema representation.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];
