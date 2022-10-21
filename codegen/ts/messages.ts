@@ -706,7 +706,7 @@ const getDecodeBinaryCode: GetCodeFn = ({
       ].join("");
       return [
         "  oneof: {\n",
-        `    const oneofFieldNumbers = oneofFieldNumbersMap.${tsName};\n`,
+        `    const oneofFieldNumbers = oneofFieldNumbersMap['${tsName}'];\n`,
         `    const oneofFieldNames = oneofFieldNamesMap.${tsName};\n`,
         "    const fieldNumber = wireFieldNumbers.find(v => oneofFieldNumbers.has(v));\n",
         "    if (fieldNumber == null) break oneof;\n",
