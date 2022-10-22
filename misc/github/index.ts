@@ -132,8 +132,12 @@ export class GithubNotLoggedInError extends Error {
 }
 
 export class GithubRepoNotFoundError extends Error {
-  constructor(user: string, repo: string) {
-    super(`Repository ${red(`${user}/${repo}`)} is not found.`);
+  constructor(user: string, repo: string, message: string) {
+    super(
+      `Repository ${
+        red(`${user}/${repo}`)
+      } is not found.\nResponse: ${message}`,
+    );
   }
 }
 
@@ -153,7 +157,8 @@ async function fetchRepoBase(
         throw new GithubNotLoggedInError();
       case 403:
       case 404:
-        throw new GithubRepoNotFoundError(user, repo);
+        const payload = await res.json();
+        throw new GithubRepoNotFoundError(user, repo, payload?.message);
       default:
         throw res;
     }
