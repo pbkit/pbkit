@@ -4,6 +4,7 @@ import {
   HelpCommand,
 } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
 import decode from "./cmds/decode/index.ts";
+import doc from "./cmds/doc/index.ts";
 import devtools from "./cmds/devtools/index.ts";
 import gen from "./cmds/gen/index.ts";
 import lsp from "./cmds/lsp/index.ts";
@@ -18,6 +19,7 @@ command
   })
   .command("completions", new CompletionsCommand())
   .command("decode", decode)
+  .command("doc", doc)
   .command("devtools", devtools)
   .command("gen", gen)
   .command("lsp", lsp)
