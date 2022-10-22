@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { createLoader } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import gen from "../../../../../codegen/json/index.ts";
@@ -30,7 +30,7 @@ export default new Command()
     "The number of space characters to use as white space for indenting.",
   )
   .description("Generate pbkit style schema representation.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

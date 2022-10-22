@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { stringify } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
 import {
   loadPollapoYml,
@@ -19,7 +19,7 @@ export default new Command()
   .option("-C, --config <value:string>", "Pollapo config", {
     default: "pollapo.yml",
   })
-  .action(async (options: Options, targets: string[]) => {
+  .action(async (options: Options, ...targets: string[]) => {
     try {
       const pollapoYml = await loadPollapoYml(options.config);
       const pollapoYmlText = stringify(sanitizeDeps(

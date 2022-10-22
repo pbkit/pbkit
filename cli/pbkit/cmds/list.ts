@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { isSemver } from "../../pollapo/rev.ts";
 import { fetchTags } from "../../../misc/github/index.ts";
 import getLocalVersions from "../getLocalVersions.ts";

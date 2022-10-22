@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import {
   isAbsolute,
   normalize,
@@ -70,7 +70,7 @@ export default new Command()
     "Generate service codes for wrp (webview/worker request protocol)",
   )
   .description("Generate swift library which is dependent on SwiftProtobuf.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const includePaths = (options.includePath ?? []).map((path) =>

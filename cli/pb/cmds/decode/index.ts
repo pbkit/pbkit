@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import {
   readAll,
   writeAll,
@@ -35,7 +35,7 @@ command
   .description(
     "Read a binary message of the given type from standard input and write it in text format to standard output.",
   )
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const typePath = options.type ? "." + options.type : "";
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];

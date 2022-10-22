@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { writeAll } from "https://deno.land/std@0.136.0/streams/conversion.ts";
 import { createLoader } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
@@ -29,7 +29,7 @@ export default new Command()
   )
   .option("--text", "Output in text format.")
   .description("Generate FileDescriptorSet.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

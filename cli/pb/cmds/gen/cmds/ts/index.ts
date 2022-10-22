@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";
@@ -67,7 +67,7 @@ export default new Command()
     { default: ".ts" },
   )
   .description("Generate typescript library.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

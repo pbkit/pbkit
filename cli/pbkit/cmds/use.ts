@@ -1,5 +1,5 @@
 import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import resolveRev from "../resolveRev.ts";
 import download from "../download.ts";
 import isDownloaded from "../isDownloaded.ts";
@@ -10,14 +10,12 @@ import {
 } from "../toplevel-commands.ts";
 import { setCurrentVersion } from "../current-version.ts";
 
-interface Options {}
-
 export default new Command()
   .arguments("[version:string]")
   .description(
     "Install pbkit <version> (default: latest, download if necessary).",
   )
-  .action(async (_options: Options, version: string = "latest") => {
+  .action(async (_: void, version = "latest") => {
     const rev = await resolveRev(version);
     if (!isDownloaded(rev)) await download(rev);
     await unuseCurrentVersion();

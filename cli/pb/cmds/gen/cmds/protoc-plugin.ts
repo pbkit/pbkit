@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { writeAll } from "https://deno.land/std@0.147.0/streams/conversion.ts";
 import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
 import { ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
@@ -43,7 +43,7 @@ export default new Command()
   .option("-o, --out-dir <value:string>", "Out directory", { default: "out" })
   .option("--option <value:string>", "Option for plugin")
   .description("Generate codes using protoc plugin.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";
@@ -29,12 +29,12 @@ export default new Command()
   .option(
     "--host <type-path:string>",
     "The host service to generate.",
-    { collect: true, requiredValue: true },
+    { collect: true, required: true },
   )
   .option(
     "--guest <type-path:string>",
     "The guest service to generate.",
-    { collect: true, requiredValue: true },
+    { collect: true, required: true },
   )
   .option(
     "-o, --out-dir <value:string>",
@@ -42,7 +42,7 @@ export default new Command()
     { default: "out" },
   )
   .description("Generate WRP library for Kotlin.")
-  .action(async (options: Options, protoFiles: string[] = []) => {
+  .action(async (options: Options, ...protoFiles: string[]) => {
     const entryPaths = options.entryPath ?? [];
     const protoPaths = options.protoPath ?? [];
     const roots = [...entryPaths, ...protoPaths, Deno.cwd(), getVendorDir()];

@@ -7,7 +7,7 @@ import {
 } from "https://deno.land/std@0.147.0/fmt/colors.ts";
 import { emptyDir, ensureDir } from "https://deno.land/std@0.147.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import backoff from "../misc/exponential-backoff.ts";
 import {
   getToken,
@@ -44,7 +44,7 @@ import {
   PollapoUnauthorizedError,
   validateToken,
 } from "../../../misc/github/auth.ts";
-import { Confirm } from "https://deno.land/x/cliffy@v0.19.5/prompt/confirm.ts";
+import { Confirm } from "https://deno.land/x/cliffy@v0.25.2/prompt/confirm.ts";
 
 interface Options {
   clean?: true;

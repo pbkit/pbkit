@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { createLoader } from "../../../../../../../core/loader/deno-fs.ts";
 import save from "../../../../../../../codegen/save.ts";
 import {
@@ -9,12 +9,10 @@ import iterRuntimeFiles from "../../../../../../../codegen/ts/iterRuntimeFiles.t
 import { getVendorDir } from "../../../../../config.ts";
 import expandEntryPaths from "../../../expandEntryPaths.ts";
 
-interface Options {}
-
 export default new Command()
   .arguments("<config-yaml:string>")
   .description("Bundle multiple build unit.")
-  .action(async (_: Options, configYaml: string) => {
+  .action(async (_: void, configYaml: string) => {
     const configYamlText = await Deno.readTextFile(configYaml);
     const [outDir, bundleConfig] = await yamlTextToBundleConfig(
       configYamlText,

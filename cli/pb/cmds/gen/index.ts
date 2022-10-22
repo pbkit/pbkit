@@ -1,4 +1,4 @@
-import { Command } from "https://deno.land/x/cliffy@v0.19.5/command/mod.ts";
+import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import fileDescriptorSet from "./cmds/file-descriptor-set.ts";
 import protocPlugin from "./cmds/protoc-plugin.ts";
 import schema from "./cmds/schema.ts";
