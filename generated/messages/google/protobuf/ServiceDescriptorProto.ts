@@ -42,7 +42,7 @@ export type Type = $.google.protobuf.ServiceDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.ServiceDescriptorProto {
   return {
-    name: "",
+    name: undefined,
     method: [],
     options: undefined,
   };

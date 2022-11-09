@@ -34,7 +34,7 @@ export type Type = $.google.protobuf.EnumValueOptions;
 
 export function getDefaultValue(): $.google.protobuf.EnumValueOptions {
   return {
-    deprecated: false,
+    deprecated: undefined,
     uninterpretedOption: [],
   };
 }

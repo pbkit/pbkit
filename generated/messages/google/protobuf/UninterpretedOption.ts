@@ -40,12 +40,12 @@ export type Type = $.google.protobuf.UninterpretedOption;
 export function getDefaultValue(): $.google.protobuf.UninterpretedOption {
   return {
     name: [],
-    identifierValue: "",
-    positiveIntValue: "0",
-    negativeIntValue: "0",
-    doubleValue: 0,
-    stringValue: new Uint8Array(),
-    aggregateValue: "",
+    identifierValue: undefined,
+    positiveIntValue: undefined,
+    negativeIntValue: undefined,
+    doubleValue: undefined,
+    stringValue: undefined,
+    aggregateValue: undefined,
   };
 }
 

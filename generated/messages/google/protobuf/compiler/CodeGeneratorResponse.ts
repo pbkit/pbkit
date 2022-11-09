@@ -35,8 +35,8 @@ export type Type = $.google.protobuf.compiler.CodeGeneratorResponse;
 
 export function getDefaultValue(): $.google.protobuf.compiler.CodeGeneratorResponse {
   return {
-    error: "",
-    supportedFeatures: "0",
+    error: undefined,
+    supportedFeatures: undefined,
     file: [],
   };
 }

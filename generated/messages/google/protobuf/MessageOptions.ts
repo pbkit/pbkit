@@ -37,10 +37,10 @@ export type Type = $.google.protobuf.MessageOptions;
 
 export function getDefaultValue(): $.google.protobuf.MessageOptions {
   return {
-    messageSetWireFormat: false,
-    noStandardDescriptorAccessor: false,
-    deprecated: false,
-    mapEntry: false,
+    messageSetWireFormat: undefined,
+    noStandardDescriptorAccessor: undefined,
+    deprecated: undefined,
+    mapEntry: undefined,
     uninterpretedOption: [],
   };
 }

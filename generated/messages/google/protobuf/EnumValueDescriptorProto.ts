@@ -35,8 +35,8 @@ export type Type = $.google.protobuf.EnumValueDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.EnumValueDescriptorProto {
   return {
-    name: "",
-    number: 0,
+    name: undefined,
+    number: undefined,
     options: undefined,
   };
 }

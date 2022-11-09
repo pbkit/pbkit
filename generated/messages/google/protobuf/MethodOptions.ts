@@ -43,8 +43,8 @@ export type Type = $.google.protobuf.MethodOptions;
 
 export function getDefaultValue(): $.google.protobuf.MethodOptions {
   return {
-    deprecated: false,
-    idempotencyLevel: "IDEMPOTENCY_UNKNOWN",
+    deprecated: undefined,
+    idempotencyLevel: undefined,
     uninterpretedOption: [],
   };
 }

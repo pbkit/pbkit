@@ -34,7 +34,7 @@ export type Type = $.google.protobuf.OneofDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.OneofDescriptorProto {
   return {
-    name: "",
+    name: undefined,
     options: undefined,
   };
 }

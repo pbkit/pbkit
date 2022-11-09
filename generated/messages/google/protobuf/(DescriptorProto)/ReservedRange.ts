@@ -26,8 +26,8 @@ export type Type = $.google.protobuf.DescriptorProto.ReservedRange;
 
 export function getDefaultValue(): $.google.protobuf.DescriptorProto.ReservedRange {
   return {
-    start: 0,
-    end: 0,
+    start: undefined,
+    end: undefined,
   };
 }
 

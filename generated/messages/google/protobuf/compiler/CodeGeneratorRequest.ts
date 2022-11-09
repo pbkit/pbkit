@@ -44,7 +44,7 @@ export type Type = $.google.protobuf.compiler.CodeGeneratorRequest;
 export function getDefaultValue(): $.google.protobuf.compiler.CodeGeneratorRequest {
   return {
     fileToGenerate: [],
-    parameter: "",
+    parameter: undefined,
     compilerVersion: undefined,
     protoFile: [],
   };

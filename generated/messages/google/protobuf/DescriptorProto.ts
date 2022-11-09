@@ -84,7 +84,7 @@ export type Type = $.google.protobuf.DescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.DescriptorProto {
   return {
-    name: "",
+    name: undefined,
     field: [],
     nestedType: [],
     enumType: [],

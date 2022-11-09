@@ -53,13 +53,13 @@ export type Type = $.google.protobuf.FieldOptions;
 
 export function getDefaultValue(): $.google.protobuf.FieldOptions {
   return {
-    ctype: "STRING",
-    packed: false,
-    deprecated: false,
-    lazy: false,
-    jstype: "JS_NORMAL",
-    weak: false,
-    unverifiedLazy: false,
+    ctype: undefined,
+    packed: undefined,
+    deprecated: undefined,
+    lazy: undefined,
+    jstype: undefined,
+    weak: undefined,
+    unverifiedLazy: undefined,
     uninterpretedOption: [],
   };
 }

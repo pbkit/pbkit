@@ -56,17 +56,17 @@ export type Type = $.google.protobuf.FieldDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.FieldDescriptorProto {
   return {
-    name: "",
-    extendee: "",
-    number: 0,
-    label: "UNSPECIFIED",
-    type: "UNSPECIFIED",
-    typeName: "",
-    defaultValue: "",
+    name: undefined,
+    extendee: undefined,
+    number: undefined,
+    label: undefined,
+    type: undefined,
+    typeName: undefined,
+    defaultValue: undefined,
     options: undefined,
-    oneofIndex: 0,
-    jsonName: "",
-    proto3Optional: false,
+    oneofIndex: undefined,
+    jsonName: undefined,
+    proto3Optional: undefined,
   };
 }
 

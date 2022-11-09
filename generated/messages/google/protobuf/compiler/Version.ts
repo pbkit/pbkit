@@ -28,10 +28,10 @@ export type Type = $.google.protobuf.compiler.Version;
 
 export function getDefaultValue(): $.google.protobuf.compiler.Version {
   return {
-    major: 0,
-    minor: 0,
-    patch: 0,
-    suffix: "",
+    major: undefined,
+    minor: undefined,
+    patch: undefined,
+    suffix: undefined,
   };
 }
 

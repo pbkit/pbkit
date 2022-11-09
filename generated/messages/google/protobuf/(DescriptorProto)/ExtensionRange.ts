@@ -35,8 +35,8 @@ export type Type = $.google.protobuf.DescriptorProto.ExtensionRange;
 
 export function getDefaultValue(): $.google.protobuf.DescriptorProto.ExtensionRange {
   return {
-    start: 0,
-    end: 0,
+    start: undefined,
+    end: undefined,
     options: undefined,
   };
 }
