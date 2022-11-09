@@ -40,10 +40,10 @@ export type Type = $.google.protobuf.GeneratedCodeInfo.Annotation;
 export function getDefaultValue(): $.google.protobuf.GeneratedCodeInfo.Annotation {
   return {
     path: [],
-    sourceFile: "",
-    begin: 0,
-    end: 0,
-    semantic: "NONE",
+    sourceFile: undefined,
+    begin: undefined,
+    end: undefined,
+    semantic: undefined,
   };
 }
 

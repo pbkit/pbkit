@@ -38,12 +38,12 @@ export type Type = $.google.protobuf.MethodDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.MethodDescriptorProto {
   return {
-    name: "",
-    inputType: "",
-    outputType: "",
+    name: undefined,
+    inputType: undefined,
+    outputType: undefined,
     options: undefined,
-    clientStreaming: false,
-    serverStreaming: false,
+    clientStreaming: undefined,
+    serverStreaming: undefined,
   };
 }
 

@@ -32,8 +32,8 @@ export function getDefaultValue(): $.google.protobuf.SourceCodeInfo.Location {
   return {
     path: [],
     span: [],
-    leadingComments: "",
-    trailingComments: "",
+    leadingComments: undefined,
+    trailingComments: undefined,
     leadingDetachedComments: [],
   };
 }

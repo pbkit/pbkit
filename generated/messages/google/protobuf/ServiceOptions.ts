@@ -34,7 +34,7 @@ export type Type = $.google.protobuf.ServiceOptions;
 
 export function getDefaultValue(): $.google.protobuf.ServiceOptions {
   return {
-    deprecated: false,
+    deprecated: undefined,
     uninterpretedOption: [],
   };
 }
