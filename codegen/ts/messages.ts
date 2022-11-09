@@ -338,7 +338,9 @@ const getGetDefaultValueCode: GetCodeFn = ({ typePath, message }) => {
     `export function getDefaultValue(): $${typePath} {\n`,
     "  return {\n",
     message.fields.map((field) => {
-      if (!field.default) return `    ${field.tsName}: undefined,\n`;
+      if (!field.default || field.schema.kind === "optional") {
+        return `    ${field.tsName}: undefined,\n`;
+      }
       return `    ${field.tsName}: ${field.default},\n`;
     }).join(""),
     message.oneofFields.map(
