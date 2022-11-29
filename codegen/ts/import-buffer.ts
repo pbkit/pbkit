@@ -1,5 +1,5 @@
 import { dirname, join, relative } from "../path.ts";
-import { GenRuntimeConfig } from "./index.ts";
+import { GenRuntimeConfig } from "./aot.ts";
 
 export interface AddImport {
   (from: string, item: string, as?: string): string;

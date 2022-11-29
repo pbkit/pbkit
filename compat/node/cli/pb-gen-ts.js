@@ -46,7 +46,7 @@ async function run() {
 }
 
 async function getGen() {
-  const module = "../../../codegen/ts/index.mjs";
+  const module = "../../../codegen/ts/aot.mjs";
   return (await import(module)).default;
 }
 

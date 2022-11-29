@@ -36,7 +36,7 @@ async function run() {
 }
 
 async function getBundle() {
-  const modulePath = "../../codegen/ts/index.mjs";
+  const modulePath = "../../codegen/ts/aot.mjs";
   const module = await import(modulePath);
   const { bundle, yamlTextToBundleConfig } = module;
   return { bundle, yamlTextToBundleConfig };

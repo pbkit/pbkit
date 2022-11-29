@@ -2,7 +2,7 @@ import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";
-import gen from "../../../../../../codegen/ts/index.ts";
+import gen from "../../../../../../codegen/ts/aot.ts";
 import iterRuntimeFiles from "../../../../../../codegen/ts/iterRuntimeFiles.ts";
 import { getVendorDir } from "../../../../config.ts";
 import expandEntryPaths from "../../expandEntryPaths.ts";

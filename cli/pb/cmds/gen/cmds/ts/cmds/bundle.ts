@@ -4,7 +4,7 @@ import save from "../../../../../../../codegen/save.ts";
 import {
   bundle,
   yamlTextToBundleConfig,
-} from "../../../../../../../codegen/ts/index.ts";
+} from "../../../../../../../codegen/ts/aot.ts";
 import iterRuntimeFiles from "../../../../../../../codegen/ts/iterRuntimeFiles.ts";
 import { getVendorDir } from "../../../../../config.ts";
 import expandEntryPaths from "../../../expandEntryPaths.ts";
