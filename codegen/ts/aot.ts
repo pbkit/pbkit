@@ -55,7 +55,20 @@ async function* genAll(config: GenAllConfig): AsyncGenerator<CodeEntry> {
     }
   }
   const createImportBuffer: CreateImportBufferFn = (config) => (
-    createImportBufferFn({ ...config, runtime: _runtime })
+    createImportBufferFn({
+      ...config,
+      getAddRuntimeImportFn(addInternalImport, addImport) {
+        return function addRuntimeImport(here, from, item, as) {
+          if (_runtime.packageName == null) {
+            const _from = join(_runtime.outDir, from);
+            return addInternalImport(here, _from, item, as);
+          } else {
+            const _from = join(_runtime.packageName, from);
+            return addImport(_from, item, as);
+          }
+        };
+      },
+    })
   );
   const indexBuffer = createIndexBuffer({ indexFilename });
   for await (const unit of units) {
