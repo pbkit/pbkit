@@ -1,9 +1,10 @@
+import { CodeFragment } from "./code-fragment.ts";
 import { ImportBuffer } from "./import-buffer.ts";
 import { Field } from "./messages.ts";
 
 export interface CustomTypeMapping {
   [typePath: string]: {
-    tsType: string;
+    tsType: CodeFragment;
     getWireValueToTsValueCode: GetFieldCodeFn;
     getTsValueToWireValueCode: GetFieldCodeFn;
     getTsValueToJsonValueCode: GetFieldCodeFn;
@@ -16,5 +17,5 @@ export interface GetFieldCodeFnConfig {
   field: Field;
 }
 export interface GetFieldCodeFn {
-  (config: GetFieldCodeFnConfig): string | undefined;
+  (config: GetFieldCodeFnConfig): CodeFragment | undefined;
 }

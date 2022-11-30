@@ -1,8 +1,6 @@
-import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { join } from "../path.ts";
-import { CodeEntry } from "../index.ts";
 import { GenMessagesConfig, GenServicesConfig } from "./aot.ts";
 import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
 import { IndexBuffer } from "./index-buffer.ts";
@@ -10,6 +8,14 @@ import {
   getFilePath as getMessageFilePath,
   pbTypeToTsMessageType,
 } from "./messages.ts";
+import {
+  CodeFragment,
+  Export,
+  js,
+  Module,
+  ModuleFragment,
+  ts,
+} from "./code-fragment.ts";
 
 export interface GenConfig {
   createImportBuffer: CreateImportBufferFn;
@@ -20,7 +26,7 @@ export interface GenConfig {
 export default function* gen(
   schema: Schema,
   config: GenConfig,
-): Generator<CodeEntry> {
+): Generator<Module> {
   const {
     createImportBuffer,
     indexBuffer,
@@ -69,36 +75,28 @@ function* genService({
   createImportBuffer,
   messages,
   services,
-}: GenServiceConfig): Generator<CodeEntry> {
+}: GenServiceConfig): Generator<Module> {
   const filePath = getFilePath(typePath, services);
   const importBuffer = createImportBuffer({ reservedNames });
-  const serviceTypeDefCode = getServiceTypeDefCode({
-    filePath,
-    importBuffer,
-    service: type,
-    messages,
-  });
-  const methodDescriptorsCode = getMethodDescriptorsCode({
-    filePath,
-    typePath,
-    importBuffer,
-    service: type,
-    messages,
-  });
-  const createServiceClientCode = getCreateServiceClientCode({
-    filePath,
-    importBuffer,
-    service: type,
-  });
-  yield [
-    filePath,
-    new StringReader([
-      importBuffer.getCode() + "\n",
-      serviceTypeDefCode + "\n",
-      methodDescriptorsCode + "\n",
-      createServiceClientCode,
-    ].join("")),
-  ];
+  yield new Module(filePath, importBuffer)
+    .add(getServiceTypeDefCode({
+      filePath,
+      importBuffer,
+      service: type,
+      messages,
+    }))
+    .add(getMethodDescriptorsCode({
+      filePath,
+      typePath,
+      importBuffer,
+      service: type,
+      messages,
+    }))
+    .add(getCreateServiceClientCode({
+      filePath,
+      importBuffer,
+      service: type,
+    }));
 }
 
 interface GetServiceTypeDefCodeConfig {
@@ -112,7 +110,7 @@ function getServiceTypeDefCode({
   importBuffer,
   messages,
   service,
-}: GetServiceTypeDefCodeConfig) {
+}: GetServiceTypeDefCodeConfig): ModuleFragment[] {
   function getTsType(typePath?: string) {
     return pbTypeToTsMessageType({
       addInternalImport: importBuffer.addInternalImport,
@@ -126,7 +124,12 @@ function getServiceTypeDefCode({
     if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
     return isRes ? `Promise<${typeName}>` : typeName;
   }
-  return `export interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}\n`;
+  return [
+    new Export(
+      "Service",
+      ts`interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}`,
+    ),
+  ];
   function getRpcsCode() {
     const isServiceEmpty = Object.keys(service.rpcs).length < 1;
     if (isServiceEmpty) return "";
@@ -158,7 +161,7 @@ function getMethodDescriptorsCode({
   importBuffer,
   service,
   messages,
-}: GetMethodDescriptorsCodeConfig) {
+}: GetMethodDescriptorsCodeConfig): ModuleFragment[] {
   function getTsType(typePath?: string) {
     return pbTypeToTsMessageType({
       addInternalImport: importBuffer.addInternalImport,
@@ -168,65 +171,71 @@ function getMethodDescriptorsCode({
     });
   }
   return [
-    "export type MethodDescriptors = typeof methodDescriptors;\n",
-    "export const methodDescriptors = {\n",
-    Object.entries(service.rpcs).map(([rpcName, rpc]) => {
-      const camelRpcName = pascalToCamel(rpcName);
-      const encodeRequestBinary = importBuffer.addInternalImport(
-        filePath,
-        getMessageFilePath(rpc.reqType.typePath!, messages),
-        "encodeBinary",
-      );
-      const decodeRequestBinary = importBuffer.addInternalImport(
-        filePath,
-        getMessageFilePath(rpc.reqType.typePath!, messages),
-        "decodeBinary",
-      );
-      const encodeRequestJson = importBuffer.addInternalImport(
-        filePath,
-        getMessageFilePath(rpc.reqType.typePath!, messages),
-        "encodeJson",
-      );
-      const encodeResponseBinary = importBuffer.addInternalImport(
-        filePath,
-        getMessageFilePath(rpc.resType.typePath!, messages),
-        "encodeBinary",
-      );
-      const decodeResponseBinary = importBuffer.addInternalImport(
-        filePath,
-        getMessageFilePath(rpc.resType.typePath!, messages),
-        "decodeBinary",
-      );
-      const encodeResponseJson = importBuffer.addInternalImport(
-        filePath,
-        getMessageFilePath(rpc.resType.typePath!, messages),
-        "encodeJson",
-      );
-      return [
-        `  ${camelRpcName}: {\n`,
-        `    methodName: "${rpcName}",\n`,
-        `    service: { serviceName: "${typePath.substr(1)}" },\n`,
-        `    requestStream: ${rpc.reqType.stream ? "true" : "false"},\n`,
-        `    responseStream: ${rpc.resType.stream ? "true" : "false"},\n`,
-        `    requestType: {\n`,
-        `      serializeBinary: ${encodeRequestBinary},\n`,
-        `      deserializeBinary: ${decodeRequestBinary},\n`,
-        `      serializeJson: (value: ${
-          getTsType(rpc.reqType.typePath)
-        }) => JSON.stringify(${encodeRequestJson}(value)),\n`,
-        `    },\n`,
-        `    responseType: {\n`,
-        `      serializeBinary: ${encodeResponseBinary},\n`,
-        `      deserializeBinary: ${decodeResponseBinary},\n`,
-        `      serializeJson: (value: ${
-          getTsType(rpc.resType.typePath)
-        }) => JSON.stringify(${encodeResponseJson}(value)),\n`,
-        `    },\n`,
-        "  },\n",
-      ].join("");
-    }).join(""),
-    "} as const;\n",
-  ].join("");
+    new Export(
+      "MethodDescriptors",
+      ts`type MethodDescriptors = typeof methodDescriptors;`,
+    ),
+    new Export(
+      "methodDescriptors",
+      js([
+        js`const methodDescriptors = {\n`,
+        ...Object.entries(service.rpcs).map(([rpcName, rpc]) => {
+          const camelRpcName = pascalToCamel(rpcName);
+          const encodeRequestBinary = importBuffer.addInternalImport(
+            filePath,
+            getMessageFilePath(rpc.reqType.typePath!, messages),
+            "encodeBinary",
+          );
+          const decodeRequestBinary = importBuffer.addInternalImport(
+            filePath,
+            getMessageFilePath(rpc.reqType.typePath!, messages),
+            "decodeBinary",
+          );
+          const encodeRequestJson = importBuffer.addInternalImport(
+            filePath,
+            getMessageFilePath(rpc.reqType.typePath!, messages),
+            "encodeJson",
+          );
+          const encodeResponseBinary = importBuffer.addInternalImport(
+            filePath,
+            getMessageFilePath(rpc.resType.typePath!, messages),
+            "encodeBinary",
+          );
+          const decodeResponseBinary = importBuffer.addInternalImport(
+            filePath,
+            getMessageFilePath(rpc.resType.typePath!, messages),
+            "decodeBinary",
+          );
+          const encodeResponseJson = importBuffer.addInternalImport(
+            filePath,
+            getMessageFilePath(rpc.resType.typePath!, messages),
+            "encodeJson",
+          );
+          const reqTsType = getTsType(rpc.reqType.typePath);
+          const resTsType = getTsType(rpc.resType.typePath);
+          return js([
+            js`  ${camelRpcName}: {\n`,
+            js`    methodName: "${rpcName}",\n`,
+            js`    service: { serviceName: "${typePath.slice(1)}" },\n`,
+            js`    requestStream: ${rpc.reqType.stream ? "true" : "false"},\n`,
+            js`    responseStream: ${rpc.resType.stream ? "true" : "false"},\n`,
+            js`    requestType: {\n`,
+            js`      serializeBinary: ${encodeRequestBinary},\n`,
+            js`      deserializeBinary: ${decodeRequestBinary},\n`,
+            js`      serializeJson: (value${ts`: ${reqTsType}`}) => JSON.stringify(${encodeRequestJson}(value)),\n`,
+            js`    },\n`,
+            js`    responseType: {\n`,
+            js`      serializeBinary: ${encodeResponseBinary},\n`,
+            js`      deserializeBinary: ${decodeResponseBinary},\n`,
+            js`      serializeJson: (value${ts`: ${resTsType}`}) => JSON.stringify(${encodeResponseJson}(value)),\n`,
+            js`    },\n`,
+            js`  },\n`,
+          ]);
+        }),
+        js`}${ts` as const`};`,
+      ]),
+    ),
+  ];
 }
 
 interface GetCreateServiceClientCodeConfig {
@@ -238,43 +247,85 @@ function getCreateServiceClientCode({
   filePath,
   importBuffer,
   service,
-}: GetCreateServiceClientCodeConfig) {
+}: GetCreateServiceClientCodeConfig): ModuleFragment[] {
   const RpcClientImpl = importBuffer.addRuntimeImport(
     filePath,
     "rpc.ts",
     "RpcClientImpl",
   );
-  return `export class RpcError<TTrailer = any> extends Error {
-  constructor(public trailer: TTrailer) { super(); }
-}
-export interface CreateServiceClientConfig {
-  responseOnly?: boolean;
-  devtools?: true | { tags: string[] };
-}
-export function createServiceClient<TMetadata, THeader, TTrailer>(
-  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config?: undefined
-): Service<[] | [TMetadata], []>;
-export function createServiceClient<TMetadata, THeader, TTrailer>(
-  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly: false }
-): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;
-export function createServiceClient<TMetadata, THeader, TTrailer>(
-  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config: CreateServiceClientConfig & { responseOnly?: true }
-): Service<[] | [TMetadata], []>;
-export function createServiceClient<TMetadata, THeader, TTrailer>(
-  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,
-  config?: CreateServiceClientConfig
-): Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]> ${getCreateServiceClientBody()}
-`;
-  function getCreateServiceClientBody() {
+  return [
+    new Export(
+      "RpcError",
+      js([
+        js`class RpcError${ts`<TTrailer = any>`} extends Error {\n`,
+        ts`  trailer: Trailer;`,
+        js`  constructor(trailer${ts`: TTrailer`}) {\n`,
+        js`    super();\n`,
+        js`    this.trailer = trailer;\n`,
+        js`  }\n`,
+        js`}`,
+      ]),
+    ),
+    new Export(
+      "CreateServiceClientConfig",
+      ts([
+        ts`interface CreateServiceClientConfig {\n`,
+        ts`  responseOnly?: boolean;\n`,
+        ts`  devtools?: true | { tags: string[] };\n`,
+        ts`}`,
+      ]),
+    ),
+    new Export(
+      "createServiceClient",
+      ts([
+        ts`function createServiceClient<TMetadata, THeader, TTrailer>(\n`,
+        ts`  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,\n`,
+        ts`  config?: undefined\n`,
+        ts`): Service<[] | [TMetadata], []>;`,
+      ]),
+    ),
+    new Export(
+      "createServiceClient",
+      ts([
+        ts`function createServiceClient<TMetadata, THeader, TTrailer>(\n`,
+        ts`  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,\n`,
+        ts`  config: CreateServiceClientConfig & { responseOnly: false }\n`,
+        ts`): Service<[] | [TMetadata], [THeader, Promise<TTrailer>]>;`,
+      ]),
+    ),
+    new Export(
+      "createServiceClient",
+      ts([
+        ts`function createServiceClient<TMetadata, THeader, TTrailer>(\n`,
+        ts`  rpcClientImpl: ${RpcClientImpl}<TMetadata, THeader, TTrailer>,\n`,
+        ts`  config: CreateServiceClientConfig & { responseOnly?: true }\n`,
+        ts`): Service<[] | [TMetadata], []>;`,
+      ]),
+    ),
+    new Export(
+      "createServiceClient",
+      js([
+        js`function createServiceClient${ts`<TMetadata, THeader, TTrailer>`}(\n`,
+        js`  rpcClientImpl${ts`: ${RpcClientImpl}<TMetadata, THeader, TTrailer>`},\n`,
+        js`  config${ts`?: CreateServiceClientConfig`}\n`,
+        js`)${ts`: Service<[] | [TMetadata], [] | [THeader, Promise<TTrailer>]>`} ${getCreateServiceClientBody()}`,
+      ]),
+    ),
+    js([
+      js`function getHeaderBeforeTrailer${ts`<THeader, TTrailer>`}(\n`,
+      js`  headerPromise${ts`: Promise<THeader>`},\n`,
+      js`  trailerPromise${ts`: Promise<TTrailer>`}\n`,
+      js`)${ts`: Promise<THeader>`} {\n`,
+      js`  return Promise.race([\n`,
+      js`    headerPromise,\n`,
+      js`    trailerPromise.then(trailer => { throw new RpcError(trailer); }),\n`,
+      js`  ]);\n`,
+      js`}`,
+    ]),
+  ];
+  function getCreateServiceClientBody(): CodeFragment {
     const isServiceEmpty = Object.keys(service.rpcs).length < 1;
-    if (isServiceEmpty) {
-      return `{
-  return {};
-}`;
-    }
+    if (isServiceEmpty) return js`{\n  return {};\n}`;
     const MethodDescriptor = importBuffer.addRuntimeImport(
       filePath,
       "rpc.ts",
@@ -300,43 +351,36 @@ export function createServiceClient<TMetadata, THeader, TTrailer>(
       "client-devtools.ts",
       "getDevtoolsConfig",
     );
-    return `{
-  let _rpcClientImpl = rpcClientImpl;
-  const responseOnly = config?.responseOnly ?? true;
-  const devtools = config?.devtools ?? false;
-  if (devtools) {
-    const tags = devtools === true ? [] : devtools.tags;
-    const devtoolsConfig = ${getDevtoolsConfig}();
-    _rpcClientImpl = ${wrapRpcClientImpl}({ rpcClientImpl, devtoolsConfig, tags });
-  }
-  return Object.fromEntries(Object.entries(methodDescriptors).map(
-    ([camelRpcName, methodDescriptor]) => {
-      const { requestStream, responseStream } = methodDescriptor;
-      const rpcMethodImpl = _rpcClientImpl(methodDescriptor as ${MethodDescriptor}<any, any>);
-      const rpcMethodHandler = async (request: any, metadata?: any) => {
-        const reqAsyncGenerator = requestStream ? request : ${fromSingle}(request);
-        const rpcMethodResult = rpcMethodImpl(reqAsyncGenerator, metadata);
-        const resAsyncGenerator = rpcMethodResult[0];
-        const headerPromise = rpcMethodResult[1];
-        const trailerPromise = rpcMethodResult[2];
-        const [header, response] = await Promise.all([
-          getHeaderBeforeTrailer(headerPromise, trailerPromise),
-          responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator),
-        ]);
-        return responseOnly ? response : [response, header, trailerPromise];
-      };
-      return [camelRpcName, rpcMethodHandler];
-    }
-  )) as unknown as Service;
-}
-function getHeaderBeforeTrailer<THeader, TTrailer>(
-  headerPromise: Promise<THeader>,
-  trailerPromise: Promise<TTrailer>
-): Promise<THeader> {
-  return Promise.race([
-    headerPromise,
-    trailerPromise.then(trailer => { throw new RpcError(trailer); }),
-  ]);
-}`;
+    return js([
+      js`{\n`,
+      js`  let _rpcClientImpl = rpcClientImpl;\n`,
+      js`  const responseOnly = config?.responseOnly ?? true;\n`,
+      js`  const devtools = config?.devtools ?? false;\n`,
+      js`  if (devtools) {\n`,
+      js`    const tags = devtools === true ? [] : devtools.tags;\n`,
+      js`    const devtoolsConfig = ${getDevtoolsConfig}();\n`,
+      js`    _rpcClientImpl = ${wrapRpcClientImpl}({ rpcClientImpl, devtoolsConfig, tags });\n`,
+      js`  }\n`,
+      js`  return Object.fromEntries(Object.entries(methodDescriptors).map(\n`,
+      js`    ([camelRpcName, methodDescriptor]) => {\n`,
+      js`      const { requestStream, responseStream } = methodDescriptor;\n`,
+      js`      const rpcMethodImpl = _rpcClientImpl(methodDescriptor${ts` as ${MethodDescriptor}<any, any>`});\n`,
+      js`      const rpcMethodHandler = async (request${ts`: any`}, metadata${ts`?: any`}) => {\n`,
+      js`        const reqAsyncGenerator = requestStream ? request : ${fromSingle}(request);\n`,
+      js`        const rpcMethodResult = rpcMethodImpl(reqAsyncGenerator, metadata);\n`,
+      js`        const resAsyncGenerator = rpcMethodResult[0];\n`,
+      js`        const headerPromise = rpcMethodResult[1];\n`,
+      js`        const trailerPromise = rpcMethodResult[2];\n`,
+      js`        const [header, response] = await Promise.all([\n`,
+      js`          getHeaderBeforeTrailer(headerPromise, trailerPromise),\n`,
+      js`          responseStream ? resAsyncGenerator : ${first}(resAsyncGenerator),\n`,
+      js`        ]);\n`,
+      js`        return responseOnly ? response : [response, header, trailerPromise];\n`,
+      js`      };\n`,
+      js`      return [camelRpcName, rpcMethodHandler];\n`,
+      js`    }\n`,
+      js`  ))${ts` as unknown as Service`};\n`,
+      js`}`,
+    ]);
   }
 }

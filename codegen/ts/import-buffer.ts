@@ -11,8 +11,11 @@ export interface ImportBuffer {
   addInternalImport: AddInternalImport;
   addImport: AddImport;
   addRuntimeImport: AddInternalImport;
-  getCode(): string;
+  getTable: () => Froms;
 }
+
+export type Froms = { [from: string]: Items };
+export type Items = { [as: string]: string };
 
 export type CreateImportBufferFn = typeof createImportBuffer;
 
@@ -26,8 +29,6 @@ export interface CreateImportBufferConfig {
 export function createImportBuffer(
   config: CreateImportBufferConfig,
 ): ImportBuffer {
-  type Froms = { [from: string]: Items };
-  type Items = { [as: string]: string };
   type ConflictTable = { [as: string]: ConflictCountTable };
   type ConflictCountTable = { [fromAndItem: string]: number };
   const froms: Froms = {};
@@ -67,15 +68,7 @@ export function createImportBuffer(
     addInternalImport,
     addImport,
     addRuntimeImport,
-    getCode() {
-      return Object.entries(froms).map(([from, items]) => {
-        const itemsCode = Object.entries(items).map(([as, item]) => {
-          if (as === item) return `  ${item},\n`;
-          return `  ${item} as ${as},\n`;
-        }).join("");
-        return `import {\n${itemsCode}} from "${from}";\n`;
-      }).join("");
-    },
+    getTable: () => froms,
   };
   return importBuffer;
 }

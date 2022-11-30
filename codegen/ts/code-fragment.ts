@@ -1,3 +1,5 @@
+import { createImportBuffer, ImportBuffer } from "./import-buffer.ts";
+
 export type CodeFragmentType = "js" | "ts";
 export class CodeFragment {
   constructor(
@@ -14,29 +16,59 @@ export class CodeFragment {
 }
 
 export function js(
-  template: ArrayLike<string>,
+  template: ArrayLike<CodeFragment | string>,
   ...substitutions: (CodeFragment | string | number | boolean)[]
 ): CodeFragment {
   return new CodeFragment(
     "js",
-    interleave(
-      template,
-      substitutions.map((s) => s instanceof CodeFragment ? s : String(s)),
+    interleave(template, substitutions).map(
+      (s) => s instanceof CodeFragment ? s : String(s),
     ),
   );
 }
 
 export function ts(
-  template: ArrayLike<string>,
+  template: ArrayLike<CodeFragment | string>,
   ...substitutions: (CodeFragment | string | number | boolean)[]
 ): CodeFragment {
   return new CodeFragment(
     "ts",
-    interleave(
-      template,
-      substitutions.map((s) => s instanceof CodeFragment ? s : String(s)),
+    interleave(template, substitutions).map(
+      (s) => s instanceof CodeFragment ? s : String(s),
     ),
   );
+}
+
+export type ModuleFragment = CodeFragment | Export;
+export class Module {
+  fragments: ModuleFragment[] = [];
+  constructor(
+    public filePath: string,
+    public importBuffer: ImportBuffer = createImportBuffer({}),
+  ) {}
+  add(fragments: ModuleFragment | ModuleFragment[]) {
+    if (Array.isArray(fragments)) this.fragments.push(...fragments.flat());
+    else this.fragments.push(fragments);
+    return this;
+  }
+  code(codeFragment: CodeFragment) {
+    this.fragments.push(codeFragment);
+    return this;
+  }
+  export(name: string, codeFragment: CodeFragment) {
+    this.fragments.push(new Export(name, codeFragment));
+    return this;
+  }
+}
+
+export class Export {
+  constructor(public name: string, public codeFragment: CodeFragment) {}
+}
+
+export class DefaultExport extends Export {
+  constructor(codeFragment: CodeFragment) {
+    super("default", codeFragment);
+  }
 }
 
 function interleave<T, U>(a: ArrayLike<T>, b: ArrayLike<U>): (T | U)[] {

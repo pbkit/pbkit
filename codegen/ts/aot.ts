@@ -1,3 +1,4 @@
+import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
 import { parse as parseYaml } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
 import { build, BuildConfig } from "../../core/schema/builder.ts";
 import { Schema } from "../../core/schema/model.ts";
@@ -9,9 +10,11 @@ import genServices from "./services.ts";
 import {
   createImportBuffer as createImportBufferFn,
   CreateImportBufferFn,
+  ImportBuffer,
 } from "./import-buffer.ts";
 import { createIndexBuffer, IndexBuffer } from "./index-buffer.ts";
 import { CustomTypeMapping } from "./index.ts";
+import { Export, Module } from "./code-fragment.ts";
 
 export type GenConfig = Omit<BundleConfig, "units"> & {
   messages?: GenMessagesConfig;
@@ -95,18 +98,47 @@ async function* genBuildUnit(
     ...getWellKnownTypeMapping({ messages }),
     ..._customTypeMapping,
   };
-  yield* genMessages(schema, {
+  const messageModules = genMessages(schema, {
     createImportBuffer,
     indexBuffer,
     customTypeMapping,
     messages,
   });
-  yield* genServices(schema, {
+  for (const module of messageModules) yield moduleToCodeEntry(module);
+  const serviceModules = genServices(schema, {
     createImportBuffer,
     indexBuffer,
     messages,
     services,
   });
+  for (const module of serviceModules) yield moduleToCodeEntry(module);
+}
+function moduleToCodeEntry(module: Module): CodeEntry {
+  return [
+    module.filePath,
+    new StringReader([
+      importBufferToCode(module.importBuffer),
+      module.fragments.map((fragment) => {
+        if (fragment instanceof Export) {
+          return `export ${fragment.codeFragment.toString("ts")}\n`;
+        }
+        const code = fragment.toString("ts");
+        if (code) return `${code}\n`;
+      }).filter((x) => x).join("\n"),
+    ].join("")),
+  ];
+}
+
+function importBufferToCode(importBuffer: ImportBuffer): string {
+  const froms = importBuffer.getTable();
+  if (Object.keys(froms).length < 1) return "";
+  return Object.entries(froms).map(([from, items]) => {
+    const itemsCode = Object.entries(items).map(([as, item]) => {
+      if (as === item) return `  ${item},\n`;
+      return `  ${item} as ${as},\n`;
+    }).join("");
+    return `import {\n${itemsCode}} from "${from}";\n`;
+  }).join("") + "\n";
 }
 
 async function* filterDuplicates(
