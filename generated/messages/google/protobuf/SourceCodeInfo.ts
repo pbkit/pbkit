@@ -24,6 +24,7 @@ export declare namespace $.google.protobuf {
     location: Location[];
   }
 }
+
 export type Type = $.google.protobuf.SourceCodeInfo;
 
 export function getDefaultValue(): $.google.protobuf.SourceCodeInfo {

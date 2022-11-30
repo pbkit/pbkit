@@ -31,6 +31,7 @@ export declare namespace $.google.protobuf.DescriptorProto {
     options?: ExtensionRangeOptions;
   }
 }
+
 export type Type = $.google.protobuf.DescriptorProto.ExtensionRange;
 
 export function getDefaultValue(): $.google.protobuf.DescriptorProto.ExtensionRange {

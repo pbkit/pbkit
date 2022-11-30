@@ -39,6 +39,7 @@ export declare namespace $.google.protobuf.compiler {
     protoFile: FileDescriptorProto[];
   }
 }
+
 export type Type = $.google.protobuf.compiler.CodeGeneratorRequest;
 
 export function getDefaultValue(): $.google.protobuf.compiler.CodeGeneratorRequest {

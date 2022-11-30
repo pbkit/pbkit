@@ -24,6 +24,7 @@ export declare namespace $.google.protobuf {
     annotation: Annotation[];
   }
 }
+
 export type Type = $.google.protobuf.GeneratedCodeInfo;
 
 export function getDefaultValue(): $.google.protobuf.GeneratedCodeInfo {

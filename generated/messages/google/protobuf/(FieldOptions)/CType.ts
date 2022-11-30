@@ -4,6 +4,7 @@ export declare namespace $.google.protobuf.FieldOptions {
     | "CORD"
     | "STRING_PIECE";
 }
+
 export type Type = $.google.protobuf.FieldOptions.CType;
 
 export const num2name = {

@@ -3,6 +3,7 @@ export declare namespace $.google.protobuf.compiler.CodeGeneratorResponse {
     | "FEATURE_NONE"
     | "FEATURE_PROTO3_OPTIONAL";
 }
+
 export type Type = $.google.protobuf.compiler.CodeGeneratorResponse.Feature;
 
 export const num2name = {

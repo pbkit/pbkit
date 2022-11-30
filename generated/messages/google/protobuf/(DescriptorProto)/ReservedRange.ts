@@ -22,6 +22,7 @@ export declare namespace $.google.protobuf.DescriptorProto {
     end?: number;
   }
 }
+
 export type Type = $.google.protobuf.DescriptorProto.ReservedRange;
 
 export function getDefaultValue(): $.google.protobuf.DescriptorProto.ReservedRange {

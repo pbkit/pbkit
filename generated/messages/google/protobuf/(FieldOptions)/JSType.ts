@@ -4,6 +4,7 @@ export declare namespace $.google.protobuf.FieldOptions {
     | "JS_STRING"
     | "JS_NUMBER";
 }
+
 export type Type = $.google.protobuf.FieldOptions.JSType;
 
 export const num2name = {

@@ -77,6 +77,7 @@ export declare namespace $.google.protobuf {
     edition?: string;
   }
 }
+
 export type Type = $.google.protobuf.FileDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.FileDescriptorProto {

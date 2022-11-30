@@ -4,6 +4,7 @@ export declare namespace $.google.protobuf.MethodOptions {
     | "NO_SIDE_EFFECTS"
     | "IDEMPOTENT";
 }
+
 export type Type = $.google.protobuf.MethodOptions.IdempotencyLevel;
 
 export const num2name = {
