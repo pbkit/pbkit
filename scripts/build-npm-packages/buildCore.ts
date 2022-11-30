@@ -75,8 +75,8 @@ export default async function buildCore(config: BuildConfig) {
     await esbuild.build({
       plugins: [denoPlugin()],
       bundle: true,
-      entryPoints: [`codegen/ts/aot.ts`],
-      outfile: `${config.dist}/codegen/ts/aot.mjs`,
+      entryPoints: [`codegen/ts/index.ts`],
+      outfile: `${config.dist}/codegen/ts/index.mjs`,
       target: "node14",
       format: "esm",
     });

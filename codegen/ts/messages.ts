@@ -3,8 +3,11 @@ import * as schema from "../../core/schema/model.ts";
 import { unpackFns } from "../../core/runtime/wire/scalar.ts";
 import { ScalarValueTypePath } from "../../core/runtime/scalar.ts";
 import { join } from "../path.ts";
-import { GenMessagesConfig } from "./aot.ts";
-import { CustomTypeMapping, GetFieldCodeFn } from "./index.ts";
+import {
+  CustomTypeMapping,
+  GenMessagesConfig,
+  GetFieldCodeFn,
+} from "./index.ts";
 import {
   AddInternalImport,
   CreateImportBufferFn,

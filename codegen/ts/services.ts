@@ -1,7 +1,7 @@
 import { pascalToCamel } from "../../misc/case.ts";
 import { RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { join } from "../path.ts";
-import { GenMessagesConfig, GenServicesConfig } from "./aot.ts";
+import { GenMessagesConfig, GenServicesConfig } from "./index.ts";
 import { CreateImportBufferFn, ImportBuffer } from "./import-buffer.ts";
 import { IndexBuffer } from "./index-buffer.ts";
 import {

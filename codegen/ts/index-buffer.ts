@@ -1,10 +1,14 @@
-import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
-import { CodeEntry } from "../index.ts";
 import * as directory from "../../misc/directory.ts";
 
+export interface Index {
+  filePath: string;
+  importAllFroms: { as: string; from: string }[];
+  exportTypes: string[];
+  reExportTypes: { item: string; as: string; from: string }[];
+}
 export interface IndexBuffer {
   reExport(from: string, item: string, as: string): void;
-  [Symbol.iterator](): Generator<CodeEntry>;
+  [Symbol.iterator](): Generator<Index>;
 }
 export interface CreateIndexBufferConfig {
   indexFilename?: string;
@@ -17,9 +21,6 @@ export function createIndexBuffer(
   }
   let root: directory.Folder<Items> = directory.empty;
   const indexFilename = config?.indexFilename || "index";
-  const folderEntryToImportStmt = ([name]: [string, unknown]) => {
-    return `import * as ${name} from "./${name}/${indexFilename}.ts";\n`;
-  };
   return {
     reExport(from, item, as) {
       const path = directory.textToPath(from);
@@ -33,26 +34,19 @@ export function createIndexBuffer(
           ([name, node]) => !name.startsWith("(") && !node.value,
         );
         const files = entries.filter(([, node]) => node.value);
-        const codes = [
-          ...folders.map(folderEntryToImportStmt),
-          folders.length
-            ? `export type {\n${
-              folders.map(([name]) => `  ${name},\n`).join("")
-            }};\n`
-            : "",
-          ...files.flatMap(
+        yield {
+          filePath: [...path, `${indexFilename}.ts`].join("/"),
+          importAllFroms: folders.map(
+            ([name]) => ({ as: name, from: `./${name}/${indexFilename}.ts` }),
+          ),
+          exportTypes: folders.map(([name]) => name),
+          reExportTypes: files.flatMap(
             ([name, { value }]) =>
               Object.entries(value!).map(
-                ([item, as]) => (
-                  `export type { ${item} as ${as} } from "./${name}.ts";\n`
-                ),
+                ([item, as]) => ({ item, as, from: `./${name}.ts` }),
               ),
           ),
-        ];
-        yield [
-          [...path, `${indexFilename}.ts`].join("/"),
-          new StringReader(codes.join("")),
-        ];
+        };
       }
     },
   };

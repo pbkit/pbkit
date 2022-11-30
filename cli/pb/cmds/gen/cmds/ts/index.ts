@@ -2,7 +2,11 @@ import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";
-import gen from "../../../../../../codegen/ts/aot.ts";
+import gen, {
+  aot,
+  GenConfig,
+  replaceExts,
+} from "../../../../../../codegen/ts/index.ts";
 import iterRuntimeFiles from "../../../../../../codegen/ts/iterRuntimeFiles.ts";
 import { getVendorDir } from "../../../../config.ts";
 import expandEntryPaths from "../../expandEntryPaths.ts";
@@ -79,17 +83,27 @@ export default new Command()
     const schema = await build({ loader, files });
     const indexFilename = options.indexFilename;
     const extInImport = options.extInImport;
+    const genConfig: GenConfig = {
+      indexFilename,
+      runtime: options.runtimePackage
+        ? { type: "packageName", packageName: options.runtimePackage.trim() }
+        : { type: "outDir", outDir: options.runtimeDir.trim() },
+      messages: { outDir: options.messagesDir.trim() },
+      services: { outDir: options.servicesDir.trim() },
+    };
     await save(
       options.outDir,
-      gen(schema, {
-        indexFilename,
+      replaceExts(
+        aot({
+          modules: gen(schema, genConfig),
+          runtimeDir: (
+            genConfig.runtime?.type === "outDir" &&
+            genConfig.runtime.outDir
+          ) || undefined,
+          iterRuntimeFiles,
+        }),
         extInImport,
-        runtime: options.runtimePackage
-          ? { packageName: options.runtimePackage.trim() }
-          : { iterRuntimeFiles, outDir: options.runtimeDir.trim() },
-        messages: { outDir: options.messagesDir.trim() },
-        services: { outDir: options.servicesDir.trim() },
-      }),
+      ),
     );
   })
   .command("bundle", bundle);

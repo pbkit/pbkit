@@ -7,6 +7,7 @@ const expandEntryPaths = require("../expandEntryPaths").default;
 const save = require("../save").default;
 const { vendorZipPath } = require("../zip-path");
 const iterRuntimeFiles = require("../iterRuntimeFiles").default;
+const getCodegenModule = require("../codegen.js").default;
 
 run().catch((err) => console.error(err) && process.exit(1));
 
@@ -14,9 +15,14 @@ async function run() {
   const {
     configYaml,
   } = getCliArgs();
-  const { bundle, yamlTextToBundleConfig } = await getBundle();
+  const {
+    aot,
+    bundle,
+    replaceExts,
+    yamlTextToBundleConfig,
+  } = await getCodegenModule();
   const configYamlText = fs.readFileSync(configYaml, "utf8");
-  const [outDir, bundleConfig] = await yamlTextToBundleConfig(
+  const { outDir, bundleConfig, extInImport } = await yamlTextToBundleConfig(
     configYamlText,
     async (protoPaths, entryPaths, protoFiles) => {
       const roots = [
@@ -30,16 +36,21 @@ async function run() {
         files: [...await expandEntryPaths(entryPaths), ...protoFiles],
       };
     },
-    iterRuntimeFiles,
   );
-  await save(outDir, bundle(bundleConfig));
-}
-
-async function getBundle() {
-  const modulePath = "../../codegen/ts/aot.mjs";
-  const module = await import(modulePath);
-  const { bundle, yamlTextToBundleConfig } = module;
-  return { bundle, yamlTextToBundleConfig };
+  await save(
+    outDir,
+    replaceExts(
+      aot({
+        modules: bundle(bundleConfig),
+        runtimeDir: (
+          bundleConfig.runtime?.type === "outDir" &&
+          bundleConfig.runtime.outDir
+        ) || undefined,
+        iterRuntimeFiles,
+      }),
+      extInImport,
+    ),
+  );
 }
 
 function getCliArgs() {

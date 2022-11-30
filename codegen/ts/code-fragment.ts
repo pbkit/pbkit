@@ -41,11 +41,14 @@ export function ts(
 
 export type ModuleFragment = CodeFragment | Export;
 export class Module {
-  fragments: ModuleFragment[] = [];
+  private fragments: ModuleFragment[] = [];
   constructor(
     public filePath: string,
     public importBuffer: ImportBuffer = createImportBuffer({}),
   ) {}
+  *[Symbol.iterator](): Generator<ModuleFragment> {
+    for (const fragment of this.fragments) yield fragment;
+  }
   add(fragments: ModuleFragment | ModuleFragment[]) {
     if (Array.isArray(fragments)) this.fragments.push(...fragments.flat());
     else this.fragments.push(fragments);
