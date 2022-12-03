@@ -4,14 +4,20 @@ import evalContext from "./evalContext.ts";
 import runtimeTable from "./generated/runtime-table.ts";
 
 export interface JitConfig {
-  modules: Generator<Module>;
+  modules: Iterable<Module>;
+  /** for custom type mapping */
+  builtins?: { [filePath: string]: object };
 }
 export interface JitResult {
-  import(filePath: string): Promise<any>;
+  import(filePath: string): Promise<{ [key: string]: any }>;
   /** debugging purpose */
   _internal: { [filePath: string]: EvalModuleResult };
 }
 export default async function jit(config: JitConfig): Promise<JitResult> {
+  const prelude: { [filePath: string]: object } = {
+    ...runtimeTable,
+    ...config.builtins,
+  };
   const modules: { [filePath: string]: Module } = {};
   const evaluatedModules: { [filePath: string]: EvalModuleResult } = {};
   for (const module of config.modules) modules[module.filePath] = module;
@@ -20,9 +26,7 @@ export default async function jit(config: JitConfig): Promise<JitResult> {
     _internal: evaluatedModules,
   };
   async function importAbsolute(filePath: string): Promise<any> {
-    if (filePath.startsWith("@pbkit/runtime/")) {
-      return (runtimeTable as any)[filePath];
-    }
+    if (filePath in prelude) return prelude[filePath];
     if (filePath in evaluatedModules) return evaluatedModules[filePath].value;
     const module = modules[filePath];
     if (!module) return;
@@ -43,7 +47,7 @@ interface EvalModuleConfig {
 }
 interface EvalModuleResult {
   source: string;
-  value: any;
+  value: object;
 }
 async function evalModule(config: EvalModuleConfig): Promise<EvalModuleResult> {
   const { module } = config;

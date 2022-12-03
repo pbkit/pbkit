@@ -9,7 +9,7 @@ import { Export, Module } from "./code-fragment.ts";
 import { ImportBuffer } from "./import-buffer.ts";
 
 export interface AotConfig {
-  modules: Generator<Module>;
+  modules: Iterable<Module>;
   runtimeDir?: string;
   iterRuntimeFiles?: () => AsyncGenerator<CodeEntry>;
 }
