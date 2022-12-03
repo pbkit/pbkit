@@ -1,5 +1,5 @@
 import { dirname, join } from "../path.ts";
-import { Export, Module } from "./code-fragment.ts";
+import { Export, Module, Ref } from "./code-fragment.ts";
 import evalContext from "./evalContext.ts";
 import runtimeTable from "./generated/runtime-table.ts";
 
@@ -68,23 +68,28 @@ interface CompileConfig {
 }
 function compile(config: CompileConfig): CompileResult {
   const { module } = config;
-  const everyImports = (
-    Array.from(module.importBuffer)
-      .filter((i) => !module.importBuffer.isTypeImport(i))
-  );
-  const params = everyImports.map(({ as }) => as);
+  const { importBuffer } = module;
+  const froms = Array.from(importBuffer.froms());
+  const deps = Object.fromEntries(froms.map(
+    ({ from }, index) => [from, `__module${index}`],
+  ));
+  function renderRef(ref: Ref): string {
+    const { from, item } = importBuffer.getImportFromRef(ref)!;
+    if (item === "*") return deps[from];
+    return `${deps[from]}.${item}`;
+  }
   const body = Array.from(module).map((fragment) => {
     if (fragment instanceof Export) {
       if (fragment.codeFragment.type === "ts") return;
-      return `exports.${fragment.name} = ${
-        fragment.codeFragment.toString("js")
-      };\n`;
+      return `${
+        fragment.codeFragment.toString("js", renderRef)
+      };\nexports.${fragment.name} = ${fragment.name};\n`;
     }
-    const code = fragment.toString("js");
+    const code = fragment.toString("js", renderRef);
     if (code) return code + "\n";
   }).filter((x) => x).join("\n");
   const code = [
-    `(async function (module, ${params.join(", ")}) {`,
+    `(async function (module, ${Object.values(deps).join(", ")}) {`,
     `"use strict";`,
     `const exports = module.exports;\n`,
     body,
@@ -98,13 +103,7 @@ function compile(config: CompileConfig): CompileResult {
     code,
     module: config.moduleObject,
     async run() {
-      const args = await Promise.all(everyImports.map(
-        async ({ from, item }) => {
-          const module = await config.import(from);
-          if (item === "*") return module;
-          return module[item];
-        },
-      ));
+      const args = await Promise.all(Object.keys(deps).map(config.import));
       return await moduleFn(config.moduleObject, ...args);
     },
   };

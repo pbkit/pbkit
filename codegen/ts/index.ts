@@ -48,10 +48,9 @@ function* genAll(config: GenAllConfig): Generator<Module> {
   const _runtime = (
     runtime ?? { type: "packageName", packageName: "@pbkit/runtime" }
   );
-  const createImportBuffer: CreateImportBufferFn = (config) => (
-    createImportBufferFn({
-      ...config,
-      getAddRuntimeImportFn(addInternalImport, addImport) {
+  const createImportBuffer: CreateImportBufferFn = () => (
+    createImportBufferFn(
+      function getAddRuntimeImportFn(addInternalImport, addImport) {
         return function addRuntimeImport({ here, from, item, as, type }) {
           switch (_runtime.type) {
             case "outDir": {
@@ -74,7 +73,7 @@ function* genAll(config: GenAllConfig): Generator<Module> {
           }
         };
       },
-    })
+    )
   );
   const indexBuffer = createIndexBuffer({ indexFilename });
   for (const unit of units) {
@@ -87,7 +86,7 @@ function* genAll(config: GenAllConfig): Generator<Module> {
   }
   for (const index of indexBuffer) {
     const { filePath, importAllFroms, exportTypes, reExportTypes } = index;
-    const importBuffer = createImportBuffer({});
+    const importBuffer = createImportBuffer();
     for (const { as, from } of importAllFroms) {
       importBuffer.addInternalImport({ here: filePath, from, item: "*", as });
     }

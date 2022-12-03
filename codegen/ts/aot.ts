@@ -5,7 +5,7 @@ import { build, BuildConfig } from "../../core/schema/builder.ts";
 import { CodeEntry } from "../index.ts";
 import { join } from "../path.ts";
 import { BundleConfig } from "./index.ts";
-import { Export, Module } from "./code-fragment.ts";
+import { Export, Module, Ref } from "./code-fragment.ts";
 import { ImportBuffer } from "./import-buffer.ts";
 
 export interface AotConfig {
@@ -22,6 +22,7 @@ export default async function* aot({
     yield* joinPathPrefix(runtimeDir, iterRuntimeFiles());
   }
   for (const module of modules) {
+    module.resolveRefs();
     yield [
       module.filePath,
       new StringReader([
@@ -59,23 +60,23 @@ export async function* replaceExts(
 }
 
 function importBufferToCode(importBuffer: ImportBuffer): string {
-  const froms = importBuffer.getTable();
-  if (Object.keys(froms).length < 1) return "";
-  return Object.entries(froms).flatMap(([from, items]) => {
-    const entries = Object.entries(items);
-    const importStars = entries.filter(([, item]) => item === "*");
-    const normalImports = entries.filter(([, item]) => item !== "*");
-    const imports = importStars.map(
-      ([as]) => `import * as ${as} from "${from}";\n`,
+  const froms = Array.from(importBuffer.froms());
+  if (froms.length < 1) return "";
+  return froms.flatMap(({ from, imports }) => {
+    const entries = Array.from(imports());
+    const importStars = entries.filter(({ item }) => item === "*");
+    const normalImports = entries.filter(({ item }) => item !== "*");
+    const codes = importStars.map(
+      ({ as }) => `import * as ${as} from "${from}";\n`,
     );
     if (normalImports.length) {
-      const itemsCode = normalImports.map(([as, item]) => {
-        if (as === item) return `  ${item},\n`;
+      const itemsCode = normalImports.map(({ as, item }) => {
+        if (as.toString() === item) return `  ${item},\n`;
         return `  ${item} as ${as},\n`;
       }).join("");
-      imports.push(`import {\n${itemsCode}} from "${from}";\n`);
+      codes.push(`import {\n${itemsCode}} from "${from}";\n`);
     }
-    return imports;
+    return codes;
   }).join("") + "\n";
 }
 

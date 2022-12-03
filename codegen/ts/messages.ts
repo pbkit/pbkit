@@ -183,9 +183,7 @@ function* genMessage({
   messages,
 }: GenMessageConfig): Generator<Module> {
   const filePath = getFilePath(typePath, messages);
-  const importBuffer = createImportBuffer({
-    reservedNames: [...reservedNames, typePath.split(".").pop()!],
-  });
+  const importBuffer = createImportBuffer();
   type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
   const schemaFields = Object.entries(type.fields);
   const schemaOneofFields = schemaFields.filter(
@@ -229,7 +227,11 @@ function* genMessage({
     messages,
     customTypeMapping,
   };
-  yield new Module(filePath, importBuffer)
+  yield new Module(
+    filePath,
+    importBuffer,
+    [...reservedNames, typePath.split(".").pop()!],
+  )
     .add(getMessageTypeDefCode(getCodeConfig))
     .add(getGetDefaultValueCode(getCodeConfig))
     .add(getCreateValueCode(getCodeConfig))
@@ -1075,11 +1077,11 @@ export function pbTypeToTsMessageType({
   messages,
   here,
   typePath,
-}: PbTypeToTsMessageTypeConfig): string {
-  if (!typePath) return "unknown";
+}: PbTypeToTsMessageTypeConfig): CodeFragment {
+  if (!typePath) return ts`unknown`;
   const from = getFilePath(typePath, messages);
   const as = typePath.match(/[^.]+$/)?.[0]!;
-  return addInternalImport({ here, from, item: "Type", as, type: true });
+  return ts([addInternalImport({ here, from, item: "Type", as, type: true })]);
 }
 
 export interface PbTypeToTsTypeConfig {

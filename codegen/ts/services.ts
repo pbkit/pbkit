@@ -77,8 +77,8 @@ function* genService({
   services,
 }: GenServiceConfig): Generator<Module> {
   const filePath = getFilePath(typePath, services);
-  const importBuffer = createImportBuffer({ reservedNames });
-  yield new Module(filePath, importBuffer)
+  const importBuffer = createImportBuffer();
+  yield new Module(filePath, importBuffer, reservedNames)
     .add(getServiceTypeDefCode({
       filePath,
       importBuffer,
@@ -111,7 +111,7 @@ function getServiceTypeDefCode({
   messages,
   service,
 }: GetServiceTypeDefCodeConfig): ModuleFragment[] {
-  function getTsType(typePath?: string) {
+  function getTsType(typePath?: string): CodeFragment {
     return pbTypeToTsMessageType({
       addInternalImport: importBuffer.addInternalImport,
       messages,
@@ -119,10 +119,10 @@ function getServiceTypeDefCode({
       typePath,
     });
   }
-  function getTsRpcType(rpcType: RpcType, isRes?: boolean): string {
+  function getTsRpcType(rpcType: RpcType, isRes?: boolean): CodeFragment {
     const typeName = getTsType(rpcType.typePath);
-    if (rpcType.stream) return `AsyncGenerator<${typeName}>`;
-    return isRes ? `Promise<${typeName}>` : typeName;
+    if (rpcType.stream) return ts`AsyncGenerator<${typeName}>`;
+    return isRes ? ts`Promise<${typeName}>` : typeName;
   }
   return [
     new Export(
@@ -130,22 +130,24 @@ function getServiceTypeDefCode({
       ts`interface Service<TReqArgs extends any[] = [], TResArgs extends any[] = []> {\n${getRpcsCode()}}`,
     ),
   ];
-  function getRpcsCode() {
+  function getRpcsCode(): CodeFragment {
     const isServiceEmpty = Object.keys(service.rpcs).length < 1;
-    if (isServiceEmpty) return "";
+    if (isServiceEmpty) return ts``;
     const RpcReturnType = importBuffer.addRuntimeImport({
       here: filePath,
       from: "rpc.ts",
       item: "RpcReturnType",
       type: true,
     });
-    return Object.entries(service.rpcs).map(([rpcName, rpc]) => {
-      const reqType = getTsRpcType(rpc.reqType);
-      const resType = getTsRpcType(rpc.resType, true);
-      return `  ${
-        pascalToCamel(rpcName)
-      }(request: ${reqType}, ...args: TReqArgs): ${RpcReturnType}<${resType}, TResArgs>;\n`;
-    }).join("");
+    return ts(
+      Object.entries(service.rpcs).map(([rpcName, rpc]) => {
+        const reqType = getTsRpcType(rpc.reqType);
+        const resType = getTsRpcType(rpc.resType, true);
+        return ts`  ${
+          pascalToCamel(rpcName)
+        }(request: ${reqType}, ...args: TReqArgs): ${RpcReturnType}<${resType}, TResArgs>;\n`;
+      }),
+    );
   }
 }
 

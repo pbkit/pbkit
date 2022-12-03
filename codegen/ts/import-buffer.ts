@@ -1,4 +1,5 @@
 import { dirname, relative } from "../path.ts";
+import { Ref } from "./code-fragment.ts";
 
 export interface AddImportConfig {
   from: string;
@@ -6,51 +7,41 @@ export interface AddImportConfig {
   as?: string;
   type?: boolean;
 }
-export type AddImport = (config: AddImportConfig) => string;
+export type AddImport = (config: AddImportConfig) => Ref;
 export interface AddInternalImportConfig extends AddImportConfig {
   here: string;
 }
-export type AddInternalImport = (config: AddInternalImportConfig) => string;
+export type AddInternalImport = (config: AddInternalImportConfig) => Ref;
 
-export interface Import {
+export interface ImportTriple {
   from: string;
   item: string;
-  as: string;
+  as: Ref;
 }
 export interface ImportBuffer {
   addInternalImport: AddInternalImport;
   addImport: AddImport;
   addRuntimeImport: AddInternalImport;
-  getTable: () => Froms;
-  isTypeImport: ({ from, item, as }: Import) => boolean;
-  [Symbol.iterator](): Generator<Import>;
+  isTypeImport: (ref: Ref) => boolean;
+  getImportFromRef: (ref: Ref) => ImportTriple | undefined;
+  imports(): Generator<ImportTriple>;
+  froms(): Generator<{ from: string; imports(): Generator<ImportTriple> }>;
 }
-
-export type Froms = { [from: string]: Items };
-export type Items = { [as: string]: string };
 
 export type CreateImportBufferFn = typeof createImportBuffer;
 
-export interface CreateImportBufferConfig {
-  reservedNames?: string[];
+export function createImportBuffer(
   getAddRuntimeImportFn?: (
     addInternalImport: AddInternalImport,
     addImport: AddImport,
-  ) => AddInternalImport;
-}
-export function createImportBuffer(
-  config: CreateImportBufferConfig,
+  ) => AddInternalImport,
 ): ImportBuffer {
-  type ConflictTable = { [as: string]: ConflictCountTable };
-  type ConflictCountTable = { [fromAndItem: string]: number };
+  type Froms = { [from: string]: Items };
+  type Items = { [item: string]: Ref };
   type TypeTable = { [fromAndItemAndAs: string]: boolean };
   const froms: Froms = {};
-  const conflictTable: ConflictTable = {};
   const typeTable: TypeTable = {};
-  const reservedNames = config.reservedNames ?? [];
-  for (const reservedName of reservedNames) {
-    conflictTable[reservedName] = { "": 0 };
-  }
+  const refTable: Map<Ref, ImportTriple> = new Map();
   const addInternalImport: AddInternalImport = (
     { here, from, item, as, type },
   ) => {
@@ -60,23 +51,14 @@ export function createImportBuffer(
   };
   const addImport: AddImport = ({ from, item, as, type }) => {
     const _as = as ?? item;
-    const fromAndItem = `${from},${item}`;
-    const items = froms[from] = froms[from] ?? {};
-    const conflictCountTable = conflictTable[_as] = conflictTable[_as] ?? {};
-    let conflictCount: number;
-    if (fromAndItem in conflictCountTable) {
-      conflictCount = conflictCountTable[fromAndItem];
-    } else {
-      conflictCount = Object.keys(conflictCountTable).length;
-      conflictCountTable[fromAndItem] = conflictCount;
-    }
-    const __as = conflictCount ? `${_as}_${conflictCount}` : _as;
-    items[__as] = item;
-    typeTable[`${from},${item},${__as}`] = Boolean(type);
-    return __as;
+    const items = froms[from] ??= {};
+    const ref = items[item] ??= new Ref(_as);
+    refTable.set(ref, { from, item, as: ref });
+    typeTable[`${from},${item},${_as}`] = Boolean(type);
+    return ref;
   };
   const addRuntimeImport: AddInternalImport = (
-    config.getAddRuntimeImportFn?.(
+    getAddRuntimeImportFn?.(
       addInternalImport,
       addImport,
     ) ?? addInternalImport
@@ -85,14 +67,27 @@ export function createImportBuffer(
     addInternalImport,
     addImport,
     addRuntimeImport,
-    getTable: () => froms,
-    isTypeImport: ({ from, item, as }) =>
-      Boolean(typeTable[`${from},${item},${as}`]),
-    *[Symbol.iterator]() {
-      for (const [from, items] of Object.entries(froms)) {
-        for (const [as, item] of Object.entries(items)) {
-          yield { from, item, as };
-        }
+    isTypeImport(ref) {
+      const triple = refTable.get(ref)!;
+      const { from, item, as } = triple;
+      return Boolean(typeTable[`${from},${item},${as.preferredName}`]);
+    },
+    getImportFromRef(ref) {
+      return refTable.get(ref);
+    },
+    *imports() {
+      for (const ref of refTable.keys()) yield refTable.get(ref)!;
+    },
+    *froms() {
+      for (const [from, _items] of Object.entries(froms)) {
+        yield {
+          from,
+          *imports() {
+            for (const [item, as] of Object.entries(_items)) {
+              yield { from, item, as };
+            }
+          },
+        };
       }
     },
   };
