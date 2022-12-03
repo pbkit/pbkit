@@ -133,11 +133,12 @@ function getServiceTypeDefCode({
   function getRpcsCode() {
     const isServiceEmpty = Object.keys(service.rpcs).length < 1;
     if (isServiceEmpty) return "";
-    const RpcReturnType = importBuffer.addRuntimeImport(
-      filePath,
-      "rpc.ts",
-      "RpcReturnType",
-    );
+    const RpcReturnType = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "rpc.ts",
+      item: "RpcReturnType",
+      type: true,
+    });
     return Object.entries(service.rpcs).map(([rpcName, rpc]) => {
       const reqType = getTsRpcType(rpc.reqType);
       const resType = getTsRpcType(rpc.resType, true);
@@ -181,36 +182,36 @@ function getMethodDescriptorsCode({
         js`const methodDescriptors = {\n`,
         ...Object.entries(service.rpcs).map(([rpcName, rpc]) => {
           const camelRpcName = pascalToCamel(rpcName);
-          const encodeRequestBinary = importBuffer.addInternalImport(
-            filePath,
-            getMessageFilePath(rpc.reqType.typePath!, messages),
-            "encodeBinary",
-          );
-          const decodeRequestBinary = importBuffer.addInternalImport(
-            filePath,
-            getMessageFilePath(rpc.reqType.typePath!, messages),
-            "decodeBinary",
-          );
-          const encodeRequestJson = importBuffer.addInternalImport(
-            filePath,
-            getMessageFilePath(rpc.reqType.typePath!, messages),
-            "encodeJson",
-          );
-          const encodeResponseBinary = importBuffer.addInternalImport(
-            filePath,
-            getMessageFilePath(rpc.resType.typePath!, messages),
-            "encodeBinary",
-          );
-          const decodeResponseBinary = importBuffer.addInternalImport(
-            filePath,
-            getMessageFilePath(rpc.resType.typePath!, messages),
-            "decodeBinary",
-          );
-          const encodeResponseJson = importBuffer.addInternalImport(
-            filePath,
-            getMessageFilePath(rpc.resType.typePath!, messages),
-            "encodeJson",
-          );
+          const encodeRequestBinary = importBuffer.addInternalImport({
+            here: filePath,
+            from: getMessageFilePath(rpc.reqType.typePath!, messages),
+            item: "encodeBinary",
+          });
+          const decodeRequestBinary = importBuffer.addInternalImport({
+            here: filePath,
+            from: getMessageFilePath(rpc.reqType.typePath!, messages),
+            item: "decodeBinary",
+          });
+          const encodeRequestJson = importBuffer.addInternalImport({
+            here: filePath,
+            from: getMessageFilePath(rpc.reqType.typePath!, messages),
+            item: "encodeJson",
+          });
+          const encodeResponseBinary = importBuffer.addInternalImport({
+            here: filePath,
+            from: getMessageFilePath(rpc.resType.typePath!, messages),
+            item: "encodeBinary",
+          });
+          const decodeResponseBinary = importBuffer.addInternalImport({
+            here: filePath,
+            from: getMessageFilePath(rpc.resType.typePath!, messages),
+            item: "decodeBinary",
+          });
+          const encodeResponseJson = importBuffer.addInternalImport({
+            here: filePath,
+            from: getMessageFilePath(rpc.resType.typePath!, messages),
+            item: "encodeJson",
+          });
           const reqTsType = getTsType(rpc.reqType.typePath);
           const resTsType = getTsType(rpc.resType.typePath);
           return js([
@@ -248,11 +249,12 @@ function getCreateServiceClientCode({
   importBuffer,
   service,
 }: GetCreateServiceClientCodeConfig): ModuleFragment[] {
-  const RpcClientImpl = importBuffer.addRuntimeImport(
-    filePath,
-    "rpc.ts",
-    "RpcClientImpl",
-  );
+  const RpcClientImpl = importBuffer.addRuntimeImport({
+    here: filePath,
+    from: "rpc.ts",
+    item: "RpcClientImpl",
+    type: true,
+  });
   return [
     new Export(
       "RpcError",
@@ -326,31 +328,32 @@ function getCreateServiceClientCode({
   function getCreateServiceClientBody(): CodeFragment {
     const isServiceEmpty = Object.keys(service.rpcs).length < 1;
     if (isServiceEmpty) return js`{\n  return {};\n}`;
-    const MethodDescriptor = importBuffer.addRuntimeImport(
-      filePath,
-      "rpc.ts",
-      "MethodDescriptor",
-    );
-    const fromSingle = importBuffer.addRuntimeImport(
-      filePath,
-      "async/async-generator.ts",
-      "fromSingle",
-    );
-    const first = importBuffer.addRuntimeImport(
-      filePath,
-      "async/async-generator.ts",
-      "first",
-    );
-    const wrapRpcClientImpl = importBuffer.addRuntimeImport(
-      filePath,
-      "client-devtools.ts",
-      "wrapRpcClientImpl",
-    );
-    const getDevtoolsConfig = importBuffer.addRuntimeImport(
-      filePath,
-      "client-devtools.ts",
-      "getDevtoolsConfig",
-    );
+    const MethodDescriptor = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "rpc.ts",
+      item: "MethodDescriptor",
+      type: true,
+    });
+    const fromSingle = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "async/async-generator.ts",
+      item: "fromSingle",
+    });
+    const first = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "async/async-generator.ts",
+      item: "first",
+    });
+    const wrapRpcClientImpl = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "client-devtools.ts",
+      item: "wrapRpcClientImpl",
+    });
+    const getDevtoolsConfig = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "client-devtools.ts",
+      item: "getDevtoolsConfig",
+    });
     return js([
       js`{\n`,
       js`  let _rpcClientImpl = rpcClientImpl;\n`,

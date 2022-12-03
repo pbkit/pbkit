@@ -481,17 +481,18 @@ const getEncodeBinaryCode: GetCodeFn = ({
   messages,
   customTypeMapping,
 }) => {
-  const WireMessage = importBuffer.addRuntimeImport(
-    filePath,
-    "wire/index.ts",
-    "WireMessage",
-  );
-  const serialize = importBuffer.addRuntimeImport(
-    filePath,
-    "wire/serialize.ts",
-    "default",
-    "serialize",
-  );
+  const WireMessage = importBuffer.addRuntimeImport({
+    here: filePath,
+    from: "wire/index.ts",
+    item: "WireMessage",
+    type: true,
+  });
+  const serialize = importBuffer.addRuntimeImport({
+    here: filePath,
+    from: "wire/serialize.ts",
+    item: "default",
+    as: "serialize",
+  });
   return [
     new Export(
       "encodeBinary",
@@ -583,12 +584,12 @@ const getDecodeBinaryCode: GetCodeFn = ({
   messages,
   customTypeMapping,
 }) => {
-  const deserialize = importBuffer.addRuntimeImport(
-    filePath,
-    "wire/deserialize.ts",
-    "default",
-    "deserialize",
-  );
+  const deserialize = importBuffer.addRuntimeImport({
+    here: filePath,
+    from: "wire/deserialize.ts",
+    item: "default",
+    as: "deserialize",
+  });
   return [
     message.oneofFields.length
       ? js([
@@ -644,24 +645,24 @@ const getDecodeBinaryCode: GetCodeFn = ({
             const type = typePath?.slice(1)!;
             let wireValuesToTsValuesCode: CodeFragment;
             if (type as keyof typeof unpackFns in unpackFns) {
-              const unpackFns = importBuffer.addRuntimeImport(
-                filePath,
-                "wire/scalar.ts",
-                "unpackFns",
-              );
+              const unpackFns = importBuffer.addRuntimeImport({
+                here: filePath,
+                from: "wire/scalar.ts",
+                item: "unpackFns",
+              });
               wireValuesToTsValuesCode =
                 js`Array.from(${unpackFns}.${type}(wireValues))`;
             } else if (field.isEnum && typePath) {
-              const unpackFns = importBuffer.addRuntimeImport(
-                filePath,
-                "wire/scalar.ts",
-                "unpackFns",
-              );
-              const num2name = importBuffer.addInternalImport(
-                filePath,
-                getFilePath(typePath, messages),
-                "num2name",
-              );
+              const unpackFns = importBuffer.addRuntimeImport({
+                here: filePath,
+                from: "wire/scalar.ts",
+                item: "unpackFns",
+              });
+              const num2name = importBuffer.addInternalImport({
+                here: filePath,
+                from: getFilePath(typePath, messages),
+                item: "num2name",
+              });
               wireValuesToTsValuesCode =
                 js`Array.from(${unpackFns}.int32(wireValues)).map(num => ${num2name}[num${ts` as keyof typeof ${num2name}`}])`;
             } else {
@@ -693,11 +694,12 @@ const getDecodeBinaryCode: GetCodeFn = ({
         }),
         ...message.oneofFields.map((field) => {
           const { tsName, fields } = field;
-          const Field = importBuffer.addRuntimeImport(
-            filePath,
-            "wire/index.ts",
-            "Field",
-          );
+          const Field = importBuffer.addRuntimeImport({
+            here: filePath,
+            from: "wire/index.ts",
+            item: "Field",
+            type: true,
+          });
           const wireValueToTsValueMapCode = js([
             js`{\n`,
             ...fields.map((field) => {
@@ -768,17 +770,17 @@ function getDefaultTsValueToWireValueCode({
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return js``;
-    const serialize = importBuffer.addRuntimeImport(
-      filePath,
-      "wire/serialize.ts",
-      "default",
-      "serialize",
-    );
-    const WireType = importBuffer.addRuntimeImport(
-      filePath,
-      "wire/index.ts",
-      "WireType",
-    );
+    const serialize = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "wire/serialize.ts",
+      item: "default",
+      as: "serialize",
+    });
+    const WireType = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "wire/index.ts",
+      item: "WireType",
+    });
     const keyTypePathCode = typePathToCode("key", keyTypePath);
     const valueTypePathCode = typePathToCode("value", valueTypePath);
     const value = (
@@ -791,37 +793,37 @@ function getDefaultTsValueToWireValueCode({
   function typePathToCode(tsValue: string, typePath?: string): CodeFragment {
     if (!typePath) return js``;
     if (typePath in scalarTypeMapping) {
-      const tsValueToWireValueFns = importBuffer.addRuntimeImport(
-        filePath,
-        "wire/scalar.ts",
-        "tsValueToWireValueFns",
-      );
+      const tsValueToWireValueFns = importBuffer.addRuntimeImport({
+        here: filePath,
+        from: "wire/scalar.ts",
+        item: "tsValueToWireValueFns",
+      });
       return js`${tsValueToWireValueFns}.${typePath.slice(1)}(${tsValue})`;
     }
-    const WireType = importBuffer.addRuntimeImport(
-      filePath,
-      "wire/index.ts",
-      "WireType",
-    );
+    const WireType = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "wire/index.ts",
+      item: "WireType",
+    });
     if (field.isEnum) {
-      const Long = importBuffer.addRuntimeImport(
-        filePath,
-        "Long.ts",
-        "default",
-        "Long",
-      );
-      const name2num = importBuffer.addInternalImport(
-        filePath,
-        getFilePath(typePath, messages),
-        "name2num",
-      );
+      const Long = importBuffer.addRuntimeImport({
+        here: filePath,
+        from: "Long.ts",
+        item: "default",
+        as: "Long",
+      });
+      const name2num = importBuffer.addInternalImport({
+        here: filePath,
+        from: getFilePath(typePath, messages),
+        item: "name2num",
+      });
       return js`{ type: ${WireType}.Varint${ts` as const`}, value: new ${Long}(${name2num}[${tsValue}${ts` as keyof typeof ${name2num}`}]) }`;
     }
-    const encodeBinary = importBuffer.addInternalImport(
-      filePath,
-      getFilePath(typePath, messages),
-      "encodeBinary",
-    );
+    const encodeBinary = importBuffer.addInternalImport({
+      here: filePath,
+      from: getFilePath(typePath, messages),
+      item: "encodeBinary",
+    });
     return js`{ type: ${WireType}.LengthDelimited${ts` as const`}, value: ${encodeBinary}(${tsValue}) }`;
   }
 }
@@ -855,46 +857,46 @@ export function getDefaultTsValueToJsonValueCode({
   importBuffer,
   field,
   messages,
-}: GetDefaultTsValueToJsonValueCodeConfig): string | undefined {
+}: GetDefaultTsValueToJsonValueCodeConfig): CodeFragment | undefined {
   const { schema, tsName } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
     const valueTypePathCode = typePathToCode("value", valueTypePath);
-    return `Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
+    return js`Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
   }
   if (schema.kind === "repeated") {
     const { typePath } = schema;
     if (!typePath) return;
     const typePathCode = typePathToCode("value", typePath);
-    return `value.${tsName}.map(value => ${typePathCode})`;
+    return js`value.${tsName}.map(value => ${typePathCode})`;
   }
   const { typePath } = schema;
   return typePathToCode("value." + tsName, typePath);
-  function typePathToCode(tsName: string, typePath?: string) {
-    if (!typePath) return;
+  function typePathToCode(tsName: string, typePath?: string): CodeFragment {
+    if (!typePath) return js``;
     if (typePath in scalarTypeMapping) {
-      const tsValueToJsonValueFns = importBuffer.addRuntimeImport(
-        filePath,
-        "json/scalar.ts",
-        "tsValueToJsonValueFns",
-      );
-      return `${tsValueToJsonValueFns}.${typePath.substr(1)}(${tsName})`;
+      const tsValueToJsonValueFns = importBuffer.addRuntimeImport({
+        here: filePath,
+        from: "json/scalar.ts",
+        item: "tsValueToJsonValueFns",
+      });
+      return js`${tsValueToJsonValueFns}.${typePath.slice(1)}(${tsName})`;
     }
     if (field.isEnum) {
-      const tsValueToJsonValueFns = importBuffer.addRuntimeImport(
-        filePath,
-        "json/scalar.ts",
-        "tsValueToJsonValueFns",
-      );
-      return `${tsValueToJsonValueFns}.enum(${tsName})`;
+      const tsValueToJsonValueFns = importBuffer.addRuntimeImport({
+        here: filePath,
+        from: "json/scalar.ts",
+        item: "tsValueToJsonValueFns",
+      });
+      return js`${tsValueToJsonValueFns}.enum(${tsName})`;
     }
-    const encodeJson = importBuffer.addInternalImport(
-      filePath,
-      getFilePath(typePath, messages),
-      "encodeJson",
-    );
-    return `${encodeJson}(${tsName})`;
+    const encodeJson = importBuffer.addInternalImport({
+      here: filePath,
+      from: getFilePath(typePath, messages),
+      item: "encodeJson",
+    });
+    return js`${encodeJson}(${tsName})`;
   }
 }
 
@@ -927,48 +929,48 @@ function getDefaultJsonValueToTsValueCode({
   importBuffer,
   field,
   messages,
-}: GetDefaultJsonValueToTsValueCodeConfig): string | undefined {
+}: GetDefaultJsonValueToTsValueCodeConfig): CodeFragment | undefined {
   const { schema, tsName } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
     const valueTypePathCode = typePathToCode("value", valueTypePath);
-    return `Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
+    return js`Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
   }
   if (schema.kind === "repeated") {
     const { typePath } = schema;
     if (!typePath) return;
     const typePathCode = typePathToCode("value", typePath);
-    return `value.${tsName}?.map((value: any) => ${typePathCode})`;
+    return js`value.${tsName}?.map((value${ts`: any`}) => ${typePathCode})`;
   }
   const { typePath } = schema;
   return typePathToCode("value." + tsName, typePath);
   function typePathToCode(
     jsonValue: string,
     typePath?: string,
-  ) {
-    if (!typePath) return;
-    const jsonValueToTsValueFns = importBuffer.addRuntimeImport(
-      filePath,
-      "json/scalar.ts",
-      "jsonValueToTsValueFns",
-    );
+  ): CodeFragment {
+    if (!typePath) return js``;
+    const jsonValueToTsValueFns = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "json/scalar.ts",
+      item: "jsonValueToTsValueFns",
+    });
     if (typePath in scalarTypeMapping) {
-      return `${jsonValueToTsValueFns}.${typePath.slice(1)}(${jsonValue})`;
+      return js`${jsonValueToTsValueFns}.${typePath.slice(1)}(${jsonValue})`;
     }
     if (field.isEnum) {
       if (schema.kind === "map") {
-        return `${jsonValueToTsValueFns}.enum(${jsonValue})`;
+        return js`${jsonValueToTsValueFns}.enum(${jsonValue})`;
       } else {
-        return `${jsonValueToTsValueFns}.enum(${jsonValue}) as ${field.tsType}`;
+        return js`${jsonValueToTsValueFns}.enum(${jsonValue})${ts` as ${field.tsType}`}`;
       }
     }
-    const decodeJson = importBuffer.addInternalImport(
-      filePath,
-      getFilePath(typePath, messages),
-      "decodeJson",
-    );
-    return `${decodeJson}(${jsonValue})`;
+    const decodeJson = importBuffer.addInternalImport({
+      here: filePath,
+      from: getFilePath(typePath, messages),
+      item: "decodeJson",
+    });
+    return js`${decodeJson}(${jsonValue})`;
   }
 }
 
@@ -1006,17 +1008,17 @@ function getDefaultWireValueToTsValueCode({
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return js``;
-    const deserialize = importBuffer.addRuntimeImport(
-      filePath,
-      "wire/deserialize.ts",
-      "default",
-      "deserialize",
-    );
-    const WireType = importBuffer.addRuntimeImport(
-      filePath,
-      "wire/index.ts",
-      "WireType",
-    );
+    const deserialize = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "wire/deserialize.ts",
+      item: "default",
+      as: "deserialize",
+    });
+    const WireType = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "wire/index.ts",
+      item: "WireType",
+    });
     const keyTypePathCode = typePathToCode("key", keyTypePath);
     const valueTypePathCode = typePathToCode("value", valueTypePath);
     return js([
@@ -1033,31 +1035,31 @@ function getDefaultWireValueToTsValueCode({
   function typePathToCode(wireValue: string, typePath?: string): CodeFragment {
     if (!typePath) return js``;
     if (typePath in scalarTypeMapping) {
-      const wireValueToTsValueFns = importBuffer.addRuntimeImport(
-        filePath,
-        "wire/scalar.ts",
-        "wireValueToTsValueFns",
-      );
+      const wireValueToTsValueFns = importBuffer.addRuntimeImport({
+        here: filePath,
+        from: "wire/scalar.ts",
+        item: "wireValueToTsValueFns",
+      });
       return js`${wireValueToTsValueFns}.${typePath.slice(1)}(${wireValue})`;
     }
-    const WireType = importBuffer.addRuntimeImport(
-      filePath,
-      "wire/index.ts",
-      "WireType",
-    );
+    const WireType = importBuffer.addRuntimeImport({
+      here: filePath,
+      from: "wire/index.ts",
+      item: "WireType",
+    });
     if (field.isEnum) {
-      const num2name = importBuffer.addInternalImport(
-        filePath,
-        getFilePath(typePath, messages),
-        "num2name",
-      );
+      const num2name = importBuffer.addInternalImport({
+        here: filePath,
+        from: getFilePath(typePath, messages),
+        item: "num2name",
+      });
       return js`${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0]${ts` as keyof typeof ${num2name}`}] : undefined`;
     }
-    const decodeBinary = importBuffer.addInternalImport(
-      filePath,
-      getFilePath(typePath, messages),
-      "decodeBinary",
-    );
+    const decodeBinary = importBuffer.addInternalImport({
+      here: filePath,
+      from: getFilePath(typePath, messages),
+      item: "decodeBinary",
+    });
     return js`${wireValue}.type === ${WireType}.LengthDelimited ? ${decodeBinary}(${wireValue}.value) : undefined`;
   }
 }
@@ -1077,7 +1079,7 @@ export function pbTypeToTsMessageType({
   if (!typePath) return "unknown";
   const from = getFilePath(typePath, messages);
   const as = typePath.match(/[^.]+$/)?.[0]!;
-  return addInternalImport(here, from, "Type", as);
+  return addInternalImport({ here, from, item: "Type", as, type: true });
 }
 
 export interface PbTypeToTsTypeConfig {
@@ -1103,7 +1105,7 @@ export function pbTypeToTsType({
   }
   const from = getFilePath(typePath, messages);
   const as = typePath.match(/[^.]+$/)?.[0]!;
-  return ts([addInternalImport(here, from, "Type", as)]);
+  return ts([addInternalImport({ here, from, item: "Type", as, type: true })]);
 }
 type ScalarToCodeTable = { [typePath in ScalarValueTypePath]: CodeFragment };
 const scalarTypeMapping: ScalarToCodeTable = {

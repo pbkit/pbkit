@@ -52,15 +52,24 @@ function* genAll(config: GenAllConfig): Generator<Module> {
     createImportBufferFn({
       ...config,
       getAddRuntimeImportFn(addInternalImport, addImport) {
-        return function addRuntimeImport(here, from, item, as) {
+        return function addRuntimeImport({ here, from, item, as, type }) {
           switch (_runtime.type) {
             case "outDir": {
-              const _from = join(_runtime.outDir, from);
-              return addInternalImport(here, _from, item, as);
+              return addInternalImport({
+                here,
+                from: join(_runtime.outDir, from),
+                item,
+                as,
+                type,
+              });
             }
             case "packageName": {
-              const _from = join(_runtime.packageName, from);
-              return addImport(_from, item, as);
+              return addImport({
+                from: join(_runtime.packageName, from),
+                item,
+                as,
+                type,
+              });
             }
           }
         };
@@ -80,7 +89,7 @@ function* genAll(config: GenAllConfig): Generator<Module> {
     const { filePath, importAllFroms, exportTypes, reExportTypes } = index;
     const importBuffer = createImportBuffer({});
     for (const { as, from } of importAllFroms) {
-      importBuffer.addInternalImport(filePath, from, "*", as);
+      importBuffer.addInternalImport({ here: filePath, from, item: "*", as });
     }
     const module = new Module(filePath, importBuffer);
     if (exportTypes.length) {
