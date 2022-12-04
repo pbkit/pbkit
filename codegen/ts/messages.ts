@@ -595,35 +595,34 @@ const getDecodeBinaryCode: GetCodeFn = ({
     as: "deserialize",
   });
   return [
-    message.oneofFields.length
-      ? js([
-        js`const fieldNames${ts`: Map<number, string>`} = new Map([\n`,
-        ...Array.from(message.everyFieldNames).map(
-          ([fieldNumber, name]) => js`  [${fieldNumber}, "${name}"],\n`,
-        ),
-        "]);\n",
-        js`const oneofFieldNumbersMap${ts`: { [oneof: string]: Set<number> }`} = {\n`,
-        ...message.oneofFields.map(({ tsName, fields }) =>
-          js([
-            js`  ${tsName}: new Set([`,
-            fields.map(({ fieldNumber }) => fieldNumber).join(", "),
-            js`]),\n`,
-          ])
-        ),
-        "};\n",
-        js`const oneofFieldNamesMap = {\n`,
-        ...message.oneofFields.map(({ tsName, fields }) =>
-          js([
-            js`  ${tsName}: new Map([\n`,
-            ...fields.map(({ fieldNumber, tsName }) =>
-              js`    [${fieldNumber}, "${tsName}"${ts` as const`}],\n`
-            ),
-            js`  ]),\n`,
-          ])
-        ),
-        js`};\n`,
-      ])
-      : js``,
+    ...(message.oneofFields.length
+      ? [
+        js([
+          js`const oneofFieldNumbersMap${ts`: { [oneof: string]: Set<number> }`} = {\n`,
+          ...message.oneofFields.map(({ tsName, fields }) =>
+            js([
+              js`  ${tsName}: new Set([`,
+              fields.map(({ fieldNumber }) => fieldNumber).join(", "),
+              js`]),\n`,
+            ])
+          ),
+          js`};`,
+        ]),
+        js([
+          js`const oneofFieldNamesMap = {\n`,
+          ...message.oneofFields.map(({ tsName, fields }) =>
+            js([
+              js`  ${tsName}: new Map([\n`,
+              ...fields.map(({ fieldNumber, tsName }) =>
+                js`    [${fieldNumber}, "${tsName}"${ts` as const`}],\n`
+              ),
+              js`  ]),\n`,
+            ])
+          ),
+          js`};`,
+        ]),
+      ]
+      : []),
     new Export(
       "decodeBinary",
       js([
@@ -788,7 +787,7 @@ function getDefaultTsValueToWireValueCode({
     const keyTypePathCode = typePathToCode("key", keyTypePath);
     const valueTypePathCode = typePathToCode("value", valueTypePath);
     const value = (
-      `${serialize}([[1, ${keyTypePathCode}], [2, ${valueTypePathCode}]])`
+      js`${serialize}([[1, ${keyTypePathCode}], [2, ${valueTypePathCode}]])`
     );
     return js`{ type: ${WireType}.LengthDelimited${ts` as const`}, value: ${value} }`;
   }
