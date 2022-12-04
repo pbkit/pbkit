@@ -14,6 +14,9 @@ import { Field } from "./messages.ts";
 export * from "./aot.ts";
 export { default as aot } from "./aot.ts";
 
+export * from "./jit.ts";
+export { default as jit } from "./jit.ts";
+
 export type GenConfig = Omit<BundleConfig, "units"> & {
   messages?: GenMessagesConfig;
   services?: GenServicesConfig;

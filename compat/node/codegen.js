@@ -1,2 +1,2 @@
-const module = "../../../codegen/ts/index.mjs";
-exports.default = () => import(module);
+const modulePath = "../../codegen/ts/index.mjs";
+exports.default = () => import(modulePath);
