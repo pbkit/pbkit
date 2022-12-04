@@ -30,6 +30,7 @@ export declare namespace $.google.protobuf {
     options?: OneofOptions;
   }
 }
+
 export type Type = $.google.protobuf.OneofDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.OneofDescriptorProto {

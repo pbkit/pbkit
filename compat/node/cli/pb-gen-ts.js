@@ -7,6 +7,7 @@ const save = require("../save").default;
 const { vendorZipPath } = require("../zip-path");
 const { build } = require("../../../core/schema/builder");
 const iterRuntimeFiles = require("../iterRuntimeFiles").default;
+const getCodegenModule = require("../codegen.js").default;
 
 run().catch((err) => console.error(err) && process.exit(1));
 
@@ -23,7 +24,11 @@ async function run() {
     indexFilename,
     extInImport,
   } = getCliArgs();
-  const gen = await getGen();
+  const {
+    default: gen,
+    aot,
+    replaceExts,
+  } = await getCodegenModule();
   const roots = [...entryPaths, ...protoPaths, process.cwd(), vendorZipPath];
   const loader = createLoader({ roots });
   const files = [
@@ -31,23 +36,28 @@ async function run() {
     ...protoFiles,
   ];
   const schema = await build({ loader, files });
+  const genConfig = {
+    indexFilename,
+    runtime: runtimePackage
+      ? { type: "packageName", packageName: runtimePackage.trim() }
+      : { type: "outDir", outDir: runtimeDir.trim() },
+    messages: { outDir: messagesDir.trim() },
+    services: { outDir: servicesDir.trim() },
+  };
   await save(
     outDir,
-    gen(schema, {
-      indexFilename,
+    replaceExts(
+      aot({
+        modules: gen(schema, genConfig),
+        runtimeDir: (
+          genConfig.runtime?.type === "outDir" &&
+          genConfig.runtime.outDir
+        ) || undefined,
+        iterRuntimeFiles,
+      }),
       extInImport,
-      runtime: runtimePackage
-        ? { packageName: runtimePackage.trim() }
-        : { iterRuntimeFiles, outDir: runtimeDir.trim() },
-      messages: { outDir: messagesDir.trim() },
-      services: { outDir: servicesDir.trim() },
-    }),
+    ),
   );
-}
-
-async function getGen() {
-  const module = "../../../codegen/ts/index.mjs";
-  return (await import(module)).default;
 }
 
 function getCliArgs() {

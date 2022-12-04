@@ -1,79 +1,92 @@
-import { dirname, join, relative } from "../path.ts";
-import { GenRuntimeConfig } from "./index.ts";
+import { dirname, relative } from "../path.ts";
+import { Ref } from "./code-fragment.ts";
 
-export interface AddImport {
-  (from: string, item: string, as?: string): string;
+export interface AddImportConfig {
+  from: string;
+  item: string;
+  as?: string;
+  type?: boolean;
 }
-export interface AddInternalImport {
-  (here: string, from: string, item: string, as?: string): string;
+export type AddImport = (config: AddImportConfig) => Ref;
+export interface AddInternalImportConfig extends AddImportConfig {
+  here: string;
 }
+export type AddInternalImport = (config: AddInternalImportConfig) => Ref;
 
+export interface ImportTriple {
+  from: string;
+  item: string;
+  as: Ref;
+}
 export interface ImportBuffer {
   addInternalImport: AddInternalImport;
   addImport: AddImport;
   addRuntimeImport: AddInternalImport;
-  getCode(): string;
+  isTypeImport: (ref: Ref) => boolean;
+  getImportFromRef: (ref: Ref) => ImportTriple | undefined;
+  imports(): Generator<ImportTriple>;
+  froms(): Generator<{ from: string; imports(): Generator<ImportTriple> }>;
 }
 
 export type CreateImportBufferFn = typeof createImportBuffer;
 
-export interface CreateImportBufferConfig {
-  reservedNames?: string[];
-  runtime?: GenRuntimeConfig;
-}
 export function createImportBuffer(
-  config: CreateImportBufferConfig,
+  getAddRuntimeImportFn?: (
+    addInternalImport: AddInternalImport,
+    addImport: AddImport,
+  ) => AddInternalImport,
 ): ImportBuffer {
   type Froms = { [from: string]: Items };
-  type Items = { [as: string]: string };
-  type ConflictTable = { [as: string]: ConflictCountTable };
-  type ConflictCountTable = { [fromAndItem: string]: number };
+  type Items = { [item: string]: Ref };
   const froms: Froms = {};
-  const conflictTable: ConflictTable = {};
-  const reservedNames = config.reservedNames ?? [];
-  const runtime = config.runtime ?? { packageName: "@pbkit/runtime" };
-  for (const reservedName of reservedNames) {
-    conflictTable[reservedName] = { "": 0 };
-  }
+  const typeTable: Map<Ref, boolean> = new Map();
+  const refTable: Map<Ref, ImportTriple> = new Map();
+  const addInternalImport: AddInternalImport = (
+    { here, from, item, as, type },
+  ) => {
+    const _from = relative(dirname(here), from);
+    const __from = (_from[0] !== ".") ? `./${_from}` : _from;
+    return addImport({ from: __from, item, as, type });
+  };
+  const addImport: AddImport = ({ from, item, as, type }) => {
+    const _as = as ?? item;
+    const items = froms[from] ??= {};
+    if (item in items) return items[item];
+    const ref = items[item] = new Ref(_as);
+    typeTable.set(ref, Boolean(type));
+    refTable.set(ref, { from, item, as: ref });
+    return ref;
+  };
+  const addRuntimeImport: AddInternalImport = (
+    getAddRuntimeImportFn?.(
+      addInternalImport,
+      addImport,
+    ) ?? addInternalImport
+  );
   const importBuffer: ImportBuffer = {
-    addInternalImport(here, from, item, as) {
-      const _from = relative(dirname(here), from);
-      const __from = (_from[0] !== ".") ? `./${_from}` : _from;
-      return importBuffer.addImport(__from, item, as);
+    addInternalImport,
+    addImport,
+    addRuntimeImport,
+    isTypeImport(ref) {
+      return Boolean(typeTable.get(ref));
     },
-    addImport(from, item, as) {
-      const _as = as ?? item;
-      const fromAndItem = `${from},${item}`;
-      const items = froms[from] = froms[from] ?? {};
-      const conflictCountTable = conflictTable[_as] = conflictTable[_as] ?? {};
-      let conflictCount: number;
-      if (fromAndItem in conflictCountTable) {
-        conflictCount = conflictCountTable[fromAndItem];
-      } else {
-        conflictCount = Object.keys(conflictCountTable).length;
-        conflictCountTable[fromAndItem] = conflictCount;
+    getImportFromRef(ref) {
+      return refTable.get(ref);
+    },
+    *imports() {
+      for (const ref of refTable.keys()) yield refTable.get(ref)!;
+    },
+    *froms() {
+      for (const [from, _items] of Object.entries(froms)) {
+        yield {
+          from,
+          *imports() {
+            for (const [item, as] of Object.entries(_items)) {
+              yield { from, item, as };
+            }
+          },
+        };
       }
-      const __as = conflictCount ? `${_as}_${conflictCount}` : _as;
-      items[__as] = item;
-      return __as;
-    },
-    addRuntimeImport(here, from, item, as) {
-      if (runtime.packageName == null) {
-        const _from = join(runtime.outDir, from);
-        return importBuffer.addInternalImport(here, _from, item, as);
-      } else {
-        const _from = join(runtime.packageName, from);
-        return importBuffer.addImport(_from, item, as);
-      }
-    },
-    getCode() {
-      return Object.entries(froms).map(([from, items]) => {
-        const itemsCode = Object.entries(items).map(([as, item]) => {
-          if (as === item) return `  ${item},\n`;
-          return `  ${item} as ${as},\n`;
-        }).join("");
-        return `import {\n${itemsCode}} from "${from}";\n`;
-      }).join("");
     },
   };
   return importBuffer;

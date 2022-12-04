@@ -80,6 +80,7 @@ export declare namespace $.google.protobuf {
     reservedName: string[];
   }
 }
+
 export type Type = $.google.protobuf.DescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.DescriptorProto {

@@ -5,6 +5,7 @@ export declare namespace $.google.protobuf.FieldDescriptorProto {
     | "LABEL_REQUIRED"
     | "LABEL_REPEATED";
 }
+
 export type Type = $.google.protobuf.FieldDescriptorProto.Label;
 
 export const num2name = {

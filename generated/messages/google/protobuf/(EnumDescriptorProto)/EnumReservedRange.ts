@@ -22,6 +22,7 @@ export declare namespace $.google.protobuf.EnumDescriptorProto {
     end?: number;
   }
 }
+
 export type Type = $.google.protobuf.EnumDescriptorProto.EnumReservedRange;
 
 export function getDefaultValue(): $.google.protobuf.EnumDescriptorProto.EnumReservedRange {

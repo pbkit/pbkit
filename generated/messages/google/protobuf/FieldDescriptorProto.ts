@@ -52,6 +52,7 @@ export declare namespace $.google.protobuf {
     proto3Optional?: boolean;
   }
 }
+
 export type Type = $.google.protobuf.FieldDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.FieldDescriptorProto {

@@ -24,6 +24,7 @@ export declare namespace $.google.protobuf.compiler {
     suffix?: string;
   }
 }
+
 export type Type = $.google.protobuf.compiler.Version;
 
 export function getDefaultValue(): $.google.protobuf.compiler.Version {

@@ -31,6 +31,7 @@ export declare namespace $.google.protobuf {
     options?: EnumValueOptions;
   }
 }
+
 export type Type = $.google.protobuf.EnumValueDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.EnumValueDescriptorProto {

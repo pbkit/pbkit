@@ -30,6 +30,7 @@ export declare namespace $.google.protobuf {
     uninterpretedOption: UninterpretedOption[];
   }
 }
+
 export type Type = $.google.protobuf.ServiceOptions;
 
 export function getDefaultValue(): $.google.protobuf.ServiceOptions {

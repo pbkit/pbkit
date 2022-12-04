@@ -35,6 +35,7 @@ export declare namespace $.google.protobuf.GeneratedCodeInfo {
     semantic?: Semantic;
   }
 }
+
 export type Type = $.google.protobuf.GeneratedCodeInfo.Annotation;
 
 export function getDefaultValue(): $.google.protobuf.GeneratedCodeInfo.Annotation {

@@ -38,6 +38,7 @@ export declare namespace $.google.protobuf {
     options?: ServiceOptions;
   }
 }
+
 export type Type = $.google.protobuf.ServiceDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.ServiceDescriptorProto {

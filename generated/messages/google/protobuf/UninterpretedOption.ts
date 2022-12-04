@@ -35,6 +35,7 @@ export declare namespace $.google.protobuf {
     aggregateValue?: string;
   }
 }
+
 export type Type = $.google.protobuf.UninterpretedOption;
 
 export function getDefaultValue(): $.google.protobuf.UninterpretedOption {

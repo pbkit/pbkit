@@ -31,6 +31,7 @@ export declare namespace $.google.protobuf {
     uninterpretedOption: UninterpretedOption[];
   }
 }
+
 export type Type = $.google.protobuf.EnumOptions;
 
 export function getDefaultValue(): $.google.protobuf.EnumOptions {

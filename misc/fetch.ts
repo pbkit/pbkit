@@ -62,7 +62,7 @@ export function progressResponse(originalResponse: Response): ProgressResult {
 function readerToSubscribeFn<T>(
   reader: ReadableStreamDefaultReader<T>,
   wait = Promise.resolve(),
-): SubscribeFn<ReadableStreamReadResult<T>> {
+): SubscribeFn<ReadableStreamDefaultReadResult<T>> {
   return createSubscribeFn(async () => {
     const readResult = await reader.read();
     return [readResult, readResult.done];

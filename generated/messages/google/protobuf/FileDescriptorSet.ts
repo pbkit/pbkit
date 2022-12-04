@@ -24,6 +24,7 @@ export declare namespace $.google.protobuf {
     file: FileDescriptorProto[];
   }
 }
+
 export type Type = $.google.protobuf.FileDescriptorSet;
 
 export function getDefaultValue(): $.google.protobuf.FileDescriptorSet {

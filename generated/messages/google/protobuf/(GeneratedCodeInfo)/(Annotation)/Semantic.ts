@@ -4,6 +4,7 @@ export declare namespace $.google.protobuf.GeneratedCodeInfo.Annotation {
     | "SET"
     | "ALIAS";
 }
+
 export type Type = $.google.protobuf.GeneratedCodeInfo.Annotation.Semantic;
 
 export const num2name = {

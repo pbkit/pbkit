@@ -32,6 +32,7 @@ export declare namespace $.google.protobuf.compiler.CodeGeneratorResponse {
     generatedCodeInfo?: GeneratedCodeInfo;
   }
 }
+
 export type Type = $.google.protobuf.compiler.CodeGeneratorResponse.File;
 
 export function getDefaultValue(): $.google.protobuf.compiler.CodeGeneratorResponse.File {

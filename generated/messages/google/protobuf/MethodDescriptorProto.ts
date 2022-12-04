@@ -34,6 +34,7 @@ export declare namespace $.google.protobuf {
     serverStreaming?: boolean;
   }
 }
+
 export type Type = $.google.protobuf.MethodDescriptorProto;
 
 export function getDefaultValue(): $.google.protobuf.MethodDescriptorProto {
