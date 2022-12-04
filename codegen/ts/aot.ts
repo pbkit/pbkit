@@ -5,7 +5,7 @@ import { build, BuildConfig } from "../../core/schema/builder.ts";
 import { CodeEntry } from "../index.ts";
 import { join } from "../path.ts";
 import { BundleConfig } from "./index.ts";
-import { Export, Module, Ref } from "./code-fragment.ts";
+import { Export, Module } from "./code-fragment.ts";
 import { ImportBuffer } from "./import-buffer.ts";
 
 export interface AotConfig {
