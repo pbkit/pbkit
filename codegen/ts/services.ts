@@ -262,7 +262,7 @@ function getCreateServiceClientCode({
       "RpcError",
       js([
         js`class RpcError${ts`<TTrailer = any>`} extends Error {\n`,
-        ts`  trailer: Trailer;`,
+        ts`  trailer: TTrailer;\n`,
         js`  constructor(trailer${ts`: TTrailer`}) {\n`,
         js`    super();\n`,
         js`    this.trailer = trailer;\n`,

@@ -714,7 +714,7 @@ const getDecodeBinaryCode: GetCodeFn = ({
                 messages,
               })({ filePath, importBuffer, field }) || js`undefined`;
               return js`      [${fieldNumber}](wireValue${ts`: ${Field}`}) { return ${wireValueToTsValueCode}; },\n`;
-            }).join(``),
+            }),
             js`    }`,
           ]);
           return js([
