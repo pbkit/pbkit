@@ -65,24 +65,31 @@ export class Module {
   constructor(
     public filePath: string,
     public importBuffer: ImportBuffer = createImportBuffer(),
-    public reservedNames: string[] = [],
+    public reservedNames: Set<string> = new Set(),
   ) {}
   *[Symbol.iterator](): Generator<ModuleFragment> {
     for (const fragment of this.fragments) yield fragment;
   }
   resolveRefs() {
-    const reservedNames = this.reservedNames ?? [];
-    const conflictCount: { [preferredName: string]: number } = (
-      Object.fromEntries(reservedNames.map((name) => [name, 0]))
-    );
+    const conflictCount: { [preferredName: string]: number } = {};
     const refNumberMap = new Map<Ref, number>();
-    const refs = this.fragments.flatMap((moduleFragment) => {
-      if (moduleFragment instanceof Export) {
-        return Array.from(moduleFragment.codeFragment.refs());
-      } else {
-        return Array.from(moduleFragment.refs());
-      }
-    });
+    const refs = new Set(
+      Array.from(this.importBuffer.imports())
+        .map(({ as }) => as)
+        .concat(this.fragments.flatMap((moduleFragment) => {
+          if (moduleFragment instanceof Export) {
+            return Array.from(moduleFragment.codeFragment.refs());
+          } else {
+            return Array.from(moduleFragment.refs());
+          }
+        })),
+    );
+    for (const ref of refs) {
+      if (!this.reservedNames.has(ref.preferredName)) continue;
+      if (ref.preferredName in conflictCount) continue;
+      conflictCount[ref.preferredName] = 1;
+      refNumberMap.set(ref, 1);
+    }
     for (const ref of refs) {
       if (!refNumberMap.has(ref)) {
         refNumberMap.set(

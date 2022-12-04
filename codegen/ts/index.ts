@@ -88,20 +88,20 @@ function* genAll(config: GenAllConfig): Generator<Module> {
     const { filePath, importAllFroms, exportTypes, reExportTypes } = index;
     const importBuffer = createImportBuffer();
     for (const { as, from } of importAllFroms) {
-      importBuffer.addInternalImport({ here: filePath, from, item: "*", as });
+      importBuffer.addImport({ from, item: "*", as });
     }
-    const module = new Module(filePath, importBuffer);
+    const codes: string[] = [];
     if (exportTypes.length) {
-      module.add(
-        ts`export type {\n${
-          exportTypes.map((type) => `  ${type}\n`).join("")
+      codes.push(
+        `export type {\n${
+          exportTypes.map((type) => `  ${type},\n`).join("")
         }};`,
       );
     }
     for (const { item, as, from } of reExportTypes) {
-      module.add(ts`export type { ${item} as ${as} } from "${from}";`);
+      codes.push(`export type { ${item} as ${as} } from "${from}";`);
     }
-    yield module;
+    yield new Module(filePath, importBuffer).code(ts([codes.join("\n")]));
   }
 }
 

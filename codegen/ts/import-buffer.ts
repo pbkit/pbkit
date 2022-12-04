@@ -38,9 +38,8 @@ export function createImportBuffer(
 ): ImportBuffer {
   type Froms = { [from: string]: Items };
   type Items = { [item: string]: Ref };
-  type TypeTable = { [fromAndItemAndAs: string]: boolean };
   const froms: Froms = {};
-  const typeTable: TypeTable = {};
+  const typeTable: Map<Ref, boolean> = new Map();
   const refTable: Map<Ref, ImportTriple> = new Map();
   const addInternalImport: AddInternalImport = (
     { here, from, item, as, type },
@@ -52,9 +51,10 @@ export function createImportBuffer(
   const addImport: AddImport = ({ from, item, as, type }) => {
     const _as = as ?? item;
     const items = froms[from] ??= {};
-    const ref = items[item] ??= new Ref(_as);
+    if (item in items) return items[item];
+    const ref = items[item] = new Ref(_as);
+    typeTable.set(ref, Boolean(type));
     refTable.set(ref, { from, item, as: ref });
-    typeTable[`${from},${item},${_as}`] = Boolean(type);
     return ref;
   };
   const addRuntimeImport: AddInternalImport = (
@@ -68,9 +68,7 @@ export function createImportBuffer(
     addImport,
     addRuntimeImport,
     isTypeImport(ref) {
-      const triple = refTable.get(ref)!;
-      const { from, item, as } = triple;
-      return Boolean(typeTable[`${from},${item},${as.preferredName}`]);
+      return Boolean(typeTable.get(ref));
     },
     getImportFromRef(ref) {
       return refTable.get(ref);

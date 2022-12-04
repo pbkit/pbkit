@@ -79,7 +79,7 @@ export function getFilePath(
 
 const getTypeDefCodeBase = (
   { typePath }: { typePath: string },
-  getTypeDefCodeFn: (typeName: string) => string,
+  getTypeDefCodeFn: (typeName: string) => CodeFragment,
 ): ModuleFragment[] => {
   const fragments = typePath.split(".");
   const typeName = fragments.pop()!;
@@ -113,7 +113,7 @@ function* genEnum(
   });
   yield new Module(filePath)
     .add(getTypeDefCodeBase({ typePath }, (typeName) => {
-      return `  export type ${typeName} =\n${
+      return ts`  export type ${typeName} =\n${
         fields.map(([, { name }]) => `    | "${name}"`).join("\n")
       };\n`;
     }))
@@ -230,7 +230,7 @@ function* genMessage({
   yield new Module(
     filePath,
     importBuffer,
-    [...reservedNames, typePath.split(".").pop()!],
+    new Set([...reservedNames, typePath.split(".").pop()!]),
   )
     .add(getMessageTypeDefCode(getCodeConfig))
     .add(getGetDefaultValueCode(getCodeConfig))
@@ -298,15 +298,15 @@ type GetCodeFn = (config: GetCodeConfig) => ModuleFragment[];
 
 const getMessageTypeDefCode: GetCodeFn = (config) => {
   const { message } = config;
-  const typeBodyCodes: string[] = [];
+  const typeBodyCodes: CodeFragment[] = [];
   if (message.fields.length) typeBodyCodes.push(getFieldsCode());
   if (message.oneofFields.length) typeBodyCodes.push(getOneofsCode());
   return getTypeDefCodeBase(config, (typeName) => {
-    if (!typeBodyCodes.length) return `  export type ${typeName} = {}\n`;
-    return `  export type ${typeName} = {\n${typeBodyCodes.join("")}  }\n`;
+    if (!typeBodyCodes.length) return ts`  export type ${typeName} = {}\n`;
+    return ts`  export type ${typeName} = {\n${ts(typeBodyCodes)}  }\n`;
   });
-  function getFieldsCode() {
-    return message.fields.map((field) => {
+  function getFieldsCode(): CodeFragment {
+    return ts(message.fields.map((field) => {
       const nullable = (
         (field.default == null) ||
         (field.schema.kind === "optional")
@@ -315,20 +315,22 @@ const getMessageTypeDefCode: GetCodeFn = (config) => {
       const arr = (field.schema.kind === "repeated") ? "[]" : "";
       const isDeprecated = field.schema.options["deprecated"] ?? false;
       if (isDeprecated) {
-        return `    /** @deprecated */\n    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
+        return ts`    /** @deprecated */\n    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
       }
-      return `    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
-    }).join("");
+      return ts`    ${field.tsName}${opt}: ${field.tsType}${arr};\n`;
+    }));
   }
-  function getOneofsCode() {
-    return message.oneofFields.map((oneofField) => {
-      return `    ${oneofField.tsName}?: (\n${
-        oneofField.fields.map(
+  function getOneofsCode(): CodeFragment {
+    return ts(message.oneofFields.map((oneofField) =>
+      ts([
+        ts`    ${oneofField.tsName}?: (\n`,
+        ts(oneofField.fields.map(
           (field) =>
-            `      | { field: "${field.tsName}", value: ${field.tsType} }\n`,
-        ).join("")
-      }  );\n`;
-    }).join("");
+            ts`      | { field: "${field.tsName}", value: ${field.tsType} }\n`,
+        )),
+        ts(`  );\n`),
+      ])
+    ));
   }
 };
 

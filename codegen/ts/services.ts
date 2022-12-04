@@ -78,7 +78,7 @@ function* genService({
 }: GenServiceConfig): Generator<Module> {
   const filePath = getFilePath(typePath, services);
   const importBuffer = createImportBuffer();
-  yield new Module(filePath, importBuffer, reservedNames)
+  yield new Module(filePath, importBuffer, new Set(reservedNames))
     .add(getServiceTypeDefCode({
       filePath,
       importBuffer,
