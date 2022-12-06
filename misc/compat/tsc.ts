@@ -1,8 +1,8 @@
 import {
   readAll,
   readAllSync,
-  StringReader,
-} from "https://deno.land/std@0.147.0/io/mod.ts";
+} from "https://deno.land/std@0.167.0/streams/read_all.ts";
+import { StringReader } from "https://deno.land/std@0.167.0/io/readers.ts";
 
 export function replaceTsFileExtensionInImportStatement(
   code: string,

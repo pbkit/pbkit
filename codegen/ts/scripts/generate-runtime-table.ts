@@ -1,11 +1,11 @@
-import { walk } from "https://deno.land/std@0.147.0/fs/walk.ts";
+import { walk } from "https://deno.land/std@0.167.0/fs/walk.ts";
 import {
   fromFileUrl,
   join,
   posix,
   relative,
   win32,
-} from "https://deno.land/std@0.147.0/path/mod.ts";
+} from "https://deno.land/std@0.167.0/path/mod.ts";
 
 const runtimePath = fromFileUrl(import.meta.resolve("../../../core/runtime"));
 const generatedPath = fromFileUrl(import.meta.resolve("../generated"));

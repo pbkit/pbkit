@@ -1,8 +1,6 @@
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
-import {
-  readAll,
-  writeAll,
-} from "https://deno.land/std@0.136.0/streams/conversion.ts";
+import { readAll } from "https://deno.land/std@0.167.0/streams/read_all.ts";
+import { writeAll } from "https://deno.land/std@0.167.0/streams/write_all.ts";
 import { encode } from "../../../../../compat/protoc/text-format.ts";
 import deserialize from "../../../../../core/runtime/wire/deserialize.ts";
 import { createLoader } from "../../../../../core/loader/deno-fs.ts";

@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.167.0/path/mod.ts";
 import { getVersionsDir } from "./config.ts";
 
 export default function isDownloaded(rev: string): boolean {

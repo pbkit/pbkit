@@ -1,6 +1,6 @@
-import { join } from "https://deno.land/std@0.147.0/path/mod.ts";
-import { walk, WalkEntry } from "https://deno.land/std@0.147.0/fs/walk.ts";
-import { createWalkEntry } from "https://deno.land/std@0.147.0/fs/_util.ts";
+import { join } from "https://deno.land/std@0.167.0/path/mod.ts";
+import { walk, WalkEntry } from "https://deno.land/std@0.167.0/fs/walk.ts";
+import { createWalkEntry } from "https://deno.land/std@0.167.0/fs/_util.ts";
 import { createEventBuffer } from "../../core/runtime/async/event-buffer.ts";
 
 const concurrentWalk: typeof walk = function (root, {
@@ -39,7 +39,8 @@ const concurrentWalk: typeof walk = function (root, {
       await Promise.allSettled(promises);
     }
   };
-  _walk(root, maxDepth).then(eventBuffer.finish);
+  // TODO: allow walk URL
+  _walk(root as string, maxDepth).then(eventBuffer.finish);
   return eventBuffer.drain();
 };
 

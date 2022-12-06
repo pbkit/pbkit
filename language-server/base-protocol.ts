@@ -1,8 +1,8 @@
 import {
   BufReader,
   BufWriter,
-} from "https://deno.land/std@0.147.0/io/buffer.ts";
-import { TextProtoReader } from "https://deno.land/std@0.147.0/textproto/mod.ts";
+} from "https://deno.land/std@0.159.0/io/buffer.ts";
+import { TextProtoReader } from "https://deno.land/std@0.159.0/textproto/mod.ts";
 
 export interface BaseProtocolMessage {
   headers: Headers;
@@ -14,7 +14,7 @@ export async function* readBaseProtocolMessages(
   const bufReader = new BufReader(reader);
   const textProtoReader = new TextProtoReader(bufReader);
   while (true) {
-    const headers = await textProtoReader.readMIMEHeader();
+    const headers = await textProtoReader.readMimeHeader();
     if (headers === null) throw new Deno.errors.UnexpectedEof();
     const contentLength = headers.get("Content-Length");
     if (!contentLength) {
