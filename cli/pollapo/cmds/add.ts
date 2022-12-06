@@ -3,8 +3,8 @@ import {
   Select,
   SelectValueOptions,
 } from "https://deno.land/x/cliffy@v0.25.2/prompt/select.ts";
-import { stringify } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
-import { cyan, yellow } from "https://deno.land/std@0.147.0/fmt/colors.ts";
+import { stringify } from "https://deno.land/std@0.167.0/encoding/yaml.ts";
+import { cyan, yellow } from "https://deno.land/std@0.167.0/fmt/colors.ts";
 import {
   fetchBranches,
   fetchTags,
@@ -25,7 +25,7 @@ import {
   sanitizeDeps,
 } from "../pollapoYml.ts";
 import { Confirm } from "https://deno.land/x/cliffy@v0.25.2/prompt/confirm.ts";
-import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.167.0/path/mod.ts";
 
 interface Options {
   token?: string;

@@ -1,5 +1,5 @@
-import { ensureDirSync } from "https://deno.land/std@0.147.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.147.0/path/mod.ts";
+import { ensureDirSync } from "https://deno.land/std@0.167.0/fs/mod.ts";
+import * as path from "https://deno.land/std@0.167.0/path/mod.ts";
 import { getPbkitHomeDir } from "./config.ts";
 
 export function getCurrentVersion(): string | undefined {

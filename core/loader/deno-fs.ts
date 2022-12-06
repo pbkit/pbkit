@@ -3,7 +3,7 @@ import {
   isAbsolute,
   resolve as _resolve,
   toFileUrl,
-} from "https://deno.land/std@0.147.0/path/mod.ts";
+} from "https://deno.land/std@0.167.0/path/mod.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {

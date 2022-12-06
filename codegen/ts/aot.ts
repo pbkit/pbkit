@@ -1,5 +1,5 @@
-import { StringReader } from "https://deno.land/std@0.147.0/io/mod.ts";
-import { parse as parseYaml } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
+import { StringReader } from "https://deno.land/std@0.167.0/io/readers.ts";
+import { parse as parseYaml } from "https://deno.land/std@0.167.0/encoding/yaml.ts";
 import { replaceTsFileExtensionInImportStatementFromReader } from "../../misc/compat/tsc.ts";
 import { build, BuildConfig } from "../../core/schema/builder.ts";
 import { CodeEntry } from "../index.ts";

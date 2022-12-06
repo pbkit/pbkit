@@ -1,4 +1,4 @@
-import { parse as parseYaml } from "https://deno.land/std@0.147.0/encoding/yaml.ts";
+import { parse as parseYaml } from "https://deno.land/std@0.167.0/encoding/yaml.ts";
 
 export interface BufWorkYaml {
   version: "v1";
