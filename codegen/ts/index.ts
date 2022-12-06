@@ -17,6 +17,9 @@ export { default as aot } from "./aot.ts";
 export * from "./jit.ts";
 export { default as jit } from "./jit.ts";
 
+export { getFilePath as getMessageFilePath } from "./messages.ts";
+export { getFilePath as getServiceFilePath } from "./services.ts";
+
 export type GenConfig = Omit<BundleConfig, "units"> & {
   messages?: GenMessagesConfig;
   services?: GenServicesConfig;

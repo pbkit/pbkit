@@ -35,7 +35,7 @@ export default function* gen(
   } = config;
   for (const [typePath, type] of Object.entries(schema.services)) {
     indexBuffer.reExport(
-      getFilePath(typePath, services, ""),
+      getFilePath(typePath, services.outDir, ""),
       "Service",
       typePath.split(".").pop()!,
     );
@@ -51,11 +51,11 @@ export default function* gen(
 
 export function getFilePath(
   typePath: string,
-  services: GenServicesConfig,
+  servicesDir: string = "services",
   ext = ".ts",
 ): string {
   return join(
-    services.outDir,
+    servicesDir,
     typePath.replace(/^\./, "").replaceAll(".", "/") + ext,
   );
 }
@@ -76,7 +76,7 @@ function* genService({
   messages,
   services,
 }: GenServiceConfig): Generator<Module> {
-  const filePath = getFilePath(typePath, services);
+  const filePath = getFilePath(typePath, services.outDir);
   const importBuffer = createImportBuffer();
   yield new Module(filePath, importBuffer, new Set(reservedNames))
     .add(getServiceTypeDefCode({
@@ -186,32 +186,32 @@ function getMethodDescriptorsCode({
           const camelRpcName = pascalToCamel(rpcName);
           const encodeRequestBinary = importBuffer.addInternalImport({
             here: filePath,
-            from: getMessageFilePath(rpc.reqType.typePath!, messages),
+            from: getMessageFilePath(rpc.reqType.typePath!, messages.outDir),
             item: "encodeBinary",
           });
           const decodeRequestBinary = importBuffer.addInternalImport({
             here: filePath,
-            from: getMessageFilePath(rpc.reqType.typePath!, messages),
+            from: getMessageFilePath(rpc.reqType.typePath!, messages.outDir),
             item: "decodeBinary",
           });
           const encodeRequestJson = importBuffer.addInternalImport({
             here: filePath,
-            from: getMessageFilePath(rpc.reqType.typePath!, messages),
+            from: getMessageFilePath(rpc.reqType.typePath!, messages.outDir),
             item: "encodeJson",
           });
           const encodeResponseBinary = importBuffer.addInternalImport({
             here: filePath,
-            from: getMessageFilePath(rpc.resType.typePath!, messages),
+            from: getMessageFilePath(rpc.resType.typePath!, messages.outDir),
             item: "encodeBinary",
           });
           const decodeResponseBinary = importBuffer.addInternalImport({
             here: filePath,
-            from: getMessageFilePath(rpc.resType.typePath!, messages),
+            from: getMessageFilePath(rpc.resType.typePath!, messages.outDir),
             item: "decodeBinary",
           });
           const encodeResponseJson = importBuffer.addInternalImport({
             here: filePath,
-            from: getMessageFilePath(rpc.resType.typePath!, messages),
+            from: getMessageFilePath(rpc.resType.typePath!, messages.outDir),
             item: "encodeJson",
           });
           const reqTsType = getTsType(rpc.reqType.typePath);

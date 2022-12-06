@@ -41,7 +41,7 @@ export default function* gen(
   } = config;
   for (const [typePath, type] of Object.entries(schema.types)) {
     indexBuffer.reExport(
-      getFilePath(typePath, messages, ""),
+      getFilePath(typePath, messages.outDir, ""),
       "Type",
       typePath.split(".").pop()!,
     );
@@ -65,11 +65,11 @@ export default function* gen(
 
 export function getFilePath(
   typePath: string,
-  messages: GenMessagesConfig,
+  messagesDir: string = "messages",
   ext = ".ts",
 ): string {
   return join(
-    messages.outDir,
+    messagesDir,
     typePath
       .replace(/^\./, "")
       .replaceAll(".", "/")
@@ -102,7 +102,7 @@ interface GenEnumConfig {
 function* genEnum(
   { typePath, type, messages }: GenEnumConfig,
 ): Generator<Module> {
-  const filePath = getFilePath(typePath, messages);
+  const filePath = getFilePath(typePath, messages.outDir);
   const fields = Object.entries<schema.EnumField>({
     "0": {
       description: { leading: [], trailing: [], leadingDetached: [] },
@@ -182,7 +182,7 @@ function* genMessage({
   customTypeMapping,
   messages,
 }: GenMessageConfig): Generator<Module> {
-  const filePath = getFilePath(typePath, messages);
+  const filePath = getFilePath(typePath, messages.outDir);
   const importBuffer = createImportBuffer();
   type NonOneofMessageField = Exclude<schema.MessageField, schema.OneofField>;
   const schemaFields = Object.entries(type.fields);
@@ -663,7 +663,7 @@ const getDecodeBinaryCode: GetCodeFn = ({
               });
               const num2name = importBuffer.addInternalImport({
                 here: filePath,
-                from: getFilePath(typePath, messages),
+                from: getFilePath(typePath, messages.outDir),
                 item: "num2name",
               });
               wireValuesToTsValuesCode =
@@ -817,14 +817,14 @@ function getDefaultTsValueToWireValueCode({
       });
       const name2num = importBuffer.addInternalImport({
         here: filePath,
-        from: getFilePath(typePath, messages),
+        from: getFilePath(typePath, messages.outDir),
         item: "name2num",
       });
       return js`{ type: ${WireType}.Varint${ts` as const`}, value: new ${Long}(${name2num}[${tsValue}${ts` as keyof typeof ${name2num}`}]) }`;
     }
     const encodeBinary = importBuffer.addInternalImport({
       here: filePath,
-      from: getFilePath(typePath, messages),
+      from: getFilePath(typePath, messages.outDir),
       item: "encodeBinary",
     });
     return js`{ type: ${WireType}.LengthDelimited${ts` as const`}, value: ${encodeBinary}(${tsValue}) }`;
@@ -896,7 +896,7 @@ export function getDefaultTsValueToJsonValueCode({
     }
     const encodeJson = importBuffer.addInternalImport({
       here: filePath,
-      from: getFilePath(typePath, messages),
+      from: getFilePath(typePath, messages.outDir),
       item: "encodeJson",
     });
     return js`${encodeJson}(${tsName})`;
@@ -970,7 +970,7 @@ function getDefaultJsonValueToTsValueCode({
     }
     const decodeJson = importBuffer.addInternalImport({
       here: filePath,
-      from: getFilePath(typePath, messages),
+      from: getFilePath(typePath, messages.outDir),
       item: "decodeJson",
     });
     return js`${decodeJson}(${jsonValue})`;
@@ -1053,14 +1053,14 @@ function getDefaultWireValueToTsValueCode({
     if (field.isEnum) {
       const num2name = importBuffer.addInternalImport({
         here: filePath,
-        from: getFilePath(typePath, messages),
+        from: getFilePath(typePath, messages.outDir),
         item: "num2name",
       });
       return js`${wireValue}.type === ${WireType}.Varint ? ${num2name}[${wireValue}.value[0]${ts` as keyof typeof ${num2name}`}] : undefined`;
     }
     const decodeBinary = importBuffer.addInternalImport({
       here: filePath,
-      from: getFilePath(typePath, messages),
+      from: getFilePath(typePath, messages.outDir),
       item: "decodeBinary",
     });
     return js`${wireValue}.type === ${WireType}.LengthDelimited ? ${decodeBinary}(${wireValue}.value) : undefined`;
@@ -1080,7 +1080,7 @@ export function pbTypeToTsMessageType({
   typePath,
 }: PbTypeToTsMessageTypeConfig): CodeFragment {
   if (!typePath) return ts`unknown`;
-  const from = getFilePath(typePath, messages);
+  const from = getFilePath(typePath, messages.outDir);
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return ts([addInternalImport({ here, from, item: "Type", as, type: true })]);
 }
@@ -1106,7 +1106,7 @@ export function pbTypeToTsType({
   if (typePath in customTypeMapping) {
     return customTypeMapping[typePath].tsType;
   }
-  const from = getFilePath(typePath, messages);
+  const from = getFilePath(typePath, messages.outDir);
   const as = typePath.match(/[^.]+$/)?.[0]!;
   return ts([addInternalImport({ here, from, item: "Type", as, type: true })]);
 }
