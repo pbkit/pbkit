@@ -1,21 +1,41 @@
 <div align="center">
   <h1>pbkit</h1>
   <img width="128" src="https://avatars.githubusercontent.com/u/90100959">
-  <p>TypeScript implementation of protobuf.</p>
-  <p>Supports Deno and Node.js.</p>
-  <a href="https://discord.gg/PHmV3nhvQq">
-    <img src="https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square" />
-  </a>
-  <a href="https://twitter.com/pbkit_">
-    <img src="https://img.shields.io/twitter/url.svg?label=Follow%20%40pbkit_&style=social&url=https%3A%2F%2Ftwitter.com%2Fpbkit_" />
-  </a>
-  <br>
-  <a href="https://github.com/pbkit/pbkit/releases">
-    <img src="https://img.shields.io/github/release/pbkit/pbkit/all.svg" />
-  </a>
-  <a href="https://deno.land/x/pbkit">
-    <img src="https://img.shields.io/badge/deno.land/x/-pbkit-gray?logo=deno&labelColor=black" />
-  </a>
+  <p>
+    Protobuf toolkit for modern web development
+  </p>
+  <table>
+    <tr>
+      <th>Homepage</th>
+      <td><a href="https://pbkit.dev/"><img src="https://img.shields.io/badge/%F0%9F%8F%A0-https%3A%2F%2Fpbkit.dev%2F-darkgreen" /></a></td>
+    </tr>
+    <tr>
+      <th>Join our community!</th>
+      <td><a href="https://discord.gg/PHmV3nhvQq">
+        <img src="https://img.shields.io/discord/922795162873233429?label=Discord&style=flat-square" />
+      </a></td>
+    </tr>
+    <tr>
+      <th>Follow our SNS account!</th>
+      <td><a href="https://twitter.com/pbkit_">
+        <img src="https://img.shields.io/twitter/url.svg?label=Follow%20%40pbkit_&style=social&url=https%3A%2F%2Ftwitter.com%2Fpbkit_" />
+      </a></td>
+    </tr>
+    <tr>
+      <th>Releases</th>
+      <td>
+        <a href="https://github.com/pbkit/pbkit/releases">
+          <img src="https://img.shields.io/github/release/pbkit/pbkit/all.svg" />
+        </a>
+        <br>
+        <a href="https://deno.land/x/pbkit">
+          <img src="https://img.shields.io/badge/deno.land/x/-pbkit-gray?logo=deno&labelColor=black" />
+        </a>
+        <br>
+        <a href="https://www.npmjs.com/package/pbkit"><img src="https://img.shields.io/npm/v/pbkit?label=npm%20install%20pbkit&logo=npm&logoColor=red"></a>
+      </td>
+    </tr>
+  </table>
   <br>
 </div>
 
