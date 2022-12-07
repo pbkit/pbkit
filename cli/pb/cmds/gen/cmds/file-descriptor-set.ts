@@ -5,7 +5,7 @@ import { build } from "../../../../../core/schema/builder.ts";
 import deserialize from "../../../../../core/runtime/wire/deserialize.ts";
 import { encode } from "../../../../../compat/protoc/text-format.ts";
 import { encodeBinary } from "../../../../../generated/messages/google/protobuf/FileDescriptorSet.ts";
-import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set.ts";
+import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set/pbkit2fds.ts";
 import { getVendorDir } from "../../../config.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
 

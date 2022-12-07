@@ -8,7 +8,7 @@ import {
   Schema,
   Service,
   Type,
-} from "../../core/schema/model.ts";
+} from "../../../core/schema/model.ts";
 import {
   DescriptorProto,
   EnumDescriptorProto,
@@ -19,20 +19,20 @@ import {
   MethodDescriptorProto,
   ServiceDescriptorProto,
   UninterpretedOption,
-} from "../../generated/messages/google/protobuf/index.ts";
+} from "../../../generated/messages/google/protobuf/index.ts";
 import {
   Label as FieldLabel,
   Type as FieldType,
-} from "../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
-import { snakeToCamel, snakeToPascal } from "../../misc/case.ts";
+} from "../../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
+import { snakeToCamel, snakeToPascal } from "../../../misc/case.ts";
 import {
   Type as OptimizeMode,
-} from "../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
+} from "../../../generated/messages/google/protobuf/(FileOptions)/OptimizeMode.ts";
 import {
   Type as IdempotencyLevel,
-} from "../../generated/messages/google/protobuf/(MethodOptions)/IdempotencyLevel.ts";
-import { Type as CType } from "../../generated/messages/google/protobuf/(FieldOptions)/CType.ts";
-import { Type as JSType } from "../../generated/messages/google/protobuf/(FieldOptions)/JSType.ts";
+} from "../../../generated/messages/google/protobuf/(MethodOptions)/IdempotencyLevel.ts";
+import { Type as CType } from "../../../generated/messages/google/protobuf/(FieldOptions)/CType.ts";
+import { Type as JSType } from "../../../generated/messages/google/protobuf/(FieldOptions)/JSType.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
