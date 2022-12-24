@@ -13,6 +13,9 @@ import {
   FileDescriptorSet,
   ServiceDescriptorProto,
 } from "../../../generated/messages/google/protobuf/index.ts";
+import {
+  Type as FieldType,
+} from "../../../generated/messages/google/protobuf/(FieldDescriptorProto)/index.ts";
 
 export interface ConvertFileDescriptorSetToSchemaConfig {
   fileDescriptorSet: FileDescriptorSet;
@@ -85,12 +88,75 @@ function getMessage(file: File, descriptor: DescriptorProto): Message {
       trailing: [], // TODO
       leadingDetached: [], // TODO
     },
-    fields: {}, // TODO
+    fields: Object.fromEntries(
+      descriptor.field.map((field) => {
+        const kind = field.proto3Optional
+          ? "optional"
+          : field.label === "LABEL_REPEATED"
+          ? "repeated"
+          : field.label === "LABEL_REQUIRED"
+          ? "required"
+          : field.label === "LABEL_OPTIONAL"
+          ? "optional"
+          : "normal"; // TODO: oneof, map
+        const typePath = field.typeName || getFieldTypePath(field.type);
+        const type = typePath;
+        return [Number(field.number), {
+          description: {
+            leading: [], // TODO
+            trailing: [], // TODO
+            leadingDetached: [], // TODO
+          },
+          kind,
+          name: String(field.name),
+          options: {}, // TODO
+          type,
+          typePath,
+        }];
+      }),
+    ),
     groups: {}, // TODO
     reservedFieldNumberRanges: [], // TODO
     reservedFieldNames: [], // TODO
     extensions: [], // TODO
   };
+}
+
+function getFieldTypePath(fieldType?: FieldType): string {
+  switch (fieldType) {
+    case "TYPE_DOUBLE":
+      return ".double";
+    case "TYPE_FLOAT":
+      return ".float";
+    case "TYPE_INT64":
+      return ".int64";
+    case "TYPE_UINT64":
+      return ".uint64";
+    case "TYPE_INT32":
+      return ".int32";
+    case "TYPE_FIXED64":
+      return ".fixed64";
+    case "TYPE_FIXED32":
+      return ".fixed32";
+    case "TYPE_BOOL":
+      return ".bool";
+    case "TYPE_STRING":
+      return ".string";
+    case "TYPE_BYTES":
+      return ".bytes";
+    case "TYPE_UINT32":
+      return ".uint32";
+    case "TYPE_SFIXED32":
+      return ".sfixed32";
+    case "TYPE_SFIXED64":
+      return ".sfixed64";
+    case "TYPE_SINT32":
+      return ".sint32";
+    case "TYPE_SINT64":
+      return ".sint64";
+    default:
+      return "";
+  }
 }
 
 function getEnum(file: File, descriptor: EnumDescriptorProto): Enum {
@@ -103,7 +169,17 @@ function getEnum(file: File, descriptor: EnumDescriptorProto): Enum {
       trailing: [], // TODO
       leadingDetached: [], // TODO
     },
-    fields: {}, // TODO
+    fields: Object.fromEntries(
+      descriptor.value.map((field) => [Number(field.number), {
+        description: {
+          leading: [], // TODO
+          trailing: [], // TODO
+          leadingDetached: [], // TODO
+        },
+        name: String(field.name),
+        options: {}, // TODO
+      }]),
+    ),
   };
 }
 
