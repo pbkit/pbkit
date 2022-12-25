@@ -31,7 +31,7 @@ export function convertFileDescriptorSetToSchema(
   };
   for (const fileDescriptor of fileDescriptorSet.file) {
     const importPath = fileDescriptor.name || "";
-    const syntax = fileDescriptor.syntax === "proto2" ? "proto2" : "proto3";
+    const syntax = fileDescriptor.syntax === "proto3" ? "proto3" : "proto2";
     const file: File = {
       parseResult: undefined,
       importPath,
@@ -85,12 +85,12 @@ function getService(file: File, descriptor: ServiceDescriptorProto): Service {
           },
           reqType: {
             stream: Boolean(methodDescriptor.clientStreaming),
-            type: String(methodDescriptor.inputType),
+            type: getShortNameFromTypePath(methodDescriptor.inputType),
             typePath: String(methodDescriptor.inputType),
           },
           resType: {
             stream: Boolean(methodDescriptor.serverStreaming),
-            type: String(methodDescriptor.outputType),
+            type: getShortNameFromTypePath(methodDescriptor.outputType),
             typePath: String(methodDescriptor.outputType),
           },
         }],
@@ -103,12 +103,12 @@ function getMessage(file: File, descriptor: DescriptorProto): Message {
   return {
     kind: "message",
     filePath: file.importPath,
-    options: {}, // TODO
     description: {
       leading: [], // TODO
       trailing: [], // TODO
       leadingDetached: [], // TODO
     },
+    options: {}, // TODO
     fields: Object.fromEntries(
       descriptor.field.map((field) => {
         const kind = field.proto3Optional
@@ -121,14 +121,14 @@ function getMessage(file: File, descriptor: DescriptorProto): Message {
           ? "optional"
           : "normal"; // TODO: oneof, map
         const typePath = field.typeName || getFieldTypePath(field.type);
-        const type = typePath;
+        const type = getShortNameFromTypePath(typePath);
         return [Number(field.number), {
+          kind,
           description: {
             leading: [], // TODO
             trailing: [], // TODO
             leadingDetached: [], // TODO
           },
-          kind,
           name: String(field.name),
           options: {}, // TODO
           type,
@@ -141,6 +141,10 @@ function getMessage(file: File, descriptor: DescriptorProto): Message {
     reservedFieldNames: [], // TODO
     extensions: [], // TODO
   };
+}
+
+function getShortNameFromTypePath(typePath: string = ""): string {
+  return typePath.split(".").pop() || "";
 }
 
 function getFieldTypePath(fieldType?: FieldType): string {
