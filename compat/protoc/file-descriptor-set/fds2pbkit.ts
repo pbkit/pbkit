@@ -74,7 +74,28 @@ function getService(file: File, descriptor: ServiceDescriptorProto): Service {
       trailing: [], // TODO
       leadingDetached: [], // TODO
     },
-    rpcs: {}, // TODO
+    rpcs: Object.fromEntries(
+      descriptor.method.map(
+        (methodDescriptor) => [String(methodDescriptor.name), {
+          options: {}, // TODO
+          description: {
+            leading: [], // TODO
+            trailing: [], // TODO
+            leadingDetached: [], // TODO
+          },
+          reqType: {
+            stream: Boolean(methodDescriptor.clientStreaming),
+            type: String(methodDescriptor.inputType),
+            typePath: String(methodDescriptor.inputType),
+          },
+          resType: {
+            stream: Boolean(methodDescriptor.serverStreaming),
+            type: String(methodDescriptor.outputType),
+            typePath: String(methodDescriptor.outputType),
+          },
+        }],
+      ),
+    ),
   };
 }
 
