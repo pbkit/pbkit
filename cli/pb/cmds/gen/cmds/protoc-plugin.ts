@@ -6,7 +6,7 @@ import { getVendorDir } from "../../../config.ts";
 import expandEntryPaths from "../expandEntryPaths.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import { createLoader } from "../../../../../core/loader/deno-fs.ts";
-import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set.ts";
+import { convertSchemaToFileDescriptorSet } from "../../../../../compat/protoc/file-descriptor-set/pbkit2fds.ts";
 import {
   encodeBinary as encodeCodeGeneratorRequest,
 } from "../../../../../generated/messages/google/protobuf/compiler/CodeGeneratorRequest.ts";
