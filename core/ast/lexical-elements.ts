@@ -1,5 +1,6 @@
 import { StatementBase } from "./index.ts";
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
+import { TextprotoMessageStatement } from "./textproto.ts";
 
 export type Node =
   | CommentGroup
@@ -97,6 +98,9 @@ export interface StrLit extends Span {
 
 export interface Aggregate extends Span {
   type: "aggregate";
+  bracketOpen: Token;
+  statements: TextprotoMessageStatement[];
+  bracketClose: Token;
 }
 
 export interface Empty extends StatementBase {

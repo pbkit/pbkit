@@ -1,8 +1,11 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
 
+export interface Textproto {
+  statements: TextprotoMessageStatement[];
+}
+
 export type Node =
   | TextprotoComment
-  | TextprotoMessage
   | TextprotoField
   | TextprotoSemi
   | TextprotoComma
@@ -26,11 +29,6 @@ export type Node =
 
 export interface TextprotoComment extends Token {
   type: "textproto-comment";
-}
-
-export interface TextprotoMessage extends Span {
-  type: "textproto-message";
-  statements: TextprotoMessageStatement[];
 }
 
 export type TextprotoMessageStatement =
@@ -96,7 +94,7 @@ export interface TextprotoListValue extends Span {
 export interface TextprotoMessageValue extends Span {
   type: "textproto-message-value";
   bracketOpen: Token;
-  message: TextprotoMessage;
+  statements: TextprotoMessageStatement[];
   bracketClose: Token;
 }
 
