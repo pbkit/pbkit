@@ -37,6 +37,7 @@ export type TextprotoMessageStatement =
   | TextprotoComma;
 
 export interface TextprotoField extends Span {
+  type: "textproto-field";
   fieldName: TextprotoFieldName;
   colon?: Token;
   value: TextprotoListValue | TextprotoMessageValue | TextprotoScalarValue;
@@ -82,6 +83,7 @@ export interface TextprotoAnyName extends Span {
 }
 
 export interface TextprotoListValue extends Span {
+  type: "textproto-list-value";
   bracketOpen: Token;
   valueOrCommas: (
     | TextprotoMessageValue

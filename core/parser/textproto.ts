@@ -81,6 +81,7 @@ function acceptTextprotoField(
   const semiOrComma = acceptTextprotoSemiOrComma(parser);
   return {
     ...mergeSpans([fieldName, value, semiOrComma]),
+    type: "textproto-field",
     fieldName,
     colon,
     value,
