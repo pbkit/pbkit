@@ -1066,7 +1066,7 @@ const acceptMax = acceptPatternAndThen<ast.Max>(
 );
 
 function acceptRange(parser: ProtoParser): ast.Range | undefined {
-  const rangeStart = acceptIntLit(parser);
+  const rangeStart = acceptSignedIntLit(parser);
   if (!rangeStart) return;
   skipWsAndComments(parser);
   const to = acceptKeyword(parser, "to");
@@ -1079,8 +1079,8 @@ function acceptRange(parser: ProtoParser): ast.Range | undefined {
     };
   }
   skipWsAndComments(parser);
-  const rangeEnd = acceptIntLit(parser) ?? acceptMax(parser);
-  if (!rangeEnd) throw new SyntaxError(parser, [intLitPattern, "max"]);
+  const rangeEnd = acceptSignedIntLit(parser) ?? acceptMax(parser);
+  if (!rangeEnd) throw new SyntaxError(parser, ["-", intLitPattern, "max"]);
   return {
     ...mergeSpans([rangeStart, rangeEnd]),
     type: "range",
@@ -1160,7 +1160,7 @@ function acceptReserved(
   const keyword = acceptKeyword(parser, "reserved");
   if (!keyword) return;
   skipWsAndComments(parser);
-  const reserved = parser.try(intLitPattern)
+  const reserved = (parser.try("-") ?? parser.try(intLitPattern))
     ? expectRanges(parser)
     : expectFieldNames(parser);
   skipWsAndComments(parser);
