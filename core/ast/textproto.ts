@@ -104,8 +104,8 @@ export type TextprotoScalarValue =
   | TextprotoStrLit
   | TextprotoSignedIdent
   | TextprotoSignedFloatLit
-  | TextprotoSignedDecLit
   | TextprotoSignedOctLit
+  | TextprotoSignedDecLit
   | TextprotoSignedHexLit;
 
 export interface TextprotoStrLit extends Span {
@@ -121,12 +121,12 @@ export interface TextprotoFloatLit extends Token {
   type: "textproto-float-lit";
 }
 
-export interface TextprotoDecLit extends Token {
-  type: "textproto-dec-lit";
-}
-
 export interface TextprotoOctLit extends Token {
   type: "textproto-oct-lit";
+}
+
+export interface TextprotoDecLit extends Token {
+  type: "textproto-dec-lit";
 }
 
 export interface TextprotoHexLit extends Token {

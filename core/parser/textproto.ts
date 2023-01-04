@@ -103,7 +103,7 @@ function expectTextprotoFieldValue(
 function acceptTextprotoMessageValue(
   parser: TextprotoParser,
 ): ast.TextprotoMessageValue | undefined {
-  const bracketOpen = parser.accept(/^({|<)/);
+  const bracketOpen = parser.accept(/^(?:{|<)/);
   if (!bracketOpen) return;
   const statements = acceptTextprotoStatements(parser);
   const bracketClose = bracketOpen.text === "{"
@@ -131,6 +131,18 @@ const identPattern = /^[a-z_][a-z0-9_]*/i;
 const acceptTextprotoIdent = acceptPatternAndThen<ast.TextprotoIdent>(
   identPattern,
   (ident) => ({ type: "textproto-ident", ...ident }),
+);
+
+const octPattern = /^0[0-7]+/;
+const acceptTextprotoOctLit = acceptPatternAndThen<ast.TextprotoOctLit>(
+  octPattern,
+  (oct) => ({ type: "textproto-oct-lit", ...oct }),
+);
+
+const decPattern = /^(?:0(?=$|[^0-9])|[1-9][0-9]*)/;
+const acceptTextprotoDecLit = acceptPatternAndThen<ast.TextprotoDecLit>(
+  decPattern,
+  (dec) => ({ type: "textproto-dec-lit", ...dec }),
 );
 
 // TODO: fix regex
@@ -193,8 +205,28 @@ const acceptTextprotoSignedIdent = signed<
   "textproto-signed-ident",
 );
 
+const acceptTextprotoSignedOctLit = signed<
+  ast.TextprotoOctLit,
+  "textproto-signed-oct-lit",
+  ast.TextprotoSignedOctLit
+>(
+  acceptTextprotoOctLit,
+  "textproto-signed-oct-lit",
+);
+
+const acceptTextprotoSignedDecLit = signed<
+  ast.TextprotoDecLit,
+  "textproto-signed-dec-lit",
+  ast.TextprotoSignedDecLit
+>(
+  acceptTextprotoDecLit,
+  "textproto-signed-dec-lit",
+);
+
 const acceptTextprotoScalarValue = choice<ast.TextprotoScalarValue>([
   acceptTextprotoStrLit,
   acceptTextprotoSignedIdent,
+  acceptTextprotoSignedOctLit,
+  acceptTextprotoSignedDecLit,
   // TODO
 ]);
