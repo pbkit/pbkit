@@ -101,6 +101,7 @@ export interface TextprotoMessageValue extends Span {
 }
 
 export type TextprotoScalarValue =
+  | TextprotoStrLit
   | TextprotoSignedIdent
   | TextprotoSignedFloatLit
   | TextprotoSignedDecLit

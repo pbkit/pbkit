@@ -94,7 +94,7 @@ function expectTextprotoFieldValue(
 ): ast.TextprotoField["value"] {
   return choice([
     skipWsAndTextprotoComments,
-    // TODO
+    // TODO: TextprotoListValue, TextprotoMessageValue
     acceptTextprotoScalarValue,
   ])(parser)!; // TODO: error
 }
@@ -113,6 +113,24 @@ const acceptTextprotoIdent = acceptPatternAndThen<ast.TextprotoIdent>(
   identPattern,
   (ident) => ({ type: "textproto-ident", ...ident }),
 );
+
+// TODO: fix regex
+const strLitPattern =
+  /^'(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\\?'"]|[^'\0\n\\])*'|^"(?:\\x[0-9a-f]{2}|\\[0-7]{3}|\\[0-7]|\\[abfnrtv\\\?'"]|[^"\0\n\\])*"/i;
+function acceptTextprotoStrLit(
+  parser: TextprotoParser,
+): ast.TextprotoStrLit | undefined {
+  const strLit = parser.accept(strLitPattern);
+  if (!strLit) return;
+  const tokens = [strLit];
+  while (true) {
+    skipWsAndTextprotoComments(parser);
+    const strLit = parser.accept(strLitPattern);
+    if (!strLit) break;
+    tokens.push(strLit);
+  }
+  return { ...mergeSpans(tokens), type: "textproto-str-lit", tokens };
+}
 
 const acceptTextprotoSemi = acceptPatternAndThen<ast.TextprotoSemi>(
   ";",
@@ -156,7 +174,8 @@ const acceptTextprotoSignedIdent = signed<
   "textproto-signed-ident",
 );
 
-const acceptTextprotoScalarValue = choice([
+const acceptTextprotoScalarValue = choice<ast.TextprotoScalarValue>([
+  acceptTextprotoStrLit,
   acceptTextprotoSignedIdent,
   // TODO
 ]);
