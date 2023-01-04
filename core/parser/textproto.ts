@@ -92,11 +92,30 @@ function acceptTextprotoField(
 function expectTextprotoFieldValue(
   parser: TextprotoParser,
 ): ast.TextprotoField["value"] {
-  return choice([
+  return choice<ast.TextprotoField["value"]>([
     skipWsAndTextprotoComments,
-    // TODO: TextprotoListValue, TextprotoMessageValue
+    // TODO: TextprotoListValue
+    acceptTextprotoMessageValue,
     acceptTextprotoScalarValue,
   ])(parser)!; // TODO: error
+}
+
+function acceptTextprotoMessageValue(
+  parser: TextprotoParser,
+): ast.TextprotoMessageValue | undefined {
+  const bracketOpen = parser.accept(/^({|<)/);
+  if (!bracketOpen) return;
+  const statements = acceptTextprotoStatements(parser);
+  const bracketClose = bracketOpen.text === "{"
+    ? parser.expect("}")
+    : parser.expect(">");
+  return {
+    ...mergeSpans([bracketOpen, bracketClose]),
+    type: "textproto-message-value",
+    bracketOpen,
+    statements,
+    bracketClose,
+  };
 }
 
 function acceptTextprotoFieldName(
