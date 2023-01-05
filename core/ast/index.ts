@@ -24,11 +24,13 @@ import {
 import * as extensionsAndReserved from "./extensions-and-reserved.ts";
 import * as fields from "./fields.ts";
 import * as lexicalElements from "./lexical-elements.ts";
+import * as textproto from "./textproto.ts";
 import * as topLevelDefinitions from "./top-level-definitions.ts";
 
 export * from "./extensions-and-reserved.ts";
 export * from "./fields.ts";
 export * from "./lexical-elements.ts";
+export * from "./textproto.ts";
 export * from "./top-level-definitions.ts";
 
 export interface Proto {
@@ -40,6 +42,7 @@ export type Node =
   | extensionsAndReserved.Node
   | fields.Node
   | lexicalElements.Node
+  | textproto.Node
   | topLevelDefinitions.Node;
 
 type index_Node =

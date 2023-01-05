@@ -1,22 +1,31 @@
 import * as ast from "../ast/index.ts";
 import {
+  AcceptFn,
+  acceptPatternAndThen,
+  acceptSpecialToken,
+  choice,
+  many,
+  mergeSpans,
+} from "./misc.ts";
+import {
   createRecursiveDescentParser,
   Pattern,
   RecursiveDescentParser,
-  Span,
   SyntaxError,
-  Token,
 } from "./recursive-descent-parser.ts";
+import { acceptTextprotoStatements, TextprotoParser } from "./textproto.ts";
+
+type Comment = ast.Comment | ast.TextprotoComment;
 
 export interface ParseResult<T = ast.Proto> {
   ast: T;
   parser: ProtoParser;
-  comments: ast.Comment[];
+  comments: Comment[];
 }
 
 export type ProtoParser = RecursiveDescentParser<ProtoParserEvent>;
 interface ProtoParserEvent {
-  comment: ast.Comment;
+  comment: Comment;
 }
 
 const createProtoParser = createRecursiveDescentParser as (
@@ -24,7 +33,7 @@ const createProtoParser = createRecursiveDescentParser as (
 ) => ProtoParser;
 
 export function parse(text: string): ParseResult {
-  const comments: ast.Comment[] = [];
+  const comments: Comment[] = [];
   const parser = createProtoParser(text);
   parser.on("comment", (comment) => comments.push(comment));
   const statements = acceptStatements<ast.TopLevelStatement>(parser, [
@@ -46,51 +55,6 @@ export function parseConstant(text: string): ParseResult<ast.Constant> {
   const parser = createProtoParser(text);
   const constant = expectConstant(parser);
   return { ast: constant, parser, comments: [] };
-}
-
-function mergeSpans(spans: (undefined | Span | (undefined | Span)[])[]): Span {
-  let start = Infinity;
-  let end = -Infinity;
-  for (let i = 0; i < spans.length; ++i) {
-    if (spans[i] == null) continue;
-    const span = Array.isArray(spans[i])
-      ? mergeSpans(spans[i] as Span[])
-      : spans[i] as Span;
-    start = Math.min(start, span.start);
-    end = Math.max(end, span.end);
-  }
-  return { start, end };
-}
-
-interface AcceptFn<T> {
-  (parser: ProtoParser): T | undefined;
-}
-
-function acceptPatternAndThen<T>(
-  pattern: Pattern,
-  then: (token: Token) => T,
-): AcceptFn<T> {
-  return function accept(parser) {
-    const token = parser.accept(pattern);
-    if (!token) return;
-    return then(token);
-  };
-}
-
-function choice<T>(acceptFns: AcceptFn<T>[]): AcceptFn<T> {
-  return function accept(parser) {
-    for (const acceptFn of acceptFns) {
-      const node = acceptFn(parser);
-      if (node) return node;
-    }
-  };
-}
-
-function many<T>(parser: ProtoParser, acceptFn: AcceptFn<T>): T[] {
-  const nodes: T[] = [];
-  let node: ReturnType<typeof acceptFn>;
-  while (node = acceptFn(parser)) nodes.push(node);
-  return nodes;
 }
 
 // https://dev.to/svehla/typescript-object-fromentries-389c
@@ -224,16 +188,6 @@ const acceptIdent = acceptPatternAndThen<ast.Ident>(
   identPattern,
   (ident) => ({ type: "ident", ...ident }),
 );
-
-function acceptSpecialToken<TType extends string>(
-  parser: ProtoParser,
-  type: TType,
-  pattern: Pattern = identPattern,
-): (Token & { type: TType }) | undefined {
-  const token = parser.accept(pattern);
-  if (!token) return;
-  return { type, ...token };
-}
 
 function acceptKeyword(
   parser: ProtoParser,
@@ -554,30 +508,19 @@ function expectStrLit(parser: ProtoParser): ast.StrLit {
   throw new SyntaxError(parser, [strLitPattern]);
 }
 
-// https://github.com/protocolbuffers/protobuf/blob/c2148566c7/src/google/protobuf/compiler/parser.cc#L1429-L1452
 function acceptAggregate(
   parser: ProtoParser,
 ): ast.Aggregate | undefined {
-  const parenthesisOpen = parser.accept("{");
-  if (!parenthesisOpen) return;
-  let character = parenthesisOpen;
-  let depth = 1;
-  while (character = parser.expect(/^(?:\s|\S)/)) {
-    switch (character.text) {
-      case "{":
-        ++depth;
-        break;
-      case "}":
-        --depth;
-        break;
-    }
-    if (depth === 0) {
-      break;
-    }
-  }
+  const bracketOpen = parser.accept("{");
+  if (!bracketOpen) return;
+  const statements = acceptTextprotoStatements(parser as TextprotoParser);
+  const bracketClose = parser.expect("}");
   return {
-    ...mergeSpans([parenthesisOpen, character]),
+    ...mergeSpans([bracketOpen, bracketClose]),
     type: "aggregate",
+    bracketOpen,
+    statements,
+    bracketClose,
   };
 }
 
@@ -1123,7 +1066,7 @@ const acceptMax = acceptPatternAndThen<ast.Max>(
 );
 
 function acceptRange(parser: ProtoParser): ast.Range | undefined {
-  const rangeStart = acceptIntLit(parser);
+  const rangeStart = acceptSignedIntLit(parser);
   if (!rangeStart) return;
   skipWsAndComments(parser);
   const to = acceptKeyword(parser, "to");
@@ -1136,8 +1079,8 @@ function acceptRange(parser: ProtoParser): ast.Range | undefined {
     };
   }
   skipWsAndComments(parser);
-  const rangeEnd = acceptIntLit(parser) ?? acceptMax(parser);
-  if (!rangeEnd) throw new SyntaxError(parser, [intLitPattern, "max"]);
+  const rangeEnd = acceptSignedIntLit(parser) ?? acceptMax(parser);
+  if (!rangeEnd) throw new SyntaxError(parser, ["-", intLitPattern, "max"]);
   return {
     ...mergeSpans([rangeStart, rangeEnd]),
     type: "range",
@@ -1217,7 +1160,7 @@ function acceptReserved(
   const keyword = acceptKeyword(parser, "reserved");
   if (!keyword) return;
   skipWsAndComments(parser);
-  const reserved = parser.try(intLitPattern)
+  const reserved = (parser.try("-") ?? parser.try(intLitPattern))
     ? expectRanges(parser)
     : expectFieldNames(parser);
   skipWsAndComments(parser);
