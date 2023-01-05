@@ -128,9 +128,10 @@ function expectTextprotoFieldValue(
       identPattern,
       strLitPattern,
       "-",
-      octPattern,
-      decPattern,
-      // TODO: hexPattern, floatPattern
+      octLitPattern,
+      decLitPattern,
+      // TODO: hexPattern
+      floatLitPattern,
     ]);
   }
   return value;
@@ -250,15 +251,22 @@ const acceptTextprotoIdent = acceptPatternAndThen<ast.TextprotoIdent>(
   (ident) => ({ type: "textproto-ident", ...ident }),
 );
 
-const octPattern = /^0[0-7]+/;
+const floatLitPattern =
+  /^\d+f|(?:^\d+\.\d*(?:e[-+]?\d+)?|^\d+e[-+]?\d+|^\.\d+(?:e[-+]?\d+)?)f?/i;
+const acceptTextprotoFloatLit = acceptPatternAndThen<ast.TextprotoFloatLit>(
+  floatLitPattern,
+  (float) => ({ type: "textproto-float-lit", ...float }),
+);
+
+const octLitPattern = /^0[0-7]+/;
 const acceptTextprotoOctLit = acceptPatternAndThen<ast.TextprotoOctLit>(
-  octPattern,
+  octLitPattern,
   (oct) => ({ type: "textproto-oct-lit", ...oct }),
 );
 
-const decPattern = /^(?:0(?=$|[^0-9])|[1-9][0-9]*)/;
+const decLitPattern = /^(?:0(?=$|[^0-9])|[1-9][0-9]*)/;
 const acceptTextprotoDecLit = acceptPatternAndThen<ast.TextprotoDecLit>(
-  decPattern,
+  decLitPattern,
   (dec) => ({ type: "textproto-dec-lit", ...dec }),
 );
 
@@ -327,6 +335,15 @@ const acceptTextprotoSignedIdent = signed<
   "textproto-signed-ident",
 );
 
+const acceptTextprotoSignedFloatLit = signed<
+  ast.TextprotoFloatLit,
+  "textproto-signed-float-lit",
+  ast.TextprotoSignedFloatLit
+>(
+  acceptTextprotoFloatLit,
+  "textproto-signed-float-lit",
+);
+
 const acceptTextprotoSignedOctLit = signed<
   ast.TextprotoOctLit,
   "textproto-signed-oct-lit",
@@ -348,6 +365,7 @@ const acceptTextprotoSignedDecLit = signed<
 const acceptTextprotoScalarValue = choice<ast.TextprotoScalarValue>([
   acceptTextprotoStrLit,
   acceptTextprotoSignedIdent,
+  acceptTextprotoSignedFloatLit,
   acceptTextprotoSignedOctLit,
   acceptTextprotoSignedDecLit,
   // TODO
