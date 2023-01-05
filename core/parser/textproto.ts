@@ -1,5 +1,9 @@
 import * as ast from "../ast/textproto.ts";
 import {
+  MultilineComment,
+  SinglelineComment,
+} from "../ast/lexical-elements.ts";
+import {
   AcceptFn,
   acceptPatternAndThen,
   acceptSpecialToken,
@@ -14,9 +18,11 @@ import {
   Span,
 } from "./recursive-descent-parser.ts";
 
+type Comment = ast.TextprotoComment | SinglelineComment | MultilineComment;
+
 export type TextprotoParser = RecursiveDescentParser<TextprotoParserEvent>;
 interface TextprotoParserEvent {
-  comment: ast.TextprotoComment;
+  comment: Comment;
 }
 
 const createTextprotoParser = createRecursiveDescentParser as (
@@ -26,7 +32,7 @@ const createTextprotoParser = createRecursiveDescentParser as (
 export function parseTextprotoMessage(
   text: string,
 ): ParseResult<ast.Textproto> {
-  const comments: ast.TextprotoComment[] = [];
+  const comments: Comment[] = [];
   const parser = createTextprotoParser(text);
   parser.on("comment", (comment) => comments.push(comment));
   const statements = acceptTextprotoStatements(parser);
@@ -49,12 +55,32 @@ export function acceptTextprotoStatements(
 }
 
 const whitespacePattern = /^\s+/;
+const multilineCommentPattern = /^\/\*(?:.|\r?\n)*?\*\//;
+const singlelineCommentPattern = /^\/\/.*(?:\r?\n|$)/;
 const textprotoCommentPattern = /^#.*(?:\r?\n|$)/;
 
 export function skipWsAndTextprotoComments(parser: TextprotoParser): undefined {
   while (true) {
     const whitespace = parser.accept(whitespacePattern);
     if (whitespace) continue;
+    const multilineComment = acceptSpecialToken(
+      parser,
+      "multiline-comment",
+      multilineCommentPattern,
+    );
+    if (multilineComment) {
+      parser.emit("comment", multilineComment);
+      continue;
+    }
+    const singlelineComment = acceptSpecialToken(
+      parser,
+      "singleline-comment",
+      singlelineCommentPattern,
+    );
+    if (singlelineComment) {
+      parser.emit("comment", singlelineComment);
+      continue;
+    }
     const textprotoComment = acceptSpecialToken(
       parser,
       "textproto-comment",
