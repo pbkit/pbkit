@@ -16,6 +16,7 @@ import {
   createRecursiveDescentParser,
   RecursiveDescentParser,
   Span,
+  SyntaxError,
 } from "./recursive-descent-parser.ts";
 
 type Comment = ast.TextprotoComment | SinglelineComment | MultilineComment;
@@ -149,8 +150,61 @@ function acceptTextprotoFieldName(
 ): ast.TextprotoFieldName | undefined {
   const ident = acceptTextprotoIdent(parser);
   if (ident) return ident;
-  const loc = parser.loc;
-  // TODO
+  const bracketOpen = parser.accept("[");
+  if (!bracketOpen) return;
+  skipWsAndTextprotoComments(parser);
+  const fullIdent1 = expectTextprotoFullIdent(parser);
+  skipWsAndTextprotoComments(parser);
+  if (parser.try("/")) {
+    const slash = parser.expect("/");
+    skipWsAndTextprotoComments(parser);
+    const fullIdent2 = expectTextprotoFullIdent(parser);
+    skipWsAndTextprotoComments(parser);
+    const bracketClose = parser.expect("]");
+    return {
+      ...mergeSpans([bracketOpen, bracketClose]),
+      type: "textproto-any-name",
+      bracketOpen,
+      domain: fullIdent1,
+      slash,
+      typeName: fullIdent2,
+      bracketClose,
+    };
+  }
+  const bracketClose = parser.expect("]");
+  return {
+    ...mergeSpans([bracketOpen, bracketClose]),
+    type: "textproto-extension-name",
+    bracketOpen,
+    typeName: fullIdent1,
+    bracketClose,
+  };
+}
+
+function acceptTextprotoFullIdent(
+  parser: TextprotoParser,
+): ast.TextprotoFullIdent | undefined {
+  const identOrDots = many(
+    parser,
+    choice<ast.TextprotoDot | ast.TextprotoIdent>([
+      acceptTextprotoDot,
+      acceptTextprotoIdent,
+    ]),
+  );
+  if (identOrDots.length < 1) return;
+  return {
+    ...mergeSpans(identOrDots),
+    type: "textproto-full-ident",
+    identOrDots,
+  };
+}
+
+function expectTextprotoFullIdent(
+  parser: TextprotoParser,
+): ast.TextprotoFullIdent {
+  const fullIdent = acceptTextprotoFullIdent(parser);
+  if (fullIdent) return fullIdent;
+  throw new SyntaxError(parser, [".", identPattern]);
 }
 
 const identPattern = /^[a-z_][a-z0-9_]*/i;
@@ -197,6 +251,11 @@ const acceptTextprotoSemi = acceptPatternAndThen<ast.TextprotoSemi>(
 const acceptTextprotoComma = acceptPatternAndThen<ast.TextprotoComma>(
   ",",
   (comma) => ({ type: "textproto-comma", ...comma }),
+);
+
+const acceptTextprotoDot = acceptPatternAndThen<ast.TextprotoDot>(
+  ".",
+  (dot) => ({ type: "textproto-dot", ...dot }),
 );
 
 const acceptTextprotoSemiOrComma = choice<
