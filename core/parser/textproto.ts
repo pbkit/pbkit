@@ -119,12 +119,49 @@ function acceptTextprotoField(
 function expectTextprotoFieldValue(
   parser: TextprotoParser,
 ): ast.TextprotoField["value"] {
-  return choice<ast.TextprotoField["value"]>([
-    skipWsAndTextprotoComments,
-    // TODO: TextprotoListValue
-    acceptTextprotoMessageValue,
-    acceptTextprotoScalarValue,
-  ])(parser)!; // TODO: error
+  const value = acceptTextprotoFieldValue(parser);
+  if (!value) {
+    throw new SyntaxError(parser, [
+      "[",
+      "{",
+      "<",
+      identPattern,
+      strLitPattern,
+      "-",
+      octPattern,
+      decPattern,
+      // TODO: hexPattern, floatPattern
+    ]);
+  }
+  return value;
+}
+
+function acceptTextprotoListValue(
+  parser: TextprotoParser,
+): ast.TextprotoListValue | undefined {
+  const bracketOpen = parser.accept("[");
+  if (!bracketOpen) return;
+  const valueOrCommas = many(
+    parser,
+    choice<
+      | ast.TextprotoMessageValue
+      | ast.TextprotoScalarValue
+      | ast.TextprotoComma
+    >([
+      skipWsAndTextprotoComments,
+      acceptTextprotoMessageValue,
+      acceptTextprotoScalarValue,
+      acceptTextprotoComma,
+    ]),
+  );
+  const bracketClose = parser.expect("]");
+  return {
+    ...mergeSpans([bracketOpen, bracketClose]),
+    type: "textproto-list-value",
+    bracketOpen,
+    valueOrCommas,
+    bracketClose,
+  };
 }
 
 function acceptTextprotoMessageValue(
@@ -314,4 +351,11 @@ const acceptTextprotoScalarValue = choice<ast.TextprotoScalarValue>([
   acceptTextprotoSignedOctLit,
   acceptTextprotoSignedDecLit,
   // TODO
+]);
+
+const acceptTextprotoFieldValue = choice<ast.TextprotoField["value"]>([
+  skipWsAndTextprotoComments,
+  acceptTextprotoListValue,
+  acceptTextprotoMessageValue,
+  acceptTextprotoScalarValue,
 ]);
