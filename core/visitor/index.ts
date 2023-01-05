@@ -461,12 +461,12 @@ export const visitor: Visitor = {
     }
   },
   visitRange(visitor, node) {
-    visitor.visitIntLit(visitor, node.rangeStart);
+    visitor.visitSignedIntLit(visitor, node.rangeStart);
     node.to && visitor.visitKeyword(visitor, node.to);
     if (node.rangeEnd) {
       switch (node.rangeEnd.type) {
-        case "int-lit":
-          visitor.visitIntLit(visitor, node.rangeEnd);
+        case "signed-int-lit":
+          visitor.visitSignedIntLit(visitor, node.rangeEnd);
           break;
         case "max":
           visitor.visitMax(visitor, node.rangeEnd);
