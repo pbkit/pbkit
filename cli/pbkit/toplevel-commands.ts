@@ -1,4 +1,4 @@
-import * as path from "https://deno.land/std@0.167.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
 import { getVersionsDir } from "./config.ts";
 
 export function getToplevelCommands(rev: string): string[] {

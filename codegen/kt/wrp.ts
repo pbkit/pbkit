@@ -1,5 +1,5 @@
-import { basename } from "https://deno.land/std@0.167.0/path/mod.ts";
-import { StringReader } from "https://deno.land/std@0.167.0/io/readers.ts";
+import { basename } from "https://deno.land/std@0.175.0/path/mod.ts";
+import { StringReader } from "https://deno.land/std@0.175.0/io/string_reader.ts";
 import { Rpc, RpcType, Schema, Service } from "../../core/schema/model.ts";
 import { pascalToCamel } from "../../misc/case.ts";
 import { CodeEntry } from "../index.ts";

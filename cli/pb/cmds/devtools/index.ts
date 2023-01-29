@@ -1,4 +1,4 @@
-import { Handler, Server } from "https://deno.land/std@0.167.0/http/mod.ts";
+import { Handler, Server } from "https://deno.land/std@0.175.0/http/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import {
   disassembleZip,
@@ -95,8 +95,10 @@ function createFile(arrayBuffer: ArrayBuffer): File {
       p.set(u8s.subarray(pointer, pointer += p.length));
       return Promise.resolve(p.length);
     },
-    seek(offset, whence) {
+    seek(_offset, whence) {
       let next = pointer;
+      // pbkit-devtools zip file is less than 4GB.
+      const offset = Number(_offset);
       switch (whence) {
         case Deno.SeekMode.Start: {
           next = offset;

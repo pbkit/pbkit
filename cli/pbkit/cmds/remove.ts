@@ -1,5 +1,5 @@
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
-import * as path from "https://deno.land/std@0.167.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
 import { getVersionsDir } from "../config.ts";
 import getLocalVersions from "../getLocalVersions.ts";
 import { getCurrentVersion } from "../current-version.ts";
