@@ -1,4 +1,4 @@
-import { Handler, Server } from "https://deno.land/std@0.167.0/http/mod.ts";
+import { Handler, Server } from "https://deno.land/std@0.175.0/http/mod.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import {
   disassembleZip,

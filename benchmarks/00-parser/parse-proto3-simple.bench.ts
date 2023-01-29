@@ -1,5 +1,5 @@
 import protobufjs from "https://esm.sh/protobufjs@6.11.2";
-import * as path from "https://deno.land/std@0.167.0/path/mod.ts";
+import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
 import * as pbkit from "../../core/parser/proto.ts";
 
 const dirname = path.dirname(path.fromFileUrl(import.meta.url));

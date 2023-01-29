@@ -1,5 +1,5 @@
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
-import { writeAll } from "https://deno.land/std@0.167.0/streams/write_all.ts";
+import { writeAll } from "https://deno.land/std@0.175.0/streams/write_all.ts";
 import { createLoader } from "../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../core/schema/builder.ts";
 import deserialize from "../../../../../core/runtime/wire/deserialize.ts";

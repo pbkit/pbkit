@@ -3,7 +3,7 @@ import {
   normalize,
   resolve,
   toFileUrl,
-} from "https://deno.land/std@0.167.0/path/mod.ts";
+} from "https://deno.land/std@0.175.0/path/mod.ts";
 import { createLoader } from "../../../../../../core/loader/deno-fs.ts";
 import { build } from "../../../../../../core/schema/builder.ts";
 import save from "../../../../../../codegen/save.ts";

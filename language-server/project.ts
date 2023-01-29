@@ -1,4 +1,4 @@
-import { join } from "https://deno.land/std@0.167.0/path/mod.ts";
+import { join } from "https://deno.land/std@0.175.0/path/mod.ts";
 import { getVendorDir } from "../cli/pb/config.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 import { loadPollapoYml } from "../cli/pollapo/pollapoYml.ts";

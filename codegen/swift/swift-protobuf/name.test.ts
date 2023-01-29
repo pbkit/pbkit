@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.167.0/testing/asserts.ts";
+import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { sanitizeFieldName, toCamelCase } from "./name.ts";
 
 Deno.test(function to_camel_case() {

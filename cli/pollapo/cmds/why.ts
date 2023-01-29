@@ -1,4 +1,4 @@
-import { bold, red, yellow } from "https://deno.land/std@0.167.0/fmt/colors.ts";
+import { bold, red, yellow } from "https://deno.land/std@0.175.0/fmt/colors.ts";
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { jsonTree } from "https://deno.land/x/json_tree@latest/mod.ts";
 import { println } from "../misc/stdio.ts";
