@@ -23,8 +23,10 @@ function build {
     pollapo
   )
   outdir=tmp/dist/pbkit-$target
+  mkdir -p tmp/dist
   for cli in ${clis[@]}; do
-    deno compile -A --unstable --target $target -o $outdir/$cli ./cli/$cli/entrypoint.ts
+    deno bundle ./cli/$cli/entrypoint.ts ./tmp/dist/$cli.bundle.js
+    deno compile -A --unstable --target $target -o $outdir/$cli ./tmp/dist/$cli.bundle.js
   done
   pushd $outdir
     tar -cf ../pbkit-$target.tar .
