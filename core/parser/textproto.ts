@@ -322,7 +322,7 @@ function signed<T extends Span, U extends string, V>(
       parser.loc = loc;
       return;
     }
-    return { ...mergeSpans([sign, value]), type, sign, value } as V;
+    return { ...mergeSpans([sign, value]), type, sign, value } as unknown as V;
   };
 }
 
