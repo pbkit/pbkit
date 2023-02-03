@@ -1,11 +1,11 @@
-// @deno-types="https://esm.sh/v103/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.d.ts"
+// @deno-types="https://esm.sh/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.d.ts?pin=v103"
 import {
   ErrorCodes,
   Message,
   NotificationMessage,
   RequestMessage,
   ResponseMessage,
-} from "https://esm.sh/v103/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.js";
+} from "https://esm.sh/vscode-jsonrpc@8.0.0-next.6/lib/common/messages.js?pin=v103";
 import { defer, Deferred } from "../core/runtime/async/observer.ts";
 import {
   BaseProtocolMessage,

@@ -1,6 +1,6 @@
 import { ensureDir } from "https://deno.land/std@0.175.0/fs/mod.ts";
 import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
-import JSZip from "https://esm.sh/v103/jszip@3.5.0";
+import JSZip from "https://esm.sh/jszip@3.5.0?pin=v103";
 import { stripComponent } from "./index.ts";
 
 export interface Files {
