@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as OptimizeMode,
   name2num,

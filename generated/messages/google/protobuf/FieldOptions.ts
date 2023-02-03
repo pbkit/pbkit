@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as CType,
   name2num,
@@ -8,6 +9,16 @@ import {
   name2num as name2num_1,
   num2name as num2name_1,
 } from "./(FieldOptions)/JSType.ts";
+import {
+  Type as OptionRetention,
+  name2num as name2num_2,
+  num2name as num2name_2,
+} from "./(FieldOptions)/OptionRetention.ts";
+import {
+  Type as OptionTargetType,
+  name2num as name2num_3,
+  num2name as num2name_3,
+} from "./(FieldOptions)/OptionTargetType.ts";
 import {
   Type as UninterpretedOption,
   encodeJson as encodeJson_1,
@@ -46,6 +57,9 @@ export declare namespace $.google.protobuf {
     jstype?: JSType;
     weak?: boolean;
     unverifiedLazy?: boolean;
+    debugRedact?: boolean;
+    retention?: OptionRetention;
+    target?: OptionTargetType;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -61,6 +75,9 @@ export function getDefaultValue(): $.google.protobuf.FieldOptions {
     jstype: undefined,
     weak: undefined,
     unverifiedLazy: undefined,
+    debugRedact: undefined,
+    retention: undefined,
+    target: undefined,
     uninterpretedOption: [],
   };
 }
@@ -81,6 +98,9 @@ export function encodeJson(value: $.google.protobuf.FieldOptions): unknown {
   if (value.jstype !== undefined) result.jstype = tsValueToJsonValueFns.enum(value.jstype);
   if (value.weak !== undefined) result.weak = tsValueToJsonValueFns.bool(value.weak);
   if (value.unverifiedLazy !== undefined) result.unverifiedLazy = tsValueToJsonValueFns.bool(value.unverifiedLazy);
+  if (value.debugRedact !== undefined) result.debugRedact = tsValueToJsonValueFns.bool(value.debugRedact);
+  if (value.retention !== undefined) result.retention = tsValueToJsonValueFns.enum(value.retention);
+  if (value.target !== undefined) result.target = tsValueToJsonValueFns.enum(value.target);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
@@ -94,6 +114,9 @@ export function decodeJson(value: any): $.google.protobuf.FieldOptions {
   if (value.jstype !== undefined) result.jstype = jsonValueToTsValueFns.enum(value.jstype) as JSType;
   if (value.weak !== undefined) result.weak = jsonValueToTsValueFns.bool(value.weak);
   if (value.unverifiedLazy !== undefined) result.unverifiedLazy = jsonValueToTsValueFns.bool(value.unverifiedLazy);
+  if (value.debugRedact !== undefined) result.debugRedact = jsonValueToTsValueFns.bool(value.debugRedact);
+  if (value.retention !== undefined) result.retention = jsonValueToTsValueFns.enum(value.retention) as OptionRetention;
+  if (value.target !== undefined) result.target = jsonValueToTsValueFns.enum(value.target) as OptionTargetType;
   result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
@@ -140,6 +163,24 @@ export function encodeBinary(value: $.google.protobuf.FieldOptions): Uint8Array 
     const tsValue = value.unverifiedLazy;
     result.push(
       [15, tsValueToWireValueFns.bool(tsValue)],
+    );
+  }
+  if (value.debugRedact !== undefined) {
+    const tsValue = value.debugRedact;
+    result.push(
+      [16, tsValueToWireValueFns.bool(tsValue)],
+    );
+  }
+  if (value.retention !== undefined) {
+    const tsValue = value.retention;
+    result.push(
+      [17, { type: WireType.Varint as const, value: new Long(name2num_2[tsValue as keyof typeof name2num_2]) }],
+    );
+  }
+  if (value.target !== undefined) {
+    const tsValue = value.target;
+    result.push(
+      [18, { type: WireType.Varint as const, value: new Long(name2num_3[tsValue as keyof typeof name2num_3]) }],
     );
   }
   for (const tsValue of value.uninterpretedOption) {
@@ -202,6 +243,27 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.FieldOptions
     const value = wireValueToTsValueFns.bool(wireValue);
     if (value === undefined) break field;
     result.unverifiedLazy = value;
+  }
+  field: {
+    const wireValue = wireFields.get(16);
+    if (wireValue === undefined) break field;
+    const value = wireValueToTsValueFns.bool(wireValue);
+    if (value === undefined) break field;
+    result.debugRedact = value;
+  }
+  field: {
+    const wireValue = wireFields.get(17);
+    if (wireValue === undefined) break field;
+    const value = wireValue.type === WireType.Varint ? num2name_2[wireValue.value[0] as keyof typeof num2name_2] : undefined;
+    if (value === undefined) break field;
+    result.retention = value;
+  }
+  field: {
+    const wireValue = wireFields.get(18);
+    if (wireValue === undefined) break field;
+    const value = wireValue.type === WireType.Varint ? num2name_3[wireValue.value[0] as keyof typeof num2name_3] : undefined;
+    if (value === undefined) break field;
+    result.target = value;
   }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);

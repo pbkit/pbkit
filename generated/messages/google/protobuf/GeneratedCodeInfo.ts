@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as Annotation,
   encodeJson as encodeJson_1,

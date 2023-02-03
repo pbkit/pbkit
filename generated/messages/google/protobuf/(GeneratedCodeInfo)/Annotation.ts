@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as Semantic,
   name2num,

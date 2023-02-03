@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as UninterpretedOption,
   encodeJson as encodeJson_1,
@@ -28,6 +29,8 @@ export declare namespace $.google.protobuf {
   export type EnumOptions = {
     allowAlias?: boolean;
     deprecated?: boolean;
+    /** @deprecated */
+    deprecatedLegacyJsonFieldConflicts?: boolean;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -38,6 +41,7 @@ export function getDefaultValue(): $.google.protobuf.EnumOptions {
   return {
     allowAlias: undefined,
     deprecated: undefined,
+    deprecatedLegacyJsonFieldConflicts: undefined,
     uninterpretedOption: [],
   };
 }
@@ -53,6 +57,7 @@ export function encodeJson(value: $.google.protobuf.EnumOptions): unknown {
   const result: any = {};
   if (value.allowAlias !== undefined) result.allowAlias = tsValueToJsonValueFns.bool(value.allowAlias);
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
+  if (value.deprecatedLegacyJsonFieldConflicts !== undefined) result.deprecatedLegacyJsonFieldConflicts = tsValueToJsonValueFns.bool(value.deprecatedLegacyJsonFieldConflicts);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
@@ -61,6 +66,7 @@ export function decodeJson(value: any): $.google.protobuf.EnumOptions {
   const result = getDefaultValue();
   if (value.allowAlias !== undefined) result.allowAlias = jsonValueToTsValueFns.bool(value.allowAlias);
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
+  if (value.deprecatedLegacyJsonFieldConflicts !== undefined) result.deprecatedLegacyJsonFieldConflicts = jsonValueToTsValueFns.bool(value.deprecatedLegacyJsonFieldConflicts);
   result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
@@ -77,6 +83,12 @@ export function encodeBinary(value: $.google.protobuf.EnumOptions): Uint8Array {
     const tsValue = value.deprecated;
     result.push(
       [3, tsValueToWireValueFns.bool(tsValue)],
+    );
+  }
+  if (value.deprecatedLegacyJsonFieldConflicts !== undefined) {
+    const tsValue = value.deprecatedLegacyJsonFieldConflicts;
+    result.push(
+      [6, tsValueToWireValueFns.bool(tsValue)],
     );
   }
   for (const tsValue of value.uninterpretedOption) {
@@ -104,6 +116,13 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.EnumOptions 
     const value = wireValueToTsValueFns.bool(wireValue);
     if (value === undefined) break field;
     result.deprecated = value;
+  }
+  field: {
+    const wireValue = wireFields.get(6);
+    if (wireValue === undefined) break field;
+    const value = wireValueToTsValueFns.bool(wireValue);
+    if (value === undefined) break field;
+    result.deprecatedLegacyJsonFieldConflicts = value;
   }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);

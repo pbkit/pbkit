@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as NamePart,
   encodeJson as encodeJson_1,

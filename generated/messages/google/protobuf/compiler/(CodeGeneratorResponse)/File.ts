@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as GeneratedCodeInfo,
   encodeJson as encodeJson_1,

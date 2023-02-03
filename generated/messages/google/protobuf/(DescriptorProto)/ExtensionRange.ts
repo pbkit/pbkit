@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as ExtensionRangeOptions,
   encodeJson as encodeJson_1,

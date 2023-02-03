@@ -1,3 +1,4 @@
+// @ts-nocheck
 import * as compiler from "./compiler/index.ts";
 
 export type {

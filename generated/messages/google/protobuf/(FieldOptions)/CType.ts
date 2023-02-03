@@ -1,3 +1,4 @@
+// @ts-nocheck
 export declare namespace $.google.protobuf.FieldOptions {
   export type CType =
     | "STRING"

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as FileDescriptorProto,
   encodeJson as encodeJson_1,

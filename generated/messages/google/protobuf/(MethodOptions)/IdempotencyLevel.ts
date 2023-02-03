@@ -1,3 +1,4 @@
+// @ts-nocheck
 export declare namespace $.google.protobuf.MethodOptions {
   export type IdempotencyLevel =
     | "IDEMPOTENCY_UNKNOWN"

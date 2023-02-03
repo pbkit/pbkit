@@ -1,3 +1,4 @@
+// @ts-nocheck
 export declare namespace $.google.protobuf.GeneratedCodeInfo.Annotation {
   export type Semantic =
     | "NONE"

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as UninterpretedOption,
   encodeJson as encodeJson_1,

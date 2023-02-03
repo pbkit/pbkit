@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as Version,
   encodeJson as encodeJson_1,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as EnumValueOptions,
   encodeJson as encodeJson_1,
