@@ -566,8 +566,8 @@ function enumDescriptorOptions(
     {
       allowAlias: booleanOptionValue(options["allow_alias"]),
       deprecated: booleanOptionValue(options["deprecated"]),
-      uninterpretedOption: [], // TODO
       deprecatedLegacyJsonFieldConflicts: undefined,
+      uninterpretedOption: [], // TODO
     };
   return result;
 }
