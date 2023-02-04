@@ -26,6 +26,7 @@ export default async function* aot({
     yield [
       module.filePath,
       new StringReader([
+        "// @ts-nocheck\n",
         importBufferToCode(module.importBuffer),
         Array.from(module).map((fragment) => {
           if (fragment instanceof Export) {

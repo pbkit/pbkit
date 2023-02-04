@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as MethodDescriptorProto,
   encodeJson as encodeJson_1,

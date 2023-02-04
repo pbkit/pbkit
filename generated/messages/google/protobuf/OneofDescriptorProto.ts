@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as OneofOptions,
   encodeJson as encodeJson_1,

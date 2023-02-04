@@ -33,6 +33,8 @@ import {
 } from "../../../generated/messages/google/protobuf/(MethodOptions)/IdempotencyLevel.ts";
 import { Type as CType } from "../../../generated/messages/google/protobuf/(FieldOptions)/CType.ts";
 import { Type as JSType } from "../../../generated/messages/google/protobuf/(FieldOptions)/JSType.ts";
+import { Type as OptionRetention } from "../../../generated/messages/google/protobuf/(FieldOptions)/OptionRetention.ts";
+import { Type as OptionTargetType } from "../../../generated/messages/google/protobuf/(FieldOptions)/OptionTargetType.ts";
 
 export interface ConvertSchemaToFileDescriptorSetConfig {
   schema: Schema;
@@ -393,10 +395,8 @@ function getServicesFromFile(schema: Schema, file: File): ServiceWithName[] {
 type OptionsBase = { uninterpretedOption: UninterpretedOption[] };
 function optionsOrUndefined<T extends OptionsBase>(options: T): T | undefined {
   const { uninterpretedOption, ...rest } = options;
-  const countOfOption = (
-    uninterpretedOption.length +
-    Object.values(rest).filter((x) => x !== undefined).length
-  );
+  const countOfOption = uninterpretedOption.length +
+    Object.values(rest).filter((x) => x !== undefined).length;
   return countOfOption === 0 ? undefined : options;
 }
 
@@ -500,6 +500,9 @@ function fieldDescriptorOptions(
       unverifiedLazy: booleanOptionValue(options["unverified_lazy"]),
       ctype: getCType(options["ctype"]),
       jstype: getJSType(options["jstype"]),
+      debugRedact: booleanOptionValue(options["debug_redact"]),
+      retention: getOptionRetention(options["retention"]),
+      target: getOptionTargetType(options["target"]),
       uninterpretedOption: [], // TODO
     };
   return result;
@@ -523,6 +526,37 @@ function fieldDescriptorOptions(
         return undefined;
     }
   }
+  function getOptionRetention(
+    retention: OptionValue,
+  ): OptionRetention | undefined {
+    switch (retention) {
+      case "RETENTION_UNKNOWN":
+      case "RETENTION_RUNTIME":
+      case "RETENTION_SOURCE":
+        return retention;
+      default:
+        return undefined;
+    }
+  }
+  function getOptionTargetType(
+    target: OptionValue,
+  ): OptionTargetType | undefined {
+    switch (target) {
+      case "TARGET_TYPE_UNKNOWN":
+      case "TARGET_TYPE_FILE":
+      case "TARGET_TYPE_EXTENSION_RANGE":
+      case "TARGET_TYPE_MESSAGE":
+      case "TARGET_TYPE_FIELD":
+      case "TARGET_TYPE_ONEOF":
+      case "TARGET_TYPE_ENUM":
+      case "TARGET_TYPE_ENUM_ENTRY":
+      case "TARGET_TYPE_SERVICE":
+      case "TARGET_TYPE_METHOD":
+        return target;
+      default:
+        return undefined;
+    }
+  }
 }
 
 function enumDescriptorOptions(
@@ -532,6 +566,7 @@ function enumDescriptorOptions(
     {
       allowAlias: booleanOptionValue(options["allow_alias"]),
       deprecated: booleanOptionValue(options["deprecated"]),
+      deprecatedLegacyJsonFieldConflicts: undefined,
       uninterpretedOption: [], // TODO
     };
   return result;
@@ -559,6 +594,9 @@ function descriptorOptions(
     ),
     deprecated: booleanOptionValue(options["deprecated"]),
     mapEntry: booleanOptionValue(options["map_entry"]),
+    deprecatedLegacyJsonFieldConflicts: booleanOptionValue(
+      options["deprecated_legacy_json_field_conflicts"],
+    ),
     uninterpretedOption: [], // TODO
   };
   return result;

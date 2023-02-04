@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as UninterpretedOption,
   encodeJson as encodeJson_1,
@@ -30,6 +31,8 @@ export declare namespace $.google.protobuf {
     noStandardDescriptorAccessor?: boolean;
     deprecated?: boolean;
     mapEntry?: boolean;
+    /** @deprecated */
+    deprecatedLegacyJsonFieldConflicts?: boolean;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -42,6 +45,7 @@ export function getDefaultValue(): $.google.protobuf.MessageOptions {
     noStandardDescriptorAccessor: undefined,
     deprecated: undefined,
     mapEntry: undefined,
+    deprecatedLegacyJsonFieldConflicts: undefined,
     uninterpretedOption: [],
   };
 }
@@ -59,6 +63,7 @@ export function encodeJson(value: $.google.protobuf.MessageOptions): unknown {
   if (value.noStandardDescriptorAccessor !== undefined) result.noStandardDescriptorAccessor = tsValueToJsonValueFns.bool(value.noStandardDescriptorAccessor);
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = tsValueToJsonValueFns.bool(value.mapEntry);
+  if (value.deprecatedLegacyJsonFieldConflicts !== undefined) result.deprecatedLegacyJsonFieldConflicts = tsValueToJsonValueFns.bool(value.deprecatedLegacyJsonFieldConflicts);
   result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
   return result;
 }
@@ -69,6 +74,7 @@ export function decodeJson(value: any): $.google.protobuf.MessageOptions {
   if (value.noStandardDescriptorAccessor !== undefined) result.noStandardDescriptorAccessor = jsonValueToTsValueFns.bool(value.noStandardDescriptorAccessor);
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = jsonValueToTsValueFns.bool(value.mapEntry);
+  if (value.deprecatedLegacyJsonFieldConflicts !== undefined) result.deprecatedLegacyJsonFieldConflicts = jsonValueToTsValueFns.bool(value.deprecatedLegacyJsonFieldConflicts);
   result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
   return result;
 }
@@ -97,6 +103,12 @@ export function encodeBinary(value: $.google.protobuf.MessageOptions): Uint8Arra
     const tsValue = value.mapEntry;
     result.push(
       [7, tsValueToWireValueFns.bool(tsValue)],
+    );
+  }
+  if (value.deprecatedLegacyJsonFieldConflicts !== undefined) {
+    const tsValue = value.deprecatedLegacyJsonFieldConflicts;
+    result.push(
+      [11, tsValueToWireValueFns.bool(tsValue)],
     );
   }
   for (const tsValue of value.uninterpretedOption) {
@@ -138,6 +150,13 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.MessageOptio
     const value = wireValueToTsValueFns.bool(wireValue);
     if (value === undefined) break field;
     result.mapEntry = value;
+  }
+  field: {
+    const wireValue = wireFields.get(11);
+    if (wireValue === undefined) break field;
+    const value = wireValueToTsValueFns.bool(wireValue);
+    if (value === undefined) break field;
+    result.deprecatedLegacyJsonFieldConflicts = value;
   }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as File,
   encodeJson as encodeJson_1,

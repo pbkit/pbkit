@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as Label,
   name2num,

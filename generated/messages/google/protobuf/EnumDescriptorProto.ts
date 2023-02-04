@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as EnumValueDescriptorProto,
   encodeJson as encodeJson_1,

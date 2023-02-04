@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as FieldDescriptorProto,
   encodeJson as encodeJson_1,

@@ -1,3 +1,4 @@
+// @ts-nocheck
 export declare namespace $.google.protobuf.compiler.CodeGeneratorResponse {
   export type Feature =
     | "FEATURE_NONE"

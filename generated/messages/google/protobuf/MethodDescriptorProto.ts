@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   Type as MethodOptions,
   encodeJson as encodeJson_1,
