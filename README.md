@@ -106,9 +106,11 @@ web browser) because it does not use platform APIs inside the `core` directory.
 
 - [Riiid][riiid] - Pbkit was originally created to use protobuf in Riiid.
 - [Karrot][당근마켓] - Use Pbkit to generate gRPC client used in Node.js servers.
+- [PortOne][포트원] - Use Pbkit to generate gRPC client used in Node.js servers.
 
 [riiid]: https://riiid.com/
 [당근마켓]: https://team.daangn.com/
+[포트원]: https://portone.io/
 
 ### Open source project
 
