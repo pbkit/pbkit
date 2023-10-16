@@ -65,6 +65,7 @@ export default new Command()
       ),
       protoFile: topo(fileDescriptorSet.file),
       parameter: options.option,
+      sourceFileDescriptors: [], // TODO
     };
     await writeAll(plugin.stdin, encodeCodeGeneratorRequest(request));
     plugin.stdin.close();

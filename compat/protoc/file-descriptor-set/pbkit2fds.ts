@@ -448,6 +448,7 @@ function fileDescriptorOptions(
       phpMetadataNamespace: options["php_metadata_namespace"]?.toString(),
       rubyPackage: options["ruby_package"]?.toString(),
       optimizeFor: getOptimizeMode(options["optimize_for"]),
+      features: {}, // TODO
       uninterpretedOption: [], // TODO
     };
   return result;
@@ -471,6 +472,7 @@ function methodDescriptorOptions(
   > = {
     deprecated: booleanOptionValue(options["deprecated"]),
     idempotencyLevel: getIdempotencyLevel(options["idempotency_level"]),
+    features: {}, // TODO
     uninterpretedOption: [], // TODO
   };
   return result;
@@ -502,7 +504,9 @@ function fieldDescriptorOptions(
       jstype: getJSType(options["jstype"]),
       debugRedact: booleanOptionValue(options["debug_redact"]),
       retention: getOptionRetention(options["retention"]),
-      target: getOptionTargetType(options["target"]),
+      targets: [], // TODO
+      editionDefaults: [], // TODO
+      features: {}, // TODO
       uninterpretedOption: [], // TODO
     };
   return result;
@@ -567,6 +571,7 @@ function enumDescriptorOptions(
       allowAlias: booleanOptionValue(options["allow_alias"]),
       deprecated: booleanOptionValue(options["deprecated"]),
       deprecatedLegacyJsonFieldConflicts: undefined,
+      features: {}, // TODO
       uninterpretedOption: [], // TODO
     };
   return result;
@@ -577,6 +582,8 @@ function enumValueOptions(
 ): RequiredOptional<EnumValueOptions> {
   const result: RequiredOptional<EnumValueOptions> = {
     deprecated: booleanOptionValue(options["deprecated"]),
+    features: {}, // TODO
+    debugRedact: undefined,
     uninterpretedOption: [], // TODO
   };
   return result;
@@ -597,6 +604,7 @@ function descriptorOptions(
     deprecatedLegacyJsonFieldConflicts: booleanOptionValue(
       options["deprecated_legacy_json_field_conflicts"],
     ),
+    features: {}, // TODO
     uninterpretedOption: [], // TODO
   };
   return result;
