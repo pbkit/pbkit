@@ -146,6 +146,7 @@ export interface Field {
   schema: schema.MessageField;
   fieldNumber: number;
   tsName: string;
+  jsonName: string;
   tsType: CodeFragment;
   isEnum: boolean;
   default: CodeFragment | undefined;
@@ -244,6 +245,7 @@ function* genMessage({
       schema: field,
       fieldNumber: +fieldNumber,
       tsName: snakeToCamel(field.name),
+      jsonName: field.options['json_name']?.toString() ?? snakeToCamel(field.name),
       tsType: getFieldTypeCode(field),
       isEnum: getFieldValueIsEnum(field),
       default: getFieldDefaultCode(field),
@@ -390,7 +392,7 @@ const getEncodeJsonCode: GetCodeFn = ({
         js`function encodeJson(value${ts`: $${typePath}`})${ts`: unknown`} {\n`,
         js`  const result${ts`: any`} = {};\n`,
         ...message.fields.map((field) => {
-          const { tsName, schema } = field;
+          const { tsName, jsonName, schema } = field;
           if (schema.kind === "oneof") return "";
           const tsValueToJsonValueCode = getGetTsValueToJsonValueCode({
             customTypeMapping,
@@ -398,9 +400,9 @@ const getEncodeJsonCode: GetCodeFn = ({
             messages,
           })({ filePath, importBuffer, field });
           if (schema.kind === "repeated") {
-            return js`  result.${tsName} = ${tsValueToJsonValueCode!};\n`;
+            return js`  result.${jsonName} = ${tsValueToJsonValueCode!};\n`;
           }
-          return js`  if (value.${tsName} !== undefined) result.${tsName} = ${tsValueToJsonValueCode!};\n`;
+          return js`  if (value.${tsName} !== undefined) result.${jsonName} = ${tsValueToJsonValueCode!};\n`;
         }),
         ...message.oneofFields.map(({ tsName, fields }) =>
           js([
@@ -417,7 +419,7 @@ const getEncodeJsonCode: GetCodeFn = ({
               });
               return js([
                 js`    case "${field.tsName}": {\n`,
-                js`      result.${field.tsName} = ${tsValueToJsonValueCode!};\n`,
+                js`      result.${field.jsonName} = ${tsValueToJsonValueCode!};\n`,
                 js`      break;\n`,
                 js`    }\n`,
               ]);
@@ -448,7 +450,7 @@ const getDecodeJsonCode: GetCodeFn = ({
         js`  const result = getDefaultValue();\n`,
         ...message.fields
           .map((field) => {
-            const { tsName, schema } = field;
+            const { tsName, jsonName, schema } = field;
             if (schema.kind === "oneof") return js``; // never
             const jsonValueToTsValueCode = getGetJsonValueToTsValueCode({
               customTypeMapping,
@@ -458,7 +460,7 @@ const getDecodeJsonCode: GetCodeFn = ({
             if (schema.kind === "repeated") {
               return js`  result.${tsName} = ${jsonValueToTsValueCode!} ?? [];\n`;
             }
-            return js`  if (value.${tsName} !== undefined) result.${tsName} = ${jsonValueToTsValueCode!};\n`;
+            return js`  if (value.${jsonName} !== undefined) result.${tsName} = ${jsonValueToTsValueCode!};\n`;
           }),
         ...message.oneofFields.map(({ tsName, fields }) =>
           js(fields.map((field) => {
@@ -467,7 +469,7 @@ const getDecodeJsonCode: GetCodeFn = ({
               schema: field.schema,
               messages,
             })({ filePath, importBuffer, field });
-            return js`  if (value.${field.tsName} !== undefined) result.${tsName} = {field: "${field.tsName}", value: ${jsonValueToTsValueCode!}};\n`;
+            return js`  if (value.${field.jsonName} !== undefined) result.${tsName} = {field: "${field.tsName}", value: ${jsonValueToTsValueCode!}};\n`;
           }))
         ),
         js`  return result;\n`,
@@ -933,21 +935,21 @@ function getDefaultJsonValueToTsValueCode({
   field,
   messages,
 }: GetDefaultJsonValueToTsValueCodeConfig): CodeFragment | undefined {
-  const { schema, tsName } = field;
+  const { schema, jsonName } = field;
   if (schema.kind === "map") {
     const { keyTypePath, valueTypePath } = schema;
     if (!keyTypePath || !valueTypePath) return;
     const valueTypePathCode = typePathToCode("value", valueTypePath);
-    return js`Object.fromEntries([...value.${tsName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
+    return js`Object.fromEntries([...value.${jsonName}.entries()].map(([key, value]) => [key, ${valueTypePathCode}]))`;
   }
   if (schema.kind === "repeated") {
     const { typePath } = schema;
     if (!typePath) return;
     const typePathCode = typePathToCode("value", typePath);
-    return js`value.${tsName}?.map((value${ts`: any`}) => ${typePathCode})`;
+    return js`value.${jsonName}?.map((value${ts`: any`}) => ${typePathCode})`;
   }
   const { typePath } = schema;
-  return typePathToCode("value." + tsName, typePath);
+  return typePathToCode("value." + jsonName, typePath);
   function typePathToCode(
     jsonValue: string,
     typePath?: string,
@@ -1170,7 +1172,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.BytesValue": {
@@ -1190,7 +1192,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.DoubleValue": {
@@ -1210,7 +1212,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.FloatValue": {
@@ -1230,7 +1232,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.Int32Value": {
@@ -1250,7 +1252,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.Int64Value": {
@@ -1270,7 +1272,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.NullValue": {
@@ -1290,7 +1292,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.StringValue": {
@@ -1310,7 +1312,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.UInt32Value": {
@@ -1330,7 +1332,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
     ".google.protobuf.UInt64Value": {
@@ -1350,7 +1352,7 @@ export function getWellKnownTypeMapping({
       },
       getJsonValueToTsValueCode(config) {
         const { field } = config;
-        return js`value.${field.tsName}`;
+        return js`value.${field.jsonName}`;
       },
     },
   };
