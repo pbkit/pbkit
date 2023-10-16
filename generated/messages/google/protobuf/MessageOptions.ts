@@ -1,10 +1,17 @@
 // @ts-nocheck
 import {
-  Type as UninterpretedOption,
+  Type as FeatureSet,
   encodeJson as encodeJson_1,
   decodeJson as decodeJson_1,
   encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
+} from "./FeatureSet.ts";
+import {
+  Type as UninterpretedOption,
+  encodeJson as encodeJson_2,
+  decodeJson as decodeJson_2,
+  encodeBinary as encodeBinary_2,
+  decodeBinary as decodeBinary_2,
 } from "./UninterpretedOption.ts";
 import {
   tsValueToJsonValueFns,
@@ -33,6 +40,7 @@ export declare namespace $.google.protobuf {
     mapEntry?: boolean;
     /** @deprecated */
     deprecatedLegacyJsonFieldConflicts?: boolean;
+    features?: FeatureSet;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -46,6 +54,7 @@ export function getDefaultValue(): $.google.protobuf.MessageOptions {
     deprecated: undefined,
     mapEntry: undefined,
     deprecatedLegacyJsonFieldConflicts: undefined,
+    features: undefined,
     uninterpretedOption: [],
   };
 }
@@ -64,7 +73,8 @@ export function encodeJson(value: $.google.protobuf.MessageOptions): unknown {
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = tsValueToJsonValueFns.bool(value.mapEntry);
   if (value.deprecatedLegacyJsonFieldConflicts !== undefined) result.deprecatedLegacyJsonFieldConflicts = tsValueToJsonValueFns.bool(value.deprecatedLegacyJsonFieldConflicts);
-  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  if (value.features !== undefined) result.features = encodeJson_1(value.features);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_2(value));
   return result;
 }
 
@@ -75,7 +85,8 @@ export function decodeJson(value: any): $.google.protobuf.MessageOptions {
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
   if (value.mapEntry !== undefined) result.mapEntry = jsonValueToTsValueFns.bool(value.mapEntry);
   if (value.deprecatedLegacyJsonFieldConflicts !== undefined) result.deprecatedLegacyJsonFieldConflicts = jsonValueToTsValueFns.bool(value.deprecatedLegacyJsonFieldConflicts);
-  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
+  if (value.features !== undefined) result.features = decodeJson_1(value.features);
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_2(value)) ?? [];
   return result;
 }
 
@@ -111,9 +122,15 @@ export function encodeBinary(value: $.google.protobuf.MessageOptions): Uint8Arra
       [11, tsValueToWireValueFns.bool(tsValue)],
     );
   }
+  if (value.features !== undefined) {
+    const tsValue = value.features;
+    result.push(
+      [12, { type: WireType.LengthDelimited as const, value: encodeBinary_1(tsValue) }],
+    );
+  }
   for (const tsValue of value.uninterpretedOption) {
     result.push(
-      [999, { type: WireType.LengthDelimited as const, value: encodeBinary_1(tsValue) }],
+      [999, { type: WireType.LengthDelimited as const, value: encodeBinary_2(tsValue) }],
     );
   }
   return serialize(result);
@@ -158,9 +175,16 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.MessageOptio
     if (value === undefined) break field;
     result.deprecatedLegacyJsonFieldConflicts = value;
   }
+  field: {
+    const wireValue = wireFields.get(12);
+    if (wireValue === undefined) break field;
+    const value = wireValue.type === WireType.LengthDelimited ? decodeBinary_1(wireValue.value) : undefined;
+    if (value === undefined) break field;
+    result.features = value;
+  }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);
-    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_1(wireValue.value) : undefined).filter(x => x !== undefined);
+    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_2(wireValue.value) : undefined).filter(x => x !== undefined);
     if (!value.length) break collection;
     result.uninterpretedOption = value as any;
   }

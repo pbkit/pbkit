@@ -42,6 +42,11 @@ import {
   decodeBinary as decodeBinary_6,
 } from "./SourceCodeInfo.ts";
 import {
+  Type as Edition,
+  name2num,
+  num2name,
+} from "./Edition.ts";
+import {
   tsValueToJsonValueFns,
   jsonValueToTsValueFns,
 } from "../../../../core/runtime/json/scalar.ts";
@@ -57,6 +62,9 @@ import {
   wireValueToTsValueFns,
   unpackFns,
 } from "../../../../core/runtime/wire/scalar.ts";
+import {
+  default as Long,
+} from "../../../../core/runtime/Long.ts";
 import {
   default as deserialize,
 } from "../../../../core/runtime/wire/deserialize.ts";
@@ -75,7 +83,7 @@ export declare namespace $.google.protobuf {
     publicDependency: number[];
     weakDependency: number[];
     syntax?: string;
-    edition?: string;
+    edition?: Edition;
   }
 }
 
@@ -120,7 +128,7 @@ export function encodeJson(value: $.google.protobuf.FileDescriptorProto): unknow
   result.publicDependency = value.publicDependency.map(value => tsValueToJsonValueFns.int32(value));
   result.weakDependency = value.weakDependency.map(value => tsValueToJsonValueFns.int32(value));
   if (value.syntax !== undefined) result.syntax = tsValueToJsonValueFns.string(value.syntax);
-  if (value.edition !== undefined) result.edition = tsValueToJsonValueFns.string(value.edition);
+  if (value.edition !== undefined) result.edition = tsValueToJsonValueFns.enum(value.edition);
   return result;
 }
 
@@ -138,7 +146,7 @@ export function decodeJson(value: any): $.google.protobuf.FileDescriptorProto {
   result.publicDependency = value.publicDependency?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   result.weakDependency = value.weakDependency?.map((value: any) => jsonValueToTsValueFns.int32(value)) ?? [];
   if (value.syntax !== undefined) result.syntax = jsonValueToTsValueFns.string(value.syntax);
-  if (value.edition !== undefined) result.edition = jsonValueToTsValueFns.string(value.edition);
+  if (value.edition !== undefined) result.edition = jsonValueToTsValueFns.enum(value.edition) as Edition;
   return result;
 }
 
@@ -212,7 +220,7 @@ export function encodeBinary(value: $.google.protobuf.FileDescriptorProto): Uint
   if (value.edition !== undefined) {
     const tsValue = value.edition;
     result.push(
-      [13, tsValueToWireValueFns.string(tsValue)],
+      [14, { type: WireType.Varint as const, value: new Long(name2num[tsValue as keyof typeof name2num]) }],
     );
   }
   return serialize(result);
@@ -300,9 +308,9 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.FileDescript
     result.syntax = value;
   }
   field: {
-    const wireValue = wireFields.get(13);
+    const wireValue = wireFields.get(14);
     if (wireValue === undefined) break field;
-    const value = wireValueToTsValueFns.string(wireValue);
+    const value = wireValue.type === WireType.Varint ? num2name[wireValue.value[0] as keyof typeof num2name] : undefined;
     if (value === undefined) break field;
     result.edition = value;
   }

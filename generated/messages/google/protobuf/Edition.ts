@@ -1,0 +1,39 @@
+// @ts-nocheck
+export declare namespace $.google.protobuf {
+  export type Edition =
+    | "EDITION_UNKNOWN"
+    | "EDITION_1_TEST_ONLY"
+    | "EDITION_2_TEST_ONLY"
+    | "EDITION_PROTO2"
+    | "EDITION_PROTO3"
+    | "EDITION_2023"
+    | "EDITION_99997_TEST_ONLY"
+    | "EDITION_99998_TEST_ONLY"
+    | "EDITION_99999_TEST_ONLY";
+}
+
+export type Type = $.google.protobuf.Edition;
+
+export const num2name = {
+  0: "EDITION_UNKNOWN",
+  1: "EDITION_1_TEST_ONLY",
+  2: "EDITION_2_TEST_ONLY",
+  998: "EDITION_PROTO2",
+  999: "EDITION_PROTO3",
+  1000: "EDITION_2023",
+  99997: "EDITION_99997_TEST_ONLY",
+  99998: "EDITION_99998_TEST_ONLY",
+  99999: "EDITION_99999_TEST_ONLY",
+} as const;
+
+export const name2num = {
+  EDITION_UNKNOWN: 0,
+  EDITION_1_TEST_ONLY: 1,
+  EDITION_2_TEST_ONLY: 2,
+  EDITION_PROTO2: 998,
+  EDITION_PROTO3: 999,
+  EDITION_2023: 1000,
+  EDITION_99997_TEST_ONLY: 99997,
+  EDITION_99998_TEST_ONLY: 99998,
+  EDITION_99999_TEST_ONLY: 99999,
+} as const;

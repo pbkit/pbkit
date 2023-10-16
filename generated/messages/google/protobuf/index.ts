@@ -5,6 +5,7 @@ export type {
   compiler,
 };
 export type { Type as FileDescriptorSet } from "./FileDescriptorSet.ts";
+export type { Type as Edition } from "./Edition.ts";
 export type { Type as FileDescriptorProto } from "./FileDescriptorProto.ts";
 export type { Type as DescriptorProto } from "./DescriptorProto.ts";
 export type { Type as ExtensionRangeOptions } from "./ExtensionRangeOptions.ts";
@@ -23,5 +24,7 @@ export type { Type as EnumValueOptions } from "./EnumValueOptions.ts";
 export type { Type as ServiceOptions } from "./ServiceOptions.ts";
 export type { Type as MethodOptions } from "./MethodOptions.ts";
 export type { Type as UninterpretedOption } from "./UninterpretedOption.ts";
+export type { Type as FeatureSet } from "./FeatureSet.ts";
+export type { Type as FeatureSetDefaults } from "./FeatureSetDefaults.ts";
 export type { Type as SourceCodeInfo } from "./SourceCodeInfo.ts";
 export type { Type as GeneratedCodeInfo } from "./GeneratedCodeInfo.ts";

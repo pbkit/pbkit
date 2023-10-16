@@ -5,11 +5,18 @@ import {
   num2name,
 } from "./(MethodOptions)/IdempotencyLevel.ts";
 import {
-  Type as UninterpretedOption,
+  Type as FeatureSet,
   encodeJson as encodeJson_1,
   decodeJson as decodeJson_1,
   encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
+} from "./FeatureSet.ts";
+import {
+  Type as UninterpretedOption,
+  encodeJson as encodeJson_2,
+  decodeJson as decodeJson_2,
+  encodeBinary as encodeBinary_2,
+  decodeBinary as decodeBinary_2,
 } from "./UninterpretedOption.ts";
 import {
   tsValueToJsonValueFns,
@@ -37,6 +44,7 @@ export declare namespace $.google.protobuf {
   export type MethodOptions = {
     deprecated?: boolean;
     idempotencyLevel?: IdempotencyLevel;
+    features?: FeatureSet;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -47,6 +55,7 @@ export function getDefaultValue(): $.google.protobuf.MethodOptions {
   return {
     deprecated: undefined,
     idempotencyLevel: undefined,
+    features: undefined,
     uninterpretedOption: [],
   };
 }
@@ -62,7 +71,8 @@ export function encodeJson(value: $.google.protobuf.MethodOptions): unknown {
   const result: any = {};
   if (value.deprecated !== undefined) result.deprecated = tsValueToJsonValueFns.bool(value.deprecated);
   if (value.idempotencyLevel !== undefined) result.idempotencyLevel = tsValueToJsonValueFns.enum(value.idempotencyLevel);
-  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  if (value.features !== undefined) result.features = encodeJson_1(value.features);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_2(value));
   return result;
 }
 
@@ -70,7 +80,8 @@ export function decodeJson(value: any): $.google.protobuf.MethodOptions {
   const result = getDefaultValue();
   if (value.deprecated !== undefined) result.deprecated = jsonValueToTsValueFns.bool(value.deprecated);
   if (value.idempotencyLevel !== undefined) result.idempotencyLevel = jsonValueToTsValueFns.enum(value.idempotencyLevel) as IdempotencyLevel;
-  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
+  if (value.features !== undefined) result.features = decodeJson_1(value.features);
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_2(value)) ?? [];
   return result;
 }
 
@@ -88,9 +99,15 @@ export function encodeBinary(value: $.google.protobuf.MethodOptions): Uint8Array
       [34, { type: WireType.Varint as const, value: new Long(name2num[tsValue as keyof typeof name2num]) }],
     );
   }
+  if (value.features !== undefined) {
+    const tsValue = value.features;
+    result.push(
+      [35, { type: WireType.LengthDelimited as const, value: encodeBinary_1(tsValue) }],
+    );
+  }
   for (const tsValue of value.uninterpretedOption) {
     result.push(
-      [999, { type: WireType.LengthDelimited as const, value: encodeBinary_1(tsValue) }],
+      [999, { type: WireType.LengthDelimited as const, value: encodeBinary_2(tsValue) }],
     );
   }
   return serialize(result);
@@ -114,9 +131,16 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.MethodOption
     if (value === undefined) break field;
     result.idempotencyLevel = value;
   }
+  field: {
+    const wireValue = wireFields.get(35);
+    if (wireValue === undefined) break field;
+    const value = wireValue.type === WireType.LengthDelimited ? decodeBinary_1(wireValue.value) : undefined;
+    if (value === undefined) break field;
+    result.features = value;
+  }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);
-    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_1(wireValue.value) : undefined).filter(x => x !== undefined);
+    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_2(wireValue.value) : undefined).filter(x => x !== undefined);
     if (!value.length) break collection;
     result.uninterpretedOption = value as any;
   }

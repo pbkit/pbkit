@@ -38,6 +38,7 @@ export declare namespace $.google.protobuf.compiler {
     parameter?: string;
     compilerVersion?: Version;
     protoFile: FileDescriptorProto[];
+    sourceFileDescriptors: FileDescriptorProto[];
   }
 }
 
@@ -49,6 +50,7 @@ export function getDefaultValue(): $.google.protobuf.compiler.CodeGeneratorReque
     parameter: undefined,
     compilerVersion: undefined,
     protoFile: [],
+    sourceFileDescriptors: [],
   };
 }
 
@@ -65,6 +67,7 @@ export function encodeJson(value: $.google.protobuf.compiler.CodeGeneratorReques
   if (value.parameter !== undefined) result.parameter = tsValueToJsonValueFns.string(value.parameter);
   if (value.compilerVersion !== undefined) result.compilerVersion = encodeJson_1(value.compilerVersion);
   result.protoFile = value.protoFile.map(value => encodeJson_2(value));
+  result.sourceFileDescriptors = value.sourceFileDescriptors.map(value => encodeJson_2(value));
   return result;
 }
 
@@ -74,6 +77,7 @@ export function decodeJson(value: any): $.google.protobuf.compiler.CodeGenerator
   if (value.parameter !== undefined) result.parameter = jsonValueToTsValueFns.string(value.parameter);
   if (value.compilerVersion !== undefined) result.compilerVersion = decodeJson_1(value.compilerVersion);
   result.protoFile = value.protoFile?.map((value: any) => decodeJson_2(value)) ?? [];
+  result.sourceFileDescriptors = value.sourceFileDescriptors?.map((value: any) => decodeJson_2(value)) ?? [];
   return result;
 }
 
@@ -99,6 +103,11 @@ export function encodeBinary(value: $.google.protobuf.compiler.CodeGeneratorRequ
   for (const tsValue of value.protoFile) {
     result.push(
       [15, { type: WireType.LengthDelimited as const, value: encodeBinary_2(tsValue) }],
+    );
+  }
+  for (const tsValue of value.sourceFileDescriptors) {
+    result.push(
+      [17, { type: WireType.LengthDelimited as const, value: encodeBinary_2(tsValue) }],
     );
   }
   return serialize(result);
@@ -133,6 +142,12 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.compiler.Cod
     const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_2(wireValue.value) : undefined).filter(x => x !== undefined);
     if (!value.length) break collection;
     result.protoFile = value as any;
+  }
+  collection: {
+    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 17).map(([, wireValue]) => wireValue);
+    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_2(wireValue.value) : undefined).filter(x => x !== undefined);
+    if (!value.length) break collection;
+    result.sourceFileDescriptors = value as any;
   }
   return result;
 }

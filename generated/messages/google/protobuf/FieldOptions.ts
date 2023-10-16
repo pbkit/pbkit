@@ -20,11 +20,25 @@ import {
   num2name as num2name_3,
 } from "./(FieldOptions)/OptionTargetType.ts";
 import {
-  Type as UninterpretedOption,
+  Type as EditionDefault,
   encodeJson as encodeJson_1,
   decodeJson as decodeJson_1,
   encodeBinary as encodeBinary_1,
   decodeBinary as decodeBinary_1,
+} from "./(FieldOptions)/EditionDefault.ts";
+import {
+  Type as FeatureSet,
+  encodeJson as encodeJson_2,
+  decodeJson as decodeJson_2,
+  encodeBinary as encodeBinary_2,
+  decodeBinary as decodeBinary_2,
+} from "./FeatureSet.ts";
+import {
+  Type as UninterpretedOption,
+  encodeJson as encodeJson_3,
+  decodeJson as decodeJson_3,
+  encodeBinary as encodeBinary_3,
+  decodeBinary as decodeBinary_3,
 } from "./UninterpretedOption.ts";
 import {
   tsValueToJsonValueFns,
@@ -43,6 +57,7 @@ import {
 import {
   tsValueToWireValueFns,
   wireValueToTsValueFns,
+  unpackFns,
 } from "../../../../core/runtime/wire/scalar.ts";
 import {
   default as deserialize,
@@ -59,7 +74,9 @@ export declare namespace $.google.protobuf {
     unverifiedLazy?: boolean;
     debugRedact?: boolean;
     retention?: OptionRetention;
-    target?: OptionTargetType;
+    targets: OptionTargetType[];
+    editionDefaults: EditionDefault[];
+    features?: FeatureSet;
     uninterpretedOption: UninterpretedOption[];
   }
 }
@@ -77,7 +94,9 @@ export function getDefaultValue(): $.google.protobuf.FieldOptions {
     unverifiedLazy: undefined,
     debugRedact: undefined,
     retention: undefined,
-    target: undefined,
+    targets: [],
+    editionDefaults: [],
+    features: undefined,
     uninterpretedOption: [],
   };
 }
@@ -100,8 +119,10 @@ export function encodeJson(value: $.google.protobuf.FieldOptions): unknown {
   if (value.unverifiedLazy !== undefined) result.unverifiedLazy = tsValueToJsonValueFns.bool(value.unverifiedLazy);
   if (value.debugRedact !== undefined) result.debugRedact = tsValueToJsonValueFns.bool(value.debugRedact);
   if (value.retention !== undefined) result.retention = tsValueToJsonValueFns.enum(value.retention);
-  if (value.target !== undefined) result.target = tsValueToJsonValueFns.enum(value.target);
-  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_1(value));
+  result.targets = value.targets.map(value => tsValueToJsonValueFns.enum(value));
+  result.editionDefaults = value.editionDefaults.map(value => encodeJson_1(value));
+  if (value.features !== undefined) result.features = encodeJson_2(value.features);
+  result.uninterpretedOption = value.uninterpretedOption.map(value => encodeJson_3(value));
   return result;
 }
 
@@ -116,8 +137,10 @@ export function decodeJson(value: any): $.google.protobuf.FieldOptions {
   if (value.unverifiedLazy !== undefined) result.unverifiedLazy = jsonValueToTsValueFns.bool(value.unverifiedLazy);
   if (value.debugRedact !== undefined) result.debugRedact = jsonValueToTsValueFns.bool(value.debugRedact);
   if (value.retention !== undefined) result.retention = jsonValueToTsValueFns.enum(value.retention) as OptionRetention;
-  if (value.target !== undefined) result.target = jsonValueToTsValueFns.enum(value.target) as OptionTargetType;
-  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_1(value)) ?? [];
+  result.targets = value.targets?.map((value: any) => jsonValueToTsValueFns.enum(value) as OptionTargetType) ?? [];
+  result.editionDefaults = value.editionDefaults?.map((value: any) => decodeJson_1(value)) ?? [];
+  if (value.features !== undefined) result.features = decodeJson_2(value.features);
+  result.uninterpretedOption = value.uninterpretedOption?.map((value: any) => decodeJson_3(value)) ?? [];
   return result;
 }
 
@@ -177,15 +200,25 @@ export function encodeBinary(value: $.google.protobuf.FieldOptions): Uint8Array 
       [17, { type: WireType.Varint as const, value: new Long(name2num_2[tsValue as keyof typeof name2num_2]) }],
     );
   }
-  if (value.target !== undefined) {
-    const tsValue = value.target;
+  for (const tsValue of value.targets) {
     result.push(
-      [18, { type: WireType.Varint as const, value: new Long(name2num_3[tsValue as keyof typeof name2num_3]) }],
+      [19, { type: WireType.Varint as const, value: new Long(name2num_3[tsValue as keyof typeof name2num_3]) }],
+    );
+  }
+  for (const tsValue of value.editionDefaults) {
+    result.push(
+      [20, { type: WireType.LengthDelimited as const, value: encodeBinary_1(tsValue) }],
+    );
+  }
+  if (value.features !== undefined) {
+    const tsValue = value.features;
+    result.push(
+      [21, { type: WireType.LengthDelimited as const, value: encodeBinary_2(tsValue) }],
     );
   }
   for (const tsValue of value.uninterpretedOption) {
     result.push(
-      [999, { type: WireType.LengthDelimited as const, value: encodeBinary_1(tsValue) }],
+      [999, { type: WireType.LengthDelimited as const, value: encodeBinary_3(tsValue) }],
     );
   }
   return serialize(result);
@@ -258,16 +291,28 @@ export function decodeBinary(binary: Uint8Array): $.google.protobuf.FieldOptions
     if (value === undefined) break field;
     result.retention = value;
   }
+  collection: {
+    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 19).map(([, wireValue]) => wireValue);
+    const value = Array.from(unpackFns.int32(wireValues)).map(num => num2name_3[num as keyof typeof num2name_3]);
+    if (!value.length) break collection;
+    result.targets = value as any;
+  }
+  collection: {
+    const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 20).map(([, wireValue]) => wireValue);
+    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_1(wireValue.value) : undefined).filter(x => x !== undefined);
+    if (!value.length) break collection;
+    result.editionDefaults = value as any;
+  }
   field: {
-    const wireValue = wireFields.get(18);
+    const wireValue = wireFields.get(21);
     if (wireValue === undefined) break field;
-    const value = wireValue.type === WireType.Varint ? num2name_3[wireValue.value[0] as keyof typeof num2name_3] : undefined;
+    const value = wireValue.type === WireType.LengthDelimited ? decodeBinary_2(wireValue.value) : undefined;
     if (value === undefined) break field;
-    result.target = value;
+    result.features = value;
   }
   collection: {
     const wireValues = wireMessage.filter(([fieldNumber]) => fieldNumber === 999).map(([, wireValue]) => wireValue);
-    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_1(wireValue.value) : undefined).filter(x => x !== undefined);
+    const value = wireValues.map((wireValue) => wireValue.type === WireType.LengthDelimited ? decodeBinary_3(wireValue.value) : undefined).filter(x => x !== undefined);
     if (!value.length) break collection;
     result.uninterpretedOption = value as any;
   }
