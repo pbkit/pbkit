@@ -2,10 +2,6 @@ import {
   Command,
   HelpCommand,
 } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
-import download from "./cmds/download.ts";
-import list from "./cmds/list.ts";
-import remove from "./cmds/remove.ts";
-import use from "./cmds/use.ts";
 import { getCurrentVersion } from "./current-version.ts";
 
 const command = new Command();
@@ -23,8 +19,8 @@ command
     },
   })
   .command("help", new HelpCommand())
-  .command("download", download)
-  .command("list", list)
-  .command("remove", remove)
-  .command("use", use)
+  .command("download", (await import("./cmds/download.ts")).default)
+  .command("list", (await import("./cmds/list.ts")).default)
+  .command("remove", (await import("./cmds/remove.ts")).default)
+  .command("use", (await import("./cmds/use.ts")).default)
   .parse(Deno.args);

@@ -1,10 +1,4 @@
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
-import fileDescriptorSet from "./cmds/file-descriptor-set.ts";
-import protocPlugin from "./cmds/protoc-plugin.ts";
-import schema from "./cmds/schema.ts";
-import swift from "./cmds/swift/index.ts";
-import ts from "./cmds/ts/index.ts";
-import wrpKt from "./cmds/wrp-kt/index.ts";
 
 const command = new Command();
 command
@@ -13,10 +7,13 @@ command
     command.showHelp();
     Deno.exit(0);
   })
-  .command("file-descriptor-set", fileDescriptorSet)
-  .command("protoc-plugin", protocPlugin)
-  .command("schema", schema)
-  .command("swift", swift)
-  .command("ts", ts)
-  .command("wrp-kt", wrpKt);
+  .command(
+    "file-descriptor-set",
+    (await import("./cmds/file-descriptor-set.ts")).default,
+  )
+  .command("protoc-plugin", (await import("./cmds/protoc-plugin.ts")).default)
+  .command("schema", (await import("./cmds/schema.ts")).default)
+  .command("swift", (await import("./cmds/swift/index.ts")).default)
+  .command("ts", (await import("./cmds/ts/index.ts")).default)
+  .command("wrp-kt", (await import("./cmds/wrp-kt/index.ts")).default);
 export default command;
