@@ -162,3 +162,27 @@ Deno.test("#246", () => {
     }
   `);
 });
+
+Deno.test("#288", () => {
+  parse(String.raw`
+    message ErrorCode {
+      oneof error_code {
+        CustomerSkAdNetworkConversionValueSchemaErrorEnum
+          .CustomerSkAdNetworkConversionValueSchemaError
+              customer_sk_ad_network_conversion_value_schema_error = 170;
+      }
+    }
+  `);
+});
+
+Deno.test("#289", () => {
+  parse(String.raw`
+    message TestHugeFieldNumbers {
+      extensions 536860000 to 536869999 [declaration = {
+        number: 536860000
+        full_name: ".protobuf_unittest.test_all_types"
+        type: ".protobuf_unittest.TestAllTypes"
+      }];
+    }
+  `);
+});
