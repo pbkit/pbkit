@@ -173,3 +173,10 @@ function getFetchHeaders(token?: string) {
   if (token) headers.Authorization = "token " + token;
   return headers;
 }
+
+export async function fetchLatestCommit(
+  config: FetchRepoConfig,
+): Promise<GhCommit> {
+  const res = await fetchRepoBase(config, "/commits/main");
+  return await res.json() as GhCommit;
+}
