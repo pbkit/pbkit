@@ -4,6 +4,7 @@ import {
   acceptPatternAndThen,
   acceptSpecialToken,
   choice,
+  flipFlop,
   many,
   mergeSpans,
 } from "./misc.ts";
@@ -374,12 +375,11 @@ function skipWsAndComments2(parser: ProtoParser): boolean {
 function acceptFullIdent(
   parser: ProtoParser,
 ): ast.FullIdent | undefined {
-  const identOrDots = many(
+  const identOrDots = flipFlop(
     parser,
-    choice<ast.Dot | ast.Ident>([
-      acceptDot,
-      acceptIdent,
-    ]),
+    acceptDot,
+    acceptIdent,
+    skipWsAndComments,
   );
   if (identOrDots.length < 1) return;
   return {
@@ -398,12 +398,11 @@ function expectFullIdent(parser: ProtoParser): ast.FullIdent {
 function acceptType(
   parser: ProtoParser,
 ): ast.Type | undefined {
-  const identOrDots = many(
+  const identOrDots = flipFlop(
     parser,
-    choice<ast.Dot | ast.Ident>([
-      acceptDot,
-      acceptIdent,
-    ]),
+    acceptDot,
+    acceptIdent,
+    skipWsAndComments,
   );
   if (identOrDots.length < 1) return;
   return {

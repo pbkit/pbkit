@@ -14,8 +14,28 @@ export function many<T>(
   acceptFn: AcceptFn<T>,
 ): T[] {
   const nodes: T[] = [];
-  let node: ReturnType<typeof acceptFn>;
+  let node: T | undefined;
   while (node = acceptFn(parser)) nodes.push(node);
+  return nodes;
+}
+
+export function flipFlop<T, U>(
+  parser: RecursiveDescentParser,
+  flipFn: AcceptFn<T>,
+  flopFn: AcceptFn<U>,
+  skipWsFn?: AcceptFn<void>,
+): (T | U)[] {
+  let flip = true;
+  const fn: AcceptFn<T | U> = (parser) => {
+    const result = flip ? flipFn(parser) : flopFn(parser);
+    flip = !flip;
+    skipWsFn?.(parser);
+    return result;
+  };
+  const nodes: (T | U)[] = [];
+  let node: T | U | undefined;
+  if (node = fn(parser)) nodes.push(node);
+  while (node = fn(parser)) nodes.push(node);
   return nodes;
 }
 
