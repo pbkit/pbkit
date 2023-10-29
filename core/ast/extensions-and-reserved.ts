@@ -1,5 +1,5 @@
 import { Span, Token } from "../parser/recursive-descent-parser.ts";
-import { StatementBase } from "./index.ts";
+import { FieldOptions, StatementBase } from "./index.ts";
 import {
   Comma,
   Keyword,
@@ -20,6 +20,7 @@ export interface Extensions extends StatementBase {
   type: "extensions";
   keyword: Keyword;
   ranges: Ranges;
+  fieldOptions?: FieldOptions;
   semi: Semi;
 }
 

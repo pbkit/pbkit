@@ -1116,6 +1116,8 @@ function acceptExtensions(
   skipWsAndComments(parser);
   const ranges = expectRanges(parser);
   skipWsAndComments(parser);
+  const fieldOptions = acceptFieldOptions(parser);
+  skipWsAndComments(parser);
   const semi = expectSemi(parser);
   const trailingComments = acceptTrailingComments(parser);
   return {
@@ -1132,6 +1134,7 @@ function acceptExtensions(
     type: "extensions",
     keyword,
     ranges,
+    fieldOptions,
     semi,
   };
 }
