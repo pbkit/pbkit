@@ -29,12 +29,9 @@ export interface CreateJsonRpcConnectionConfig {
 }
 export type CreateJsonRpcLogConfig = Partial<LogConfig>;
 export interface LogConfig {
-  logMessageMethod: string;
-  showMessageRequestMethod: string;
-  showMessageResponseMethod: string;
-  sendReceivedMessageRequest: boolean;
-  sendReceivedMessageResponse: boolean;
-  sendReceivedNotification: boolean;
+  logMethod: string;
+  logRequestMessage: boolean;
+  logResponseMessage: boolean;
 }
 export interface NotificationHandlers {
   [methodName: string]: (params: any) => void;
@@ -58,7 +55,7 @@ export function createJsonRpcConnection(
   );
   function sendReceivedMessageRequestLog(message: Message) {
     writeMessage({
-      method: logConfig.showMessageRequestMethod,
+      method: logConfig.logMethod,
       params: {
         type: "info",
         message: `Received (Request): ${JSON.stringify(message)}`,
@@ -68,7 +65,7 @@ export function createJsonRpcConnection(
   }
   function sendReceivedMessageResponseLog(message: Message) {
     writeMessage({
-      method: logConfig.showMessageResponseMethod,
+      method: logConfig.logMethod,
       params: {
         type: "info",
         message: `Received (Response): ${JSON.stringify(message)}`,
@@ -100,7 +97,7 @@ export function createJsonRpcConnection(
         const message = parseMessage(bpm);
         if (!message) continue;
         if (Message.isResponse(message)) {
-          logConfig.sendReceivedMessageResponse &&
+          logConfig.logResponseMessage &&
             sendReceivedMessageResponseLog(message);
           const request = waitingRequests.get(message.id);
           if (!request) {
@@ -116,7 +113,7 @@ export function createJsonRpcConnection(
           else if ("result" in message) request.resolve(message);
         }
         if (Message.isRequest(message)) {
-          logConfig.sendReceivedMessageRequest &&
+          logConfig.logRequestMessage &&
             sendReceivedMessageRequestLog(message);
           if (!config.requestHandlers[message.method]) {
             writeMessage({
@@ -196,11 +193,8 @@ function createJobQueue(): JobQueue {
 function getDefaultLogConfig(): LogConfig {
   // @TODO: Disable Log option on production deployment.
   return {
-    logMessageMethod: "window/logMessage",
-    showMessageRequestMethod: "window/showMessageRequest",
-    showMessageResponseMethod: "window/showMessageResponse",
-    sendReceivedNotification: true,
-    sendReceivedMessageRequest: true,
-    sendReceivedMessageResponse: true,
+    logMethod: "window/logMessage",
+    logRequestMessage: false,
+    logResponseMessage: false,
   };
 }
