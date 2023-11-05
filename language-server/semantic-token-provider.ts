@@ -1,12 +1,7 @@
 import { Proto } from "../core/ast/index.ts";
 import { ParseResult } from "../core/parser/proto.ts";
 import { Span } from "../core/parser/recursive-descent-parser.ts";
-import { scalarValueTypes } from "../core/runtime/scalar.ts";
-import {
-  Visitor,
-  visitor as defaultVisitor,
-  visitStatementBase,
-} from "../core/visitor/index.ts";
+import { Visitor, visitor as defaultVisitor } from "../core/visitor/index.ts";
 
 export enum TokenType {
   enum = 0,
@@ -60,134 +55,63 @@ export function getSemanticTokens(
   const tokens: SemanticToken[] = [];
   const visitor: Visitor = {
     ...defaultVisitor,
+    visitImport(visitor, node) {
+      node.weakOrPublic && push(node.weakOrPublic, TokenType.keyword);
+      defaultVisitor.visitImport(visitor, node);
+    },
     visitKeyword(visitor, node) {
-      tokens.push({
-        ...getTokenPosition(node),
-        tokenType: TokenType.keyword,
-        tokenModifiers: [],
-      });
+      push(node, TokenType.keyword);
     },
     visitType(visitor, node) {
-      if (
-        node.identOrDots.some(
-          (token) => (scalarValueTypes as string[]).includes(token.text),
-        )
-      ) {
-        return;
-      }
       const nameIdent = node.identOrDots.slice(-1)[0];
       if (nameIdent.start !== node.start) {
-        tokens.push({
-          ...getTokenPosition({ start: node.start, end: nameIdent.start }),
-          tokenType: TokenType.namespace,
-          tokenModifiers: [],
-        });
+        push({ start: node.start, end: nameIdent.start }, TokenType.namespace);
       }
-      tokens.push({
-        ...getTokenPosition(nameIdent),
-        tokenType: TokenType.type,
-        tokenModifiers: [],
-      });
+      push(nameIdent, TokenType.type);
+    },
+    visitRpc(visitor, node) {
+      push(node.rpcName, TokenType.function);
+      defaultVisitor.visitRpc(visitor, node);
     },
     visitMessage(visitor, node) {
-      visitStatementBase(visitor, node, () => {
-        visitor.visitKeyword(visitor, node.keyword);
-        tokens.push({
-          ...getTokenPosition(node.messageName),
-          tokenType: TokenType.type,
-          tokenModifiers: [],
-        });
-        visitor.visitMessageBody(visitor, node.messageBody);
-      });
+      push(node.messageName, TokenType.type);
+      defaultVisitor.visitMessage(visitor, node);
     },
     visitField(visitor, node) {
-      visitStatementBase(visitor, node, () => {
-        node.fieldLabel && visitor.visitKeyword(visitor, node.fieldLabel);
-        visitor.visitType(visitor, node.fieldType);
-        tokens.push({
-          ...getTokenPosition(node.fieldName),
-          tokenType: TokenType.property,
-          tokenModifiers: [],
-        });
-        visitor.visitIntLit(visitor, node.fieldNumber);
-        node.fieldOptions &&
-          visitor.visitFieldOptions(visitor, node.fieldOptions);
-      });
+      push(node.fieldName, TokenType.property);
+      defaultVisitor.visitField(visitor, node);
     },
     visitMalformedField(visitor, node) {
-      node.fieldLabel && visitor.visitKeyword(visitor, node.fieldLabel);
-      node.fieldType && visitor.visitType(visitor, node.fieldType);
-      node.fieldName &&
-        tokens.push({
-          ...getTokenPosition(node.fieldName),
-          tokenType: TokenType.property,
-          tokenModifiers: [],
-        });
-      node.fieldNumber && visitor.visitIntLit(visitor, node.fieldNumber);
-      node.fieldOptions &&
-        visitor.visitFieldOptions(visitor, node.fieldOptions);
+      node.fieldName && push(node.fieldName, TokenType.property);
+      defaultVisitor.visitMalformedField(visitor, node);
     },
-    visitFieldOption(visitor, node) {
-      tokens.push({
-        ...getTokenPosition(node.optionName),
-        tokenType: TokenType.parameter,
-        tokenModifiers: [],
-      });
-      tokens.push({
-        ...getTokenPosition(node.constant),
-        tokenType: TokenType.variable,
-        tokenModifiers: [TokenModifier.readonly],
-      });
+    visitOptionName(visitor, node) {
+      push(node, TokenType.parameter);
     },
     visitEnum(visitor, node) {
-      visitStatementBase(visitor, node, () => {
-        visitor.visitKeyword(visitor, node.keyword);
-        tokens.push({
-          ...getTokenPosition(node.enumName),
-          tokenType: TokenType.enum,
-          tokenModifiers: [],
-        });
-        visitor.visitEnumBody(visitor, node.enumBody);
-      });
+      push(node.enumName, TokenType.enum);
+      defaultVisitor.visitEnum(visitor, node);
     },
     visitEnumField(visitor, node) {
-      visitStatementBase(visitor, node, () => {
-        tokens.push({
-          ...getTokenPosition(node.fieldName),
-          tokenType: TokenType.property,
-          tokenModifiers: [],
-        });
-        visitor.visitToken(visitor, node.eq);
-        visitor.visitSignedIntLit(visitor, node.fieldNumber);
-        node.fieldOptions &&
-          visitor.visitFieldOptions(visitor, node.fieldOptions);
-        visitor.visitSemi(visitor, node.semi);
-      });
+      push(node.fieldName, TokenType.property);
+      defaultVisitor.visitEnumField(visitor, node);
+    },
+    visitMapField(visitor, node) {
+      push(node.mapName, TokenType.property);
+      defaultVisitor.visitMapField(visitor, node);
     },
     visitOneof(visitor, node) {
-      visitStatementBase(visitor, node, () => {
-        visitor.visitKeyword(visitor, node.keyword);
-        tokens.push({
-          ...getTokenPosition(node.oneofName),
-          tokenType: TokenType.property,
-          tokenModifiers: [],
-        });
-        visitor.visitOneofBody(visitor, node.oneofBody);
-      });
+      push(node.oneofName, TokenType.property);
+      defaultVisitor.visitOneof(visitor, node);
     },
     visitIdent(visitor, node) {
-      tokens.push({
-        ...getTokenPosition(node),
-        tokenType: TokenType.property,
-        tokenModifiers: [],
-      });
+      push(node, TokenType.property);
     },
     visitIntLit(visitor, node) {
-      tokens.push({
-        ...getTokenPosition(node),
-        tokenType: TokenType.number,
-        tokenModifiers: [],
-      });
+      push(node, TokenType.number, [TokenModifier.readonly]);
+    },
+    visitStrLit(visitor, node) {
+      push(node, TokenType.string, [TokenModifier.readonly]);
     },
   };
   visitor.visitProto(visitor, ast);
@@ -205,6 +129,13 @@ export function getSemanticTokens(
     const { row: line, col: startChar } = parser.offsetToColRow(start);
     const length = end - start;
     return { line, startChar, length };
+  }
+  function push(
+    node: Span,
+    tokenType: TokenType,
+    tokenModifiers: TokenModifier[] = [],
+  ) {
+    tokens.push({ ...getTokenPosition(node), tokenType, tokenModifiers });
   }
 }
 
