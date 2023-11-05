@@ -291,7 +291,7 @@ export const visitor: Visitor = {
       visitor.visitKeyword(visitor, node.keyword);
       visitor.visitToken(visitor, node.rpcName);
       visitor.visitRpcType(visitor, node.reqType);
-      visitor.visitToken(visitor, node.returns);
+      visitor.visitKeyword(visitor, node.returns);
       visitor.visitRpcType(visitor, node.resType);
       if (node.semiOrRpcBody.type === "semi") {
         visitor.visitSemi(visitor, node.semiOrRpcBody);

@@ -5,6 +5,7 @@ import {
   acceptSpecialToken,
   choice,
   flipFlop,
+  expectSpecialToken,
   many,
   mergeSpans,
 } from "./misc.ts";
@@ -195,6 +196,13 @@ function acceptKeyword(
   pattern: Pattern = identPattern,
 ): ast.Keyword | undefined {
   return acceptSpecialToken(parser, "keyword", pattern);
+}
+
+function expectKeyword(
+  parser: ProtoParser,
+  pattern: Pattern = identPattern,
+): ast.Keyword {
+  return expectSpecialToken(parser, "keyword", pattern);
 }
 
 function acceptCommentGroup(
@@ -1403,7 +1411,7 @@ function acceptRpc(
   skipWsAndComments(parser);
   const reqType = expectRpcType(parser);
   skipWsAndComments(parser);
-  const returns = parser.expect("returns");
+  const returns = expectKeyword(parser, "returns");
   skipWsAndComments(parser);
   const resType = expectRpcType(parser);
   skipWsAndComments(parser);

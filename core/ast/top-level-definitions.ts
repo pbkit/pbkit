@@ -128,7 +128,7 @@ export interface Rpc extends StatementBase {
   keyword: Keyword;
   rpcName: Token;
   reqType: RpcType;
-  returns: Token;
+  returns: Keyword;
   resType: RpcType;
   semiOrRpcBody: Semi | RpcBody;
 }

@@ -76,6 +76,15 @@ export function acceptSpecialToken<TType extends string>(
   return { type, ...token };
 }
 
+export function expectSpecialToken<TType extends string>(
+  parser: RecursiveDescentParser,
+  type: TType,
+  pattern: Pattern = identPattern,
+): Token & { type: TType } {
+  const token = parser.expect(pattern);
+  return { type, ...token };
+}
+
 export function acceptPatternAndThen<T>(
   pattern: Pattern,
   then: (token: Token) => T,
