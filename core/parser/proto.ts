@@ -4,8 +4,8 @@ import {
   acceptPatternAndThen,
   acceptSpecialToken,
   choice,
-  flipFlop,
   expectSpecialToken,
+  flipFlop,
   many,
   mergeSpans,
 } from "./misc.ts";
