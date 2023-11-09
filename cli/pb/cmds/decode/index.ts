@@ -7,6 +7,8 @@ import { encode } from "../../../../compat/protoc/text-format.ts";
 import deserialize from "../../../../core/runtime/wire/deserialize.ts";
 import { getVendorDir } from "../../config.ts";
 import expandEntryPaths from "../gen/expandEntryPaths.ts";
+import fileDescriptorSet from "./cmds/file-descriptor-set.ts";
+import raw from "./cmds/raw.ts";
 
 interface Options {
   type?: string;
@@ -47,9 +49,6 @@ command
     const text = encode(wireMessage, { schema, typePath });
     await writeAll(Deno.stdout, new TextEncoder().encode(text));
   })
-  .command(
-    "file-descriptor-set",
-    (await import("./cmds/file-descriptor-set.ts")).default,
-  )
-  .command("raw", (await import("./cmds/raw.ts")).default);
+  .command("file-descriptor-set", fileDescriptorSet)
+  .command("raw", raw);
 export default command;

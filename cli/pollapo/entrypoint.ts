@@ -3,6 +3,11 @@ import {
   CompletionsCommand,
   HelpCommand,
 } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
+import add from "./cmds/add.ts";
+import install from "./cmds/install.ts";
+import login from "./cmds/login/index.ts";
+import remove from "./cmds/remove.ts";
+import why from "./cmds/why.ts";
 
 const command = new Command();
 command
@@ -21,11 +26,11 @@ Homebrew: brew info pbkit
 Windows: Settings > Apps > Apps & Features, find pollapo`);
     },
   })
-  .command("add", (await import("./cmds/add.ts")).default)
+  .command("add", add)
   .command("completions", new CompletionsCommand())
   .command("help", new HelpCommand())
-  .command("install", (await import("./cmds/install.ts")).default)
-  .command("login", (await import("./cmds/login/index.ts")).default)
-  .command("remove", (await import("./cmds/remove.ts")).default)
-  .command("why", (await import("./cmds/why.ts")).default)
+  .command("install", install)
+  .command("login", login)
+  .command("remove", remove)
+  .command("why", why)
   .parse(Deno.args);
