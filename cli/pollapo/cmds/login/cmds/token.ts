@@ -1,9 +1,9 @@
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
-import { print, println } from "../../misc/stdio.ts";
+import { print, println } from "../../../misc/stdio.ts";
 import {
   getToken,
   GithubNotLoggedInError,
-} from "../../../../misc/github/index.ts";
+} from "../../../../../misc/github/index.ts";
 
 export default new Command()
   .description("Print pollapo login token")

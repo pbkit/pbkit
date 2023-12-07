@@ -12,7 +12,6 @@ import {
   getToken,
   GithubNotLoggedInError,
 } from "../../../../misc/github/index.ts";
-import token from "./token.ts";
 
 export default new Command()
   .description("Sign in with GitHub account")
@@ -54,4 +53,5 @@ export default new Command()
     await writeGhHosts(pollTokenResult.accessToken);
     await println("You are all set!");
   })
-  .command("token", token);
+  .command("npmrc", (await import("./cmds/npmrc.ts")).default)
+  .command("token", (await import("./cmds/token.ts")).default);
