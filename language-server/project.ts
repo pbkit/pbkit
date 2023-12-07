@@ -3,7 +3,7 @@ import { getVendorDir } from "../cli/pb/config.ts";
 import expandEntryPaths from "../cli/pb/cmds/gen/expandEntryPaths.ts";
 import { loadPollapoYml } from "../cli/pollapo/pollapoYml.ts";
 import { parseBufWorkYaml } from "../compat/buf/workspace.ts";
-import { parseBufModuleYaml } from "../compat/buf/module.ts";
+import { parseBufYaml } from "../compat/buf/module.ts";
 import { Loader } from "../core/loader/index.ts";
 import combineLoader from "../core/loader/combineLoader.ts";
 import memoizeLoader, { MemoizedLoader } from "../core/loader/memoizeLoader.ts";
@@ -111,26 +111,24 @@ async function getBufWorkDirs(
       (directory) => resolve(projectPath, String(directory)),
     );
   } catch {
-    return await getBufModuleV1Beta1BuildRoots(projectPath);
+    return await getBufV1Beta1BuildRoots(projectPath);
   }
-  return [];
 }
 
-async function getBufModuleV1Beta1BuildRoots(
+async function getBufV1Beta1BuildRoots(
   projectPath: string,
 ): Promise<string[]> {
   try {
-    const bufModuleYamlPath = resolve(projectPath, "buf.yaml");
-    const bufModuleYaml = parseBufModuleYaml(
-      await Deno.readTextFile(fromFileUrl(bufModuleYamlPath)),
+    const bufYamlPath = resolve(projectPath, "buf.yaml");
+    const bufYaml = parseBufYaml(
+      await Deno.readTextFile(fromFileUrl(bufYamlPath)),
     );
-    if (bufModuleYaml.version === "v1beta1") {
-      return bufModuleYaml.build.roots.map(
-        (directory) => resolve(projectPath, String(directory)),
-      );
-    }
-  } catch {}
-  return [];
+    return bufYaml.build.roots.map(
+      (directory) => resolve(projectPath, String(directory)),
+    );
+  } catch {
+    return [];
+  }
 }
 
 async function getPollapoRepo(
