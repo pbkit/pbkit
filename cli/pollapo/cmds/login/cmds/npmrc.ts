@@ -11,7 +11,10 @@ import {
 
 export default new Command()
   .description("Sign in with .npmrc config")
-  .option("-S, --silent", "Prevents interactive cli functionality")
+  .option(
+    "-S, --silent [value:boolean]",
+    "Prevents interactive cli functionality",
+  )
   .action(async ({ silent }) => {
     if (!silent) {
       try {
