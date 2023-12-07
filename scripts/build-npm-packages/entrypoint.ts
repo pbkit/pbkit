@@ -2,6 +2,7 @@ import { emptyDir } from "https://deno.land/std@0.175.0/fs/mod.ts";
 import buildCore from "./buildCore.ts";
 import buildRuntime from "./buildRuntime.ts";
 import buildPbCli from "./buildPbCli.ts";
+import buildPollapoCli from "./buildPollapoCli.ts";
 
 await emptyDir("tmp/npm");
 
@@ -30,5 +31,10 @@ await Promise.all([
     name: "@pbkit/pb-cli",
     version,
     dist: "tmp/npm/pb-cli",
+  }),
+  buildPollapoCli({
+    name: "@pbkit/pollapo-cli",
+    version,
+    dist: "tmp/npm/pollapo-cli",
   }),
 ]);

@@ -3,18 +3,22 @@ import { build } from "https://deno.land/x/dnt@0.33.0/mod.ts";
 import { BuildConfig, NameAndVersion } from "./index.ts";
 
 if (import.meta.main) {
-  buildPbCli({
-    name: "@pbkit/pb-cli",
+  buildPollapoCli({
+    name: "@pbkit/pollapo-cli",
     version: "0.0.0",
-    dist: "tmp/npm/pb-cli",
+    dist: "tmp/npm/pollapo-cli",
   });
 }
 
-export default async function buildPbCli(config: BuildConfig) {
+export default async function buildPollapoCli(config: BuildConfig) {
   const packageJson = getPackageJson(config);
   await ensureDir(config.dist);
   await build({
-    entryPoints: [{ kind: "bin", name: "pb", path: "cli/pb/entrypoint.ts" }],
+    entryPoints: [{
+      kind: "bin",
+      name: "pollapo",
+      path: "cli/pollapo/entrypoint.ts",
+    }],
     outDir: config.dist,
     shims: {
       deno: true,
@@ -47,7 +51,7 @@ export function getPackageJson(config: NameAndVersion) {
   return {
     name,
     version,
-    description: "Protobuf schema compiler",
+    description: "Protobuf package manager",
     author: "JongChan Choi <jong@chan.moe>",
     license: "(MIT OR Apache-2.0)",
     repository: {

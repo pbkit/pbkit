@@ -29,3 +29,7 @@ jobs:
         working-directory: tmp/npm/pb-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish
+        working-directory: tmp/npm/pollapo-cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
