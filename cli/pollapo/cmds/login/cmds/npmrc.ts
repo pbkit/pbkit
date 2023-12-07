@@ -1,7 +1,7 @@
 import { Command } from "https://deno.land/x/cliffy@v0.25.2/command/mod.ts";
 import { Confirm } from "https://deno.land/x/cliffy@v0.25.2/prompt/confirm.ts";
 import Npmrc from "npm:@npmcli/config@8.0.3";
-import * as npmrc from "npm:@npmcli/config@8.0.3/lib/definitions/index.js";
+import npmrc from "npm:@npmcli/config@8.0.3/lib/definitions/index.js";
 import { println } from "../../../misc/stdio.ts";
 import { writeGhHosts } from "../../../../../misc/github/auth.ts";
 import {
