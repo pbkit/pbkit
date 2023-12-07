@@ -123,7 +123,7 @@ export function getPackageJson(config: NameAndVersion) {
     dependencies: {
       "@yarnpkg/fslib": "^2.6.0-rc.8",
       "@yarnpkg/libzip": "^2.2.2",
-      "core-js": "3.18.1",
+      "core-js": "3.34.0",
       mri: "^1.2.0",
     },
   };
