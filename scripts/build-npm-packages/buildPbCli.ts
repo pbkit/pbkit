@@ -1,5 +1,5 @@
 import { ensureDir } from "https://deno.land/std@0.175.0/fs/mod.ts";
-import { build } from "https://deno.land/x/dnt@0.33.0/mod.ts";
+import { build } from "https://deno.land/x/dnt@0.39.0/mod.ts";
 import { BuildConfig, NameAndVersion } from "./index.ts";
 
 if (import.meta.main) {

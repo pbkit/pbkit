@@ -1,0 +1,7 @@
+{
+  "tasks": {
+    "install-local-pb": "deno install -A --unstable -n pb -f ./cli/pb/entrypoint.ts",
+    "install-local-pbkit": "deno install -A --unstable -n pbkit -f ./cli/pbkit/entrypoint.ts",
+    "install-local-pollapo": "deno install -A --unstable -n pollapo -f ./cli/pollapo/entrypoint.ts"
+  }
+}

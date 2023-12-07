@@ -1,6 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
-import protobufjs from "https://esm.sh/protobufjs@6.11.2";
+import protobufjs from "npm:protobufjs@6.11.2";
 import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
 import * as pbkit_Simple from "../data/gen/messages/Simple.ts";
 
