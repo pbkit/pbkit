@@ -47,6 +47,7 @@ export type Node =
 
 type index_Node =
   | Syntax
+  | Edition
   | Import
   | Package
   | Option
@@ -72,6 +73,7 @@ export type Statement =
 
 export type TopLevelStatement =
   | Syntax
+  | Edition
   | Import
   | Package
   | Option
@@ -92,6 +94,16 @@ export interface Syntax extends StatementBase {
   eq: Token;
   quoteOpen: Token;
   syntax: Token;
+  quoteClose: Token;
+  semi: Semi;
+}
+
+export interface Edition extends StatementBase {
+  type: "edition";
+  keyword: Keyword;
+  eq: Token;
+  quoteOpen: Token;
+  edition: Token;
   quoteClose: Token;
   semi: Semi;
 }

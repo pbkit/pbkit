@@ -5,6 +5,7 @@ export interface Visitor {
   visitProto: VisitFn<ast.Proto>;
   visitTopLevelStatement: VisitFn<ast.TopLevelStatement>;
   visitSyntax: VisitFn<ast.Syntax>;
+  visitEdition: VisitFn<ast.Edition>;
   visitImport: VisitFn<ast.Import>;
   visitPackage: VisitFn<ast.Package>;
   visitOption: VisitFn<ast.Option>;
@@ -103,6 +104,16 @@ export const visitor: Visitor = {
       visitor.visitToken(visitor, node.eq);
       visitor.visitToken(visitor, node.quoteOpen);
       visitor.visitToken(visitor, node.syntax);
+      visitor.visitToken(visitor, node.quoteClose);
+      visitor.visitSemi(visitor, node.semi);
+    });
+  },
+  visitEdition(visitor, node) {
+    visitStatementBase(visitor, node, () => {
+      visitor.visitKeyword(visitor, node.keyword);
+      visitor.visitToken(visitor, node.eq);
+      visitor.visitToken(visitor, node.quoteOpen);
+      visitor.visitToken(visitor, node.edition);
       visitor.visitToken(visitor, node.quoteClose);
       visitor.visitSemi(visitor, node.semi);
     });
