@@ -83,6 +83,8 @@ export const visitor: Visitor = {
     switch (node.type) {
       case "syntax":
         return visitor.visitSyntax(visitor, node);
+      case "edition":
+        return visitor.visitEdition(visitor, node);
       case "import":
         return visitor.visitImport(visitor, node);
       case "package":

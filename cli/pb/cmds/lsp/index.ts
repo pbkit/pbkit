@@ -10,7 +10,7 @@ command
     { hidden: true },
   )
   .option(
-    "--clientProcessId <pid: number>",
+    "--clientProcessId <pid:number>",
     "Option for language-server client",
     { hidden: true },
   )
