@@ -40,6 +40,7 @@ export function parse(text: string): ParseResult {
   parser.on("comment", (comment) => comments.push(comment));
   const statements = acceptStatements<ast.TopLevelStatement>(parser, [
     acceptSyntax,
+    acceptEdition,
     acceptImport,
     acceptPackage,
     acceptOption,
@@ -627,6 +628,43 @@ function acceptSyntax(
     eq,
     quoteOpen,
     syntax,
+    quoteClose,
+    semi,
+  };
+}
+
+function acceptEdition(
+  parser: ProtoParser,
+  leadingComments: ast.CommentGroup[],
+  leadingDetachedComments: ast.CommentGroup[],
+): ast.Edition | undefined {
+  const keyword = acceptKeyword(parser, "edition");
+  if (!keyword) return;
+  skipWsAndComments(parser);
+  const eq = parser.expect("=");
+  skipWsAndComments(parser);
+  const quoteOpen = parser.expect(/^['"]/);
+  const edition = parser.expect(/^[^'"]+/);
+  const quoteClose = parser.expect(/^['"]/);
+  skipWsAndComments(parser);
+  const semi = expectSemi(parser);
+  const trailingComments = acceptTrailingComments(parser);
+  return {
+    ...mergeSpans([
+      leadingDetachedComments,
+      leadingComments,
+      keyword,
+      semi,
+      trailingComments,
+    ]),
+    leadingComments,
+    trailingComments,
+    leadingDetachedComments,
+    type: "edition",
+    keyword,
+    eq,
+    quoteOpen,
+    edition,
     quoteClose,
     semi,
   };
