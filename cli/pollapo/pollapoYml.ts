@@ -8,6 +8,7 @@ import { red, yellow } from "https://deno.land/std@0.175.0/fmt/colors.ts";
 import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
 import { stripComponents, unzip } from "../../misc/archive/zip.ts";
 import { fetchArchive, fetchCommitStatus } from "../../misc/github/index.ts";
+import which from "../../misc/which.ts";
 import backoff from "./misc/exponential-backoff.ts";
 import { getRevType } from "./rev.ts";
 import { YAMLError } from "https://deno.land/std@0.175.0/encoding/_yaml/error.ts";
@@ -122,12 +123,20 @@ function encode(rev: string): string {
   );
 }
 
+export type FetchCommitHashFn = (dep: PollapoDep) => Promise<string>;
+
+export type DownloadZipAndYmlFn = (
+  dep: PollapoDep,
+  zipPath: string,
+  ymlPath: string,
+) => Promise<PollapoYml>;
+
 export interface CacheDepsConfig {
   pollapoYml: PollapoYml;
   clean: boolean;
   cacheDir: string;
-  fetchCommitHash: (dep: PollapoDep) => Promise<string>;
-  fetchZip: (dep: PollapoDep) => Promise<Uint8Array>;
+  fetchCommitHash: FetchCommitHashFn;
+  downloadZipAndYml: DownloadZipAndYmlFn;
 }
 export type CacheDepsTask =
   | CacheDepsTaskUseCache
@@ -150,17 +159,13 @@ export type CacheDepsTaskCheckCommitHash = CacheDepsTaskBase<
 >;
 export type CacheDepsTaskDownload = CacheDepsTaskBase<
   "download",
-  CacheDepsTaskDownloadResult
+  PollapoYml
 >;
-export interface CacheDepsTaskDownloadResult {
-  zip: Uint8Array;
-  pollapoYmlText: string;
-  pollapoYml: PollapoYml;
-}
 export async function* cacheDeps(
   config: CacheDepsConfig,
 ): AsyncGenerator<CacheDepsTask> {
-  const { pollapoYml, clean, cacheDir, fetchZip, fetchCommitHash } = config;
+  const { pollapoYml, clean, cacheDir, downloadZipAndYml, fetchCommitHash } =
+    config;
   if (clean) await emptyDir(cacheDir);
   const lockTable = pollapoYml?.root?.lock ?? {};
   const queue = [...deps(pollapoYml)];
@@ -203,20 +208,13 @@ export async function* cacheDeps(
         throw err;
       }
     } else {
-      const downloading = download(dep);
+      const zipPath = getZipPath(cacheDir, dep);
+      const ymlPath = getYmlPath(cacheDir, dep);
+      const downloading = downloadZipAndYml(dep, zipPath, ymlPath);
       yield { type: "download", dep, promise: downloading };
-      const { zip, pollapoYmlText, pollapoYml } = await downloading;
+      const pollapoYml = await downloading;
       queue.push(...deps(pollapoYml));
-      await cache(dep, zip, pollapoYmlText);
     }
-  }
-  async function download(
-    dep: PollapoDep,
-  ): Promise<CacheDepsTaskDownloadResult> {
-    const zip = await fetchZip(dep);
-    const pollapoYmlText = await extractPollapoYml(zip);
-    const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
-    return { zip, pollapoYmlText, pollapoYml };
   }
   async function unlink(dep: PollapoDep) {
     try {
@@ -241,18 +239,6 @@ export async function* cacheDeps(
         getYmlPath(cacheDir, dep),
         { type: "file" },
       ),
-    ]);
-  }
-  async function cache(
-    dep: PollapoDep,
-    zip: Uint8Array,
-    pollapoYmlText: string,
-  ) {
-    const zipPath = getZipPath(cacheDir, dep);
-    const ymlPath = getYmlPath(cacheDir, dep);
-    await Promise.all([
-      Deno.writeFile(zipPath, zip),
-      Deno.writeTextFile(ymlPath, pollapoYmlText),
     ]);
   }
 }
@@ -348,12 +334,72 @@ export function getFetchCommitHash(token?: string) {
   };
 }
 
-export function getFetchZip(token?: string) {
-  return async function fetchZip(dep: PollapoDep): Promise<Uint8Array> {
+export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
+  { user, repo, rev },
+  zipPath,
+  ymlPath,
+) => {
+  const repoUrl = `git@github.com:${user}/${repo}.git`;
+  const git = await which("git");
+  if (!git) throw new Error("git not found");
+  const cwd = await Deno.makeTempDir();
+  await new Deno.Command(git, { cwd, args: ["init"] }).output();
+  await new Deno.Command(git, {
+    cwd,
+    args: ["remote", "add", "origin", repoUrl],
+  })
+    .output();
+  await new Deno.Command(git, {
+    cwd,
+    args: ["fetch", "origin", rev, "--depth=1"],
+  })
+    .output();
+  await new Deno.Command(git, {
+    cwd,
+    args: [
+      "archive",
+      "--format=zip",
+      rev,
+      "--prefix",
+      `${user}-${repo}-${rev.replaceAll("/", "-")}/`,
+      "-o",
+      zipPath,
+    ],
+  })
+    .output();
+  await new Deno.Command(git, {
+    cwd,
+    args: ["checkout", rev, "--", "pollapo.yml"],
+  })
+    .output();
+  try {
+    const pollapoYmlText = await Deno.readTextFile(
+      path.resolve(cwd, "pollapo.yml"),
+    );
+    await Deno.writeTextFile(ymlPath, pollapoYmlText);
+    const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
+    return pollapoYml;
+  } catch {
+    await Deno.writeTextFile(ymlPath, "");
+    return {};
+  }
+};
+
+export function getDownloadZipAndYmlFnByToken(
+  token?: string,
+): DownloadZipAndYmlFn {
+  return async function downloadZipAndYml(dep, zipPath, ymlPath) {
     const res = await backoff(() =>
       fetchArchive({ type: "zip", token, ...dep })
     );
-    return new Uint8Array(await res.arrayBuffer());
+    const zip = new Uint8Array(await res.arrayBuffer());
+    const pollapoYmlText = await extractPollapoYml(zip);
+    const pollapoYml = parseYaml(pollapoYmlText) as PollapoYml;
+    await Promise.all([
+      Deno.writeFile(zipPath, zip),
+      Deno.writeTextFile(ymlPath, pollapoYmlText),
+    ]);
+    return pollapoYml;
   };
 }
 

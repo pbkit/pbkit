@@ -26,8 +26,9 @@ import {
   AnalyzeDepsResultRevs,
   cacheDeps,
   depToString,
+  downloadZipAndYmlWithGit,
+  getDownloadZipAndYmlFnByToken,
   getFetchCommitHash,
-  getFetchZip,
   getZipPath,
   loadPollapoYml,
   lock,
@@ -50,6 +51,7 @@ interface Options {
   clean?: true;
   outDir: string;
   token?: string;
+  git?: boolean;
   config: string;
 }
 
@@ -60,6 +62,7 @@ export default new Command()
     default: ".pollapo",
   })
   .option("-t, --token <value:string>", "GitHub OAuth token")
+  .option("-g, --git", "Use git command when downloading dependency")
   .option("-C, --config <value:string>", "Pollapo config", {
     default: "pollapo.yml",
   })
@@ -74,7 +77,9 @@ export default new Command()
         clean: !!options.clean,
         pollapoYml,
         fetchCommitHash: getFetchCommitHash(token),
-        fetchZip: getFetchZip(token),
+        downloadZipAndYml: options.git
+          ? downloadZipAndYmlWithGit
+          : getDownloadZipAndYmlFnByToken(token),
       });
       const lockTable: PollapoRootLockTable = {};
       for await (const task of caching) {
