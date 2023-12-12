@@ -343,20 +343,15 @@ export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
   const git = await which("git");
   if (!git) throw new Error("git not found");
   const cwd = await Deno.makeTempDir();
-  await new Deno.Command(git, { cwd, args: ["init"] }).output();
-  await new Deno.Command(git, {
+  await Deno.run({ cwd, cmd: [git, "init"] }).status();
+  await Deno.run({ cwd, cmd: [git, "remote", "add", "origin", repoUrl] })
+    .status();
+  await Deno.run({ cwd, cmd: [git, "fetch", "origin", rev, "--depth=1"] })
+    .status();
+  await Deno.run({
     cwd,
-    args: ["remote", "add", "origin", repoUrl],
-  })
-    .output();
-  await new Deno.Command(git, {
-    cwd,
-    args: ["fetch", "origin", rev, "--depth=1"],
-  })
-    .output();
-  await new Deno.Command(git, {
-    cwd,
-    args: [
+    cmd: [
+      git,
       "archive",
       "--format=zip",
       rev,
@@ -366,12 +361,9 @@ export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
       zipPath,
     ],
   })
-    .output();
-  await new Deno.Command(git, {
-    cwd,
-    args: ["checkout", rev, "--", "pollapo.yml"],
-  })
-    .output();
+    .status();
+  await Deno.run({ cwd, cmd: [git, "checkout", rev, "--", "pollapo.yml"] })
+    .status();
   try {
     const pollapoYmlText = await Deno.readTextFile(
       path.resolve(cwd, "pollapo.yml"),
