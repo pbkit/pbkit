@@ -27,6 +27,7 @@ import {
   cacheDeps,
   depToString,
   downloadZipAndYmlWithGit,
+  fetchCommitHashWithGit,
   getDownloadZipAndYmlFnByToken,
   getFetchCommitHash,
   getZipPath,
@@ -76,7 +77,7 @@ export default new Command()
         cacheDir,
         clean: !!options.clean,
         pollapoYml,
-        fetchCommitHash: getFetchCommitHash(token),
+        fetchCommitHash: options.git ? fetchCommitHashWithGit : getFetchCommitHash(token),
         downloadZipAndYml: options.git
           ? downloadZipAndYmlWithGit
           : getDownloadZipAndYmlFnByToken(token),
