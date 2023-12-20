@@ -327,6 +327,26 @@ function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
+export const fetchCommitHashWithGit = async (
+  { user, repo, rev }: PollapoDep,
+): Promise<string> => {
+  const git = await which("git");
+  if (!git) throw new Error("git not found");
+  const repoUrl = `git@github.com:${user}/${repo}.git`;
+  const match = new TextDecoder().decode(
+    await Deno.run({
+      cmd: [git, "ls-remote", "--heads", "--tags", repoUrl],
+      stdout: "piped",
+    }).output(),
+  ).trim().match(
+    new RegExp(`^([0-9a-f]{40})\\s+refs/(?:heads|tags)/${rev}$`, "m"),
+  );
+  if (match) return match[1];
+  throw new Error(
+    `Could not find commit hash for ref '${rev}' in the repository '${repoUrl}'`,
+  );
+};
+
 export function getFetchCommitHash(token?: string) {
   return async function fetchCommitHash(dep: PollapoDep): Promise<string> {
     const res = await backoff(() => fetchCommitStatus({ token, ...dep }));
@@ -339,9 +359,9 @@ export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
   zipPath,
   ymlPath,
 ) => {
-  const repoUrl = `git@github.com:${user}/${repo}.git`;
   const git = await which("git");
   if (!git) throw new Error("git not found");
+  const repoUrl = `git@github.com:${user}/${repo}.git`;
   const cwd = await Deno.makeTempDir();
   await Deno.run({ cwd, cmd: [git, "init"] }).status();
   await Deno.run({ cwd, cmd: [git, "remote", "add", "origin", repoUrl] })
