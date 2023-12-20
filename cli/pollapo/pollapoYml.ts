@@ -330,12 +330,12 @@ function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
 export const fetchCommitHashWithGit = async (
   { user, repo, rev }: PollapoDep,
 ): Promise<string> => {
-  const repoUrl = `git@github.com:${user}/${repo}.git`;
   const git = await which("git");
   if (!git) throw new Error("git not found");
+  const repoUrl = `git@github.com:${user}/${repo}.git`;
   const match = new TextDecoder().decode(
     await Deno.run({
-      cmd: ["git", "ls-remote", "--heads", "--tags", repoUrl],
+      cmd: [git, "ls-remote", "--heads", "--tags", repoUrl],
       stdout: "piped",
     }).output(),
   ).trim().match(
@@ -359,9 +359,9 @@ export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
   zipPath,
   ymlPath,
 ) => {
-  const repoUrl = `git@github.com:${user}/${repo}.git`;
   const git = await which("git");
   if (!git) throw new Error("git not found");
+  const repoUrl = `git@github.com:${user}/${repo}.git`;
   const cwd = await Deno.makeTempDir();
   await Deno.run({ cwd, cmd: [git, "init"] }).status();
   await Deno.run({ cwd, cmd: [git, "remote", "add", "origin", repoUrl] })
