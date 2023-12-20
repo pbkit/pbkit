@@ -327,45 +327,24 @@ function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
   return result;
 }
 
-async function getCommitHashFromRemote(
-  repoUrl: string,
-  ref: string,
-): Promise<string> {
-  const process = Deno.run({
-    cmd: ["git", "ls-remote", "--heads", "--tags", repoUrl],
-    stdout: "piped",
-  });
-
-  const output = await process.output();
-  process.close();
-
-  const decoder = new TextDecoder();
-  const outputStr = decoder.decode(output).trim();
-  const regex = new RegExp(`^([0-9a-f]{40})\\s+refs/(heads|tags)/${ref}$`, "m");
-
-  const match = outputStr.match(regex);
-  if (match) {
-    return match[1];
-  }
-
-  throw new Error(
-    `Could not find commit hash for ref '${ref}' in the repository '${repoUrl}'`,
-  );
-}
-
 export const fetchCommitHashWithGit = async (
   { user, repo, rev }: PollapoDep,
 ): Promise<string> => {
   const repoUrl = `git@github.com:${user}/${repo}.git`;
   const git = await which("git");
   if (!git) throw new Error("git not found");
-
-  const revType = getRevType(rev);
-  if (revType === "commit") {
-    return rev;
-  }
-
-  return await getCommitHashFromRemote(repoUrl, rev);
+  const match = new TextDecoder().decode(
+    await Deno.run({
+      cmd: ["git", "ls-remote", "--heads", "--tags", repoUrl],
+      stdout: "piped",
+    }).output(),
+  ).trim().match(
+    new RegExp(`^([0-9a-f]{40})\\s+refs/(?:heads|tags)/${rev}$`, "m"),
+  );
+  if (match) return match[1];
+  throw new Error(
+    `Could not find commit hash for ref '${rev}' in the repository '${repoUrl}'`,
+  );
 };
 
 export function getFetchCommitHash(token?: string) {

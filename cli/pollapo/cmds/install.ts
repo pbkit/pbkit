@@ -77,7 +77,9 @@ export default new Command()
         cacheDir,
         clean: !!options.clean,
         pollapoYml,
-        fetchCommitHash: options.git ? fetchCommitHashWithGit : getFetchCommitHash(token),
+        fetchCommitHash: options.git
+          ? fetchCommitHashWithGit
+          : getFetchCommitHash(token),
         downloadZipAndYml: options.git
           ? downloadZipAndYmlWithGit
           : getDownloadZipAndYmlFnByToken(token),
