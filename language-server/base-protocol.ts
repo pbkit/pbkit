@@ -1,13 +1,14 @@
 import { BufReader } from "https://deno.land/std@0.175.0/io/buf_reader.ts";
 import { BufWriter } from "https://deno.land/std@0.175.0/io/buf_writer.ts";
 import { TextProtoReader } from "./text-proto-reader.ts";
+import type { Reader, Writer } from "../misc/io.ts";
 
 export interface BaseProtocolMessage {
   headers: Headers;
   body: Uint8Array;
 }
 export async function* readBaseProtocolMessages(
-  reader: Deno.Reader,
+  reader: Reader,
 ): AsyncGenerator<BaseProtocolMessage> {
   const bufReader = new BufReader(reader);
   const textProtoReader = new TextProtoReader(bufReader);
@@ -30,7 +31,7 @@ export async function* readBaseProtocolMessages(
 
 const textEncoder = new TextEncoder();
 export async function writeBaseProtocolMessage(
-  writer: Deno.Writer,
+  writer: Writer,
   body: Uint8Array,
   headers: Headers = new Headers(),
 ): Promise<void> {

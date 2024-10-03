@@ -4,9 +4,12 @@ import {
   resolve as _resolve,
   toFileUrl,
 } from "https://deno.land/std@0.175.0/path/mod.ts";
+import type { EntryModule } from "./entry-module.ts";
+import { createEntryModuleEvaluator } from "./deno-entry-module.ts";
 import { Loader } from "./index.ts";
 
 export interface CreateLoaderConfig {
+  modules?: EntryModule[];
   roots: string[];
 }
 export function createLoader(
@@ -22,6 +25,20 @@ export function createLoader(
         }
       } catch {
         return null;
+      }
+      if (config.modules) {
+        for (const entryModule of config.modules) {
+          const absolutePath = resolve(entryModule.path, path);
+          const filePath = fromFileUrl(absolutePath);
+          const evaluator = createEntryModuleEvaluator(entryModule);
+          if (!evaluator.has(filePath)) continue;
+          try {
+            await Deno.lstat(filePath);
+          } catch {
+            continue;
+          }
+          return { absolutePath, data: await Deno.readTextFile(filePath) };
+        }
       }
       for (const root of config.roots) {
         const absolutePath = resolve(root, path);

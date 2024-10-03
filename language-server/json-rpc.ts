@@ -6,6 +6,7 @@ import {
   ResponseMessage,
 } from "npm:vscode-jsonrpc@8.0.0-next.6/lib/common/messages.js";
 import { defer, Deferred } from "../core/runtime/async/observer.ts";
+import type { Reader, Writer } from "../misc/io.ts";
 import {
   BaseProtocolMessage,
   readBaseProtocolMessages,
@@ -20,8 +21,8 @@ export interface JsonRpcConnection {
   finish(): void;
 }
 export interface CreateJsonRpcConnectionConfig {
-  reader: Deno.Reader;
-  writer: Deno.Writer;
+  reader: Reader;
+  writer: Writer;
   notificationHandlers: NotificationHandlers;
   requestHandlers: RequestHandlers;
   logConfig?: CreateJsonRpcLogConfig;
