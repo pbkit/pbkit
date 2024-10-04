@@ -12,13 +12,13 @@ import {
   fromFileUrl,
   resolve,
 } from "../core/loader/deno-fs.ts";
+import type { EntryModule } from "../core/loader/entry-module.ts";
+import { expandEntryModules } from "../core/loader/deno-entry-module.ts";
 import { OpenProtoManager } from "./open-proto-manager.ts";
 
 export interface ProjectManager {
   addProjectPath(projectPath: string): Promise<void>;
   getProjectPath(filePath: string): string | undefined;
-  getProjectEntryPaths(projectPath: string): Promise<string[]>;
-  getProjectDependencyPaths(projectPath: string): Promise<string[]>;
   getProjectProtoFiles(filePath: string): Promise<string[]>;
   getProjectLoader(projectPath?: string): Promise<MemoizedLoader>;
   createProjectLoader(projectPath?: string): Promise<MemoizedLoader>;
@@ -34,8 +34,6 @@ export function createProjectManager(
   return {
     addProjectPath,
     getProjectPath,
-    getProjectEntryPaths,
-    getProjectDependencyPaths,
     getProjectProtoFiles,
     async getProjectLoader(projectPath) {
       if (!projectPath) return await createProjectLoader(projectPath);
@@ -50,9 +48,6 @@ export function createProjectManager(
   function getProjectPath(filePath: string): string | undefined {
     return projectPaths.find((p) => filePath.startsWith(p));
   }
-  async function getProjectEntryPaths(projectPath: string): Promise<string[]> {
-    return [projectPath, ...await getBufWorkDirs(projectPath)];
-  }
   async function getProjectDependencyPaths(
     projectPath: string,
   ): Promise<string[]> {
@@ -66,8 +61,11 @@ export function createProjectManager(
   async function getProjectProtoFiles(filePath: string): Promise<string[]> {
     const projectPath = getProjectPath(filePath);
     if (projectPath) {
-      const entryPaths = await getProjectEntryPaths(projectPath);
-      return await expandEntryPaths(entryPaths);
+      const { roots, modules } = await getBufConfig(projectPath);
+      return [
+        ...await expandEntryPaths([projectPath, ...roots]),
+        ...await expandEntryModules(modules),
+      ];
     } else {
       return [filePath];
     }
@@ -75,18 +73,24 @@ export function createProjectManager(
   async function createProjectLoader(
     projectPath?: string,
   ): Promise<MemoizedLoader> {
-    const roots = projectPath
-      ? [
-        ...await getProjectEntryPaths(projectPath),
-        ...await getProjectDependencyPaths(projectPath),
-        ...getVendorDirs(),
-      ]
-      : getVendorDirs();
+    const { roots, modules } = await (async () => {
+      if (!projectPath) return { roots: getVendorDirs(), modules: [] };
+      const bufConfig = await getBufConfig(projectPath);
+      return {
+        roots: [
+          projectPath,
+          ...bufConfig.roots,
+          ...await getProjectDependencyPaths(projectPath),
+          ...getVendorDirs(),
+        ],
+        modules: bufConfig.modules,
+      };
+    })();
     const repo = projectPath && await getPollapoRepo(projectPath);
     return memoizeLoader(combineLoader(
       createOpenProtoLoader(openProtoManager),
       repo && createPollapoRepoLoader(projectPath, repo),
-      createDenoFsLoader({ roots }),
+      createDenoFsLoader({ roots, modules }),
     ));
   }
 }
@@ -99,35 +103,42 @@ function getVendorDirs() {
   }
 }
 
-async function getBufWorkDirs(
-  projectPath: string,
-): Promise<string[]> {
+interface BufConfig {
+  roots: string[];
+  modules: EntryModule[];
+}
+async function getBufConfig(projectPath: string): Promise<BufConfig> {
   try {
     const bufWorkYamlPath = resolve(projectPath, "buf.work.yaml");
     const bufWorkYaml = parseBufWorkYaml(
       await Deno.readTextFile(fromFileUrl(bufWorkYamlPath)),
     );
-    return bufWorkYaml.directories.map(
-      (directory) => resolve(projectPath, String(directory)),
-    );
+    return {
+      roots: bufWorkYaml.directories.map(
+        (directory) => resolve(projectPath, String(directory)),
+      ),
+      modules: [],
+    };
   } catch {
-    return await getBufV1Beta1BuildRoots(projectPath);
-  }
-}
-
-async function getBufV1Beta1BuildRoots(
-  projectPath: string,
-): Promise<string[]> {
-  try {
-    const bufYamlPath = resolve(projectPath, "buf.yaml");
-    const bufYaml = parseBufYaml(
-      await Deno.readTextFile(fromFileUrl(bufYamlPath)),
-    );
-    return bufYaml.build.roots.map(
-      (directory) => resolve(projectPath, String(directory)),
-    );
-  } catch {
-    return [];
+    try {
+      const bufYamlPath = resolve(projectPath, "buf.yaml");
+      const bufYaml = parseBufYaml(
+        await Deno.readTextFile(fromFileUrl(bufYamlPath)),
+      );
+      const version = bufYaml.version;
+      if (version === "v1" || version === "v1beta1") {
+        return {
+          roots: bufYaml.build?.roots?.map(
+            (directory) => resolve(projectPath, String(directory)),
+          ) || [],
+          modules: [],
+        };
+      }
+      // v2
+      return { roots: [], modules: bufYaml.modules || [] };
+    } catch {
+      return { roots: [], modules: [] };
+    }
   }
 }
 

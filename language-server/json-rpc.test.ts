@@ -3,12 +3,13 @@ import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { BufReader } from "https://deno.land/std@0.175.0/io/buf_reader.ts";
 import { createEventBuffer } from "../core/runtime/async/event-buffer.ts";
 import { defer } from "../core/runtime/async/observer.ts";
+import type { Reader, Writer } from "../misc/io.ts";
 import { createJsonRpcConnection } from "./json-rpc.ts";
 
-function createBuffer(): Deno.Reader & Deno.Writer {
+function createBuffer(): Reader & Writer {
   const eventBuffer = createEventBuffer<Uint8Array>();
   const asyncGenerator = eventBuffer.drain();
-  const reader: Deno.Reader = {
+  const reader: Reader = {
     async read(p) {
       const result = await asyncGenerator.next();
       if (!result) return null;

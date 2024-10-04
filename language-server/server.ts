@@ -8,6 +8,7 @@ import { ColRow } from "../core/parser/recursive-descent-parser.ts";
 import { Location } from "../core/parser/location.ts";
 import { Schema } from "../core/schema/model.ts";
 import findAllReferences from "../core/schema/findAllReferences.ts";
+import type { Reader, Writer } from "../misc/io.ts";
 import * as lsp from "./lsp.ts";
 import { createProjectManager } from "./project.ts";
 import {
@@ -21,8 +22,8 @@ import { getCompletionItems } from "./completion.ts";
 import { createOpenProtoManager } from "./open-proto-manager.ts";
 
 export interface RunConfig {
-  reader: Deno.Reader;
-  writer: Deno.Writer;
+  reader: Reader;
+  writer: Writer;
   logConfig?: CreateJsonRpcLogConfig;
 }
 export interface Server {
