@@ -53,6 +53,9 @@ export function run(config: RunConfig): Server {
       },
     },
     requestHandlers: {
+      ["shutdown"]() {
+        return null;
+      },
       ["initialize"](params: lsp.InitializeParams): lsp.InitializeResult {
         for (const folder of params.workspaceFolders || []) {
           projectManager.addProjectPath(folder.uri);
