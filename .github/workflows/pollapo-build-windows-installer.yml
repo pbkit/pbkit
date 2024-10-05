@@ -19,7 +19,7 @@ jobs:
       - name: Build
         run: deno compile -A --unstable --output pollapo.exe entrypoint.ts
       - name: Upload pollapo.exe
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: pollapo.exe
           path: cli/pollapo/pollapo.exe
