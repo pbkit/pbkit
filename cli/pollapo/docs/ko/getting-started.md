@@ -21,7 +21,7 @@ brew install pbkit
 
 ```sh
 # pbkit 저장소를 클론받습니다.
-git clone git@github.com:riiid/pbkit.git
+git clone git@github.com:pbkit/pbkit.git
 
 # pollapo 명령어를 설치합니다.
 deno install -n pollapo -A --unstable pbkit/cli/pollapo/entrypoint.ts
