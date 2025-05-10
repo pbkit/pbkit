@@ -19,18 +19,18 @@ interface Options {
 
 export default new Command()
   .description("Sign in with GitHub account")
-  .option("-h, --hostname <value:string>", "GitHub Hostname", {
+  .option("--hostname <value:string>", "GitHub Hostname", {
     default: "github.com",
   })
   .action(async (options: Options) => {
     await println(`${bold("Pollapo login")}`);
     await println("");
     try {
-      await getToken();
+      await getToken(options.hostname);
       const confirmed = await Confirm.prompt(
         {
           message:
-            "You're already logged into github.com. Do you want to re-authenticate?",
+            `You're already logged into ${options.hostname}. Do you want to re-authenticate?`,
           default: false,
           indent: "",
         },

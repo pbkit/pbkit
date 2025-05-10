@@ -34,10 +34,10 @@ export async function readGhHosts(
   return parseYaml(hostsFile) as GhHosts;
 }
 
-export async function getToken(): Promise<string> {
+export async function getToken(ghHostname: string): Promise<string> {
   try {
     const ghHosts = await readGhHosts();
-    const token = ghHosts["github.com"].oauth_token;
+    const token = ghHosts[ghHostname].oauth_token;
     if (token) return token;
   } catch {}
   throw new GithubNotLoggedInError();
