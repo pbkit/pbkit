@@ -76,6 +76,7 @@ interface PollTokenResponse {
 }
 export async function pollToken(
   code: RequestCodeResult,
+  ghHostname: string,
 ): Promise<PollTokenResponse> {
   const { interval } = code;
   const startDate = new Date();
@@ -87,7 +88,7 @@ export async function pollToken(
   while (true) {
     await wait(interval * 1000);
     try {
-      const res = await fetch(getTokenUrl("github.com"), {
+      const res = await fetch(getTokenUrl(ghHostname), {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",

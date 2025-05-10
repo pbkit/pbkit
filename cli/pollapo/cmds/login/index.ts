@@ -58,7 +58,7 @@ export default new Command()
       );
       await println(code.verificationUri);
     }
-    const pollTokenResult = await pollToken(code);
+    const pollTokenResult = await pollToken(code, options.hostname);
     await writeGhHosts(pollTokenResult.accessToken);
     await println("You are all set!");
   })
