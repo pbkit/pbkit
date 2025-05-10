@@ -25,8 +25,10 @@ export interface RequestCodeResult {
   userCode: string;
   verificationUri: string;
 }
-export async function requestCode(): Promise<RequestCodeResult> {
-  const res = await fetch(getDeviceInitUrl("github.com"), {
+export async function requestCode(
+  ghHostname: string,
+): Promise<RequestCodeResult> {
+  const res = await fetch(getDeviceInitUrl(ghHostname), {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

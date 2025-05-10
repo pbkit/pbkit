@@ -41,7 +41,7 @@ export default new Command()
         throw err;
       }
     }
-    const code = await requestCode();
+    const code = await requestCode(options.hostname);
     await println(
       `${yellow("!")} First copy your one-time code: ${bold(code.userCode)}`,
     );
