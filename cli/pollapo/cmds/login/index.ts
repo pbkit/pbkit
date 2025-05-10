@@ -46,7 +46,9 @@ export default new Command()
       `${yellow("!")} First copy your one-time code: ${bold(code.userCode)}`,
     );
     await print(
-      `- ${bold("Press Enter")} to open github.com in your browser... `,
+      `- ${
+        bold("Press Enter")
+      } to open ${options.hostname} in your browser... `,
     );
     await Deno.stdin.read(new Uint8Array(1));
     const { success } = await open(code.verificationUri);
