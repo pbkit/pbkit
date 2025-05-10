@@ -13,9 +13,16 @@ import {
   GithubNotLoggedInError,
 } from "../../../../misc/github/index.ts";
 
+interface Options {
+  hostname: string;
+}
+
 export default new Command()
   .description("Sign in with GitHub account")
-  .action(async () => {
+  .option("-h, --hostname <value:string>", "GitHub Hostname", {
+    default: "github.com",
+  })
+  .action(async (options: Options) => {
     await println(`${bold("Pollapo login")}`);
     await println("");
     try {
