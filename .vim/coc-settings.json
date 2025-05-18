@@ -1,7 +1,5 @@
 {
   "deno.enable": true,
-  "deno.lint": false,
-  "deno.unstable": true,
   "prettier.disableLanguages": [
     "typescript",
     "javascript"

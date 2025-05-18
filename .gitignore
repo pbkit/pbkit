@@ -2,3 +2,5 @@
 /pollapo.yml
 /.pollapo/
 **/*.exe
+
+node_modules/
