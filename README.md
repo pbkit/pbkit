@@ -39,6 +39,13 @@
   <br>
 </div>
 
+> [!IMPORTANT]
+> **Pbkit v1 is actively under construction.**\
+> [`v0.0.x`](https://github.com/pbkit/pbkit/tree/v0.0.72) is available in "maintenance mode".
+>
+> See https://github.com/pbkit/pbkit/issues/307
+> and join the roadmap discussion on Discord.
+
 ## What is Protobuf?
 
 <https://developers.google.com/protocol-buffers>
