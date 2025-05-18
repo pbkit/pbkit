@@ -334,10 +334,10 @@ export const fetchCommitHashWithGit = async (
   if (!git) throw new Error("git not found");
   const repoUrl = `git@github.com:${user}/${repo}.git`;
   const match = new TextDecoder().decode(
-    await Deno.run({
-      cmd: [git, "ls-remote", "--heads", "--tags", repoUrl],
+    (await new Deno.Command(git, {
+      args: ["ls-remote", "--heads", "--tags", repoUrl],
       stdout: "piped",
-    }).output(),
+    }).output()).stdout,
   ).trim().match(
     new RegExp(`^([0-9a-f]{40})\\s+refs/(?:heads|tags)/${rev}$`, "m"),
   );
@@ -363,15 +363,18 @@ export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
   if (!git) throw new Error("git not found");
   const repoUrl = `git@github.com:${user}/${repo}.git`;
   const cwd = await Deno.makeTempDir();
-  await Deno.run({ cwd, cmd: [git, "init"] }).status();
-  await Deno.run({ cwd, cmd: [git, "remote", "add", "origin", repoUrl] })
-    .status();
-  await Deno.run({ cwd, cmd: [git, "fetch", "origin", rev, "--depth=1"] })
-    .status();
-  await Deno.run({
+  await new Deno.Command(git, { cwd, args: ["init"] }).spawn();
+  await new Deno.Command(git, {
     cwd,
-    cmd: [
-      git,
+    args: ["remote", "add", "origin", repoUrl],
+  }).spawn();
+  await new Deno.Command(git, {
+    cwd,
+    args: ["fetch", "origin", rev, "--depth=1"],
+  }).spawn();
+  await new Deno.Command(git, {
+    cwd,
+    args: [
       "archive",
       "--format=zip",
       rev,
@@ -380,10 +383,12 @@ export const downloadZipAndYmlWithGit: DownloadZipAndYmlFn = async (
       "-o",
       zipPath,
     ],
+  }).spawn();
+  await new Deno.Command(git, {
+    cwd,
+    args: ["checkout", rev, "--", "pollapo.yml"],
   })
-    .status();
-  await Deno.run({ cwd, cmd: [git, "checkout", rev, "--", "pollapo.yml"] })
-    .status();
+    .spawn();
   try {
     const pollapoYmlText = await Deno.readTextFile(
       path.resolve(cwd, "pollapo.yml"),

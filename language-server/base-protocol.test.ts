@@ -1,9 +1,6 @@
-import { StringReader } from "https://deno.land/std@0.175.0/io/string_reader.ts";
-import { Buffer } from "https://deno.land/std@0.175.0/io/buffer.ts";
-import {
-  assertEquals,
-  assertRejects,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { StringReader } from "@std/io/string-reader";
+import { Buffer } from "@std/io/buffer";
+import { assertEquals, assertRejects } from "@std/assert";
 
 import {
   readBaseProtocolMessages,
@@ -59,7 +56,7 @@ Deno.test("base-protocol/writeBaseProtocolMessage: Success", async () => {
   await writeBaseProtocolMessage(messageBuffer, body);
   assertEquals(
     new TextDecoder().decode(messageBuffer.bytes()),
-    `content-length: 18\r\n\r\n{"hello": "world"}`,
+    `Content-Length: 18\r\n\r\n{"hello": "world"}`,
   );
 });
 
@@ -71,6 +68,6 @@ Deno.test("base-protocol/writeBaseProtocolMessage: Success with headers", async 
   await writeBaseProtocolMessage(messageBuffer, body, headers);
   assertEquals(
     new TextDecoder().decode(messageBuffer.bytes()),
-    `content-length: 18\r\nheader: hi\r\n\r\n{"hello": "world"}`,
+    `Content-Length: 18\r\nheader: hi\r\n\r\n{"hello": "world"}`,
   );
 });

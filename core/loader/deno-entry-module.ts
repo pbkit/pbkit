@@ -1,9 +1,5 @@
-import { walk } from "https://deno.land/std@0.175.0/fs/walk.ts";
-import {
-  fromFileUrl,
-  isAbsolute,
-  relative,
-} from "https://deno.land/std@0.175.0/path/mod.ts";
+import { walk } from "@std/fs/walk";
+import { fromFileUrl, isAbsolute, relative } from "@std/path";
 import type { EntryModule } from "./entry-module.ts";
 
 export async function expandEntryModules(

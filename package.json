@@ -1,5 +1,8 @@
 {
   "name": "pbkit",
   "type": "module",
-  "scripts": {}
+  "scripts": {},
+  "devDependencies": {
+    "esbuild": "^0.25.4"
+  }
 }

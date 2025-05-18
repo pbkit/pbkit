@@ -8,7 +8,7 @@ export default async function unuseCurrentVersion(): Promise<void> {
   try {
     console.log(`Uninstalling ${currentVersion}...`);
     for (const command of getToplevelCommands(currentVersion)) {
-      await Deno.run({ cmd: ["deno", "uninstall", command] }).status();
+      await new Deno.Command("deno", { args: ["uninstall", command] }).spawn();
     }
   } catch {}
 }

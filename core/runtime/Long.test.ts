@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { assertEquals } from "@std/assert";
 import Long from "./Long.ts";
 
 Deno.test("parse", () => {

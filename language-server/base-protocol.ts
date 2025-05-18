@@ -1,5 +1,5 @@
-import { BufReader } from "https://deno.land/std@0.175.0/io/buf_reader.ts";
-import { BufWriter } from "https://deno.land/std@0.175.0/io/buf_writer.ts";
+import { BufReader } from "@std/io/buf-reader";
+import { BufWriter } from "@std/io/buf-writer";
 import { TextProtoReader } from "./text-proto-reader.ts";
 import type { Reader, Writer } from "../misc/io.ts";
 

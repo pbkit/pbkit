@@ -3,7 +3,7 @@ import {
   isAbsolute,
   resolve as _resolve,
   toFileUrl,
-} from "https://deno.land/std@0.175.0/path/mod.ts";
+} from "@std/path";
 import type { EntryModule } from "./entry-module.ts";
 import { createEntryModuleEvaluator } from "./deno-entry-module.ts";
 import { Loader } from "./index.ts";

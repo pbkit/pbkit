@@ -1,7 +1,7 @@
-import { exists } from "https://deno.land/std@0.175.0/fs/mod.ts";
-import * as path from "https://deno.land/std@0.175.0/path/mod.ts";
+import { existsSync } from "node:fs";
+import * as path from "node:path";
 
-export default async function which(command: string): Promise<string | null> {
+export default function which(command: string): string | null {
   const pathEnv = Deno.env.get("PATH") ?? "";
   const pathExtEnv = Deno.env.get("PATHEXT");
   const paths = pathEnv.split(path.delimiter);
@@ -11,7 +11,7 @@ export default async function which(command: string): Promise<string | null> {
   for (const dir of paths) {
     for (const ext of pathExts) {
       const absolutePath = path.resolve(dir, command + ext);
-      if (await exists(absolutePath)) return absolutePath;
+      if (existsSync(absolutePath)) return absolutePath;
     }
   }
   return null;

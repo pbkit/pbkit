@@ -12,11 +12,8 @@
  * @module
  */
 
-import type {
-  BufReader,
-  ReadLineResult,
-} from "https://deno.land/std@0.175.0/io/buf_reader.ts";
-import { concat } from "https://deno.land/std@0.175.0/bytes/concat.ts";
+import type { BufReader, ReadLineResult } from "@std/io/buf-reader";
+import { concat } from "@std/bytes/concat";
 
 // Constants created for DRY
 const CHAR_SPACE: number = " ".charCodeAt(0);
@@ -135,7 +132,7 @@ export class TextProtoReader {
   }
 
   async readLineSlice(): Promise<Uint8Array | null> {
-    let line = new Uint8Array(0);
+    let line: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
     let r: ReadLineResult | null = null;
 
     do {
@@ -147,7 +144,7 @@ export class TextProtoReader {
       //TODO(SmashingQuasar): Kept skipSpace to preserve behavior but it should be looked into to check if it makes sense when this is used.
 
       if (r !== null && this.skipSpace(r.line) !== 0) {
-        line = concat(line, r.line);
+        line = concat([line, r.line]);
       }
     } while (r !== null && r.more);
 

@@ -54,11 +54,10 @@ export default new Command()
     ];
     const schema = await build({ loader, files });
     const fileDescriptorSet = convertSchemaToFileDescriptorSet({ schema });
-    const plugin = Deno.run({
-      cmd: [options.pluginPath],
+    const plugin = new Deno.Command(options.pluginPath, {
       stdin: "piped",
       stdout: "piped",
-    });
+    }).spawn();
     const request = {
       fileToGenerate: Object.values(schema.files).map((file) =>
         file.importPath
@@ -69,7 +68,8 @@ export default new Command()
     };
     await writeAll(plugin.stdin, encodeCodeGeneratorRequest(request));
     plugin.stdin.close();
-    const { error, file } = decodeCodeGeneratorResponse(await plugin.output());
+    const output = await plugin.output();
+    const { error, file } = decodeCodeGeneratorResponse(output.stdout);
     if (error && error.length > 0) {
       throw new Error("Failed to generate code: " + error);
     }

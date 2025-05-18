@@ -22,9 +22,8 @@ export default new Command()
     setCurrentVersion(rev);
     console.log(`Installing ${rev}...`);
     for (const command of getToplevelCommands(rev)) {
-      await Deno.run({
-        cmd: [
-          "deno",
+      await new Deno.Command("deno", {
+        args: [
           "install",
           "-f",
           "-A",
@@ -34,6 +33,6 @@ export default new Command()
           command,
           path.resolve(getToplevelCommandsDir(rev), command, "entrypoint.ts"),
         ],
-      }).status();
+      }).spawn();
     }
   });

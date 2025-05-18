@@ -1,7 +1,8 @@
 {
   "deno.enable": true,
-  "editor.formatOnSave": true,
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
   "[typescript]": {
+    "editor.formatOnSave": true,
     "editor.defaultFormatter": "denoland.vscode-deno"
-  }
+  },
 }
