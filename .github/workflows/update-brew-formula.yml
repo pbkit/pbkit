@@ -7,8 +7,8 @@ jobs:
   update-brew-formula:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: |-
+      - uses: actions/checkout@v4
+      - run: |
           TARGET_DIR=$(mktemp -d)
           CHECKSUM=$(curl -sL "${{ github.event.release.tarball_url }}" | sha256sum | cut -d ' ' -f 1)
           if [ -z $CHECKSUM ]]

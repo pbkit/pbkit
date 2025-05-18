@@ -1,4 +1,5 @@
 name: Pollapo - Build Windows Installer
+
 on:
   release:
     types: [created]
@@ -11,7 +12,7 @@ jobs:
         working-directory: cli/pollapo
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup Deno
         uses: denoland/setup-deno@v1
         with:
@@ -34,7 +35,7 @@ jobs:
         working-directory: cli/pollapo/windows-installer
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Setup Version by tag
         run: .\scripts\change-version.ps1
       - name: Setup devenv
